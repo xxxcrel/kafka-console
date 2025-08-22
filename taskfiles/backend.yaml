@@ -120,11 +120,11 @@ tasks:
       - install-gofumpt
     dir: "{{.BACKEND_ROOT}}"
     cmds:
-      - '{{ .BUILD_ROOT }}/bin/go/goimports -l -w -local "github.com/redpanda-data/console/backend" .'
+      - '{{ .BUILD_ROOT }}/bin/go/goimports -l -w -local "github.com/xxxcrel/kafka-console" .'
       - '{{ .BUILD_ROOT }}/bin/go/gofumpt -l -w .'
       # https://github.com/daixiang0/gci/issues/174
       # moves "maps" into the wrong place
-      - '{{ .BUILD_ROOT }}/bin/go/gci write -s default -s standard -s ''prefix(github.com/redpanda-data/console/backend)'' .'
+      - '{{ .BUILD_ROOT }}/bin/go/gci write -s default -s standard -s ''prefix(github.com/xxxcrel/kafka-console)'' .'
 
   lint:
     desc: Run Go linters for backend code

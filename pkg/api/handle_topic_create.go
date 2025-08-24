@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -10,7 +10,7 @@
 package api
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/cloudhut/common/rest"
@@ -28,22 +28,22 @@ type createTopicRequest struct {
 // OK validates the individual fields.
 func (c *createTopicRequest) OK() error {
 	if c.TopicName == "" {
-		return errors.New("topic name must be set")
+		return fmt.Errorf("topic name must be set")
 	}
 	if !isValidKafkaTopicName(c.TopicName) {
-		return errors.New("valid characters for Kafka topics are the ASCII alphanumeric characters and '.', '_', '-'")
+		return fmt.Errorf("valid characters for Kafka topics are the ASCII alphanumeric characters and '.', '_', '-'")
 	}
 
 	// Value -1 means that the partition count shall be inherited from the defaults (supported in req v4+).
 	isValidPartitionCount := c.PartitionCount == -1 || c.PartitionCount >= 1
 	if !isValidPartitionCount {
-		return errors.New("you must create a topic with at least one partition")
+		return fmt.Errorf("you must create a topic with at least one partition")
 	}
 
 	// Value -1 means that the replication factor shall be inherited from the defaults (supported in req v4+).
 	isValidReplicationFactor := c.ReplicationFactor == -1 || c.ReplicationFactor >= 1
 	if !isValidReplicationFactor {
-		return errors.New("replication factor must be 1 or more")
+		return fmt.Errorf("replication factor must be 1 or more")
 	}
 
 	return nil
@@ -74,7 +74,7 @@ type createTopicRequestConfig struct {
 // OK validates the struct fields.
 func (c *createTopicRequestConfig) OK() error {
 	if c.Name == "" {
-		return errors.New("a config name must be set")
+		return fmt.Errorf("a config name must be set")
 	}
 
 	return nil

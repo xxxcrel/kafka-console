@@ -1,8 +1,7 @@
-import { create } from '@bufbuild/protobuf';
-import { Button, ButtonGroup, createStandaloneToast, Flex, FormField, Input, PasswordInput } from '@redpanda-data/ui';
+import { Button, ButtonGroup, Flex, FormField, Input, PasswordInput, createStandaloneToast } from '@redpanda-data/ui';
 import { action, computed, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
-import { CreateSecretRequestSchema, Scope } from '../../../../protogen/redpanda/api/dataplane/v1/secret_pb';
+import { CreateSecretRequest, Scope } from '../../../../protogen/redpanda/api/dataplane/v1/secret_pb';
 import { appGlobal } from '../../../../state/appGlobal';
 import { pipelinesApi, rpcnSecretManagerApi } from '../../../../state/backendApi';
 import { DefaultSkeleton } from '../../../../utils/tsxUtils';
@@ -42,7 +41,7 @@ class RpConnectSecretCreate extends PageComponent {
   cancel() {
     this.secret = '';
     this.id = '';
-    appGlobal.historyPush(returnSecretTab);
+    appGlobal.history.push(returnSecretTab);
   }
 
   async createSecret() {
@@ -50,7 +49,7 @@ class RpConnectSecretCreate extends PageComponent {
     this.id = this.id.toUpperCase();
     rpcnSecretManagerApi
       .create(
-        create(CreateSecretRequestSchema, {
+        new CreateSecretRequest({
           id: this.id,
           // @ts-ignore js-base64 does not play nice with TypeScript 5: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'.
           secretData: base64ToUInt8Array(encodeBase64(this.secret)),
@@ -65,7 +64,7 @@ class RpConnectSecretCreate extends PageComponent {
           title: 'Secret created',
         });
         await pipelinesApi.refreshPipelines(true);
-        appGlobal.historyPush(returnSecretTab);
+        appGlobal.history.push(returnSecretTab);
       })
       .catch((err) => {
         toast({

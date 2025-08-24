@@ -14,7 +14,6 @@ import {
   Button,
   ButtonGroup,
   Checkbox,
-  createStandaloneToast,
   DataTable,
   Flex,
   ListItem,
@@ -33,12 +32,13 @@ import {
   PopoverHeader,
   PopoverTrigger,
   Progress,
-  redpandaTheme,
-  redpandaToastOptions,
   Skeleton,
   Text,
   type ToastId,
   UnorderedList,
+  createStandaloneToast,
+  redpandaTheme,
+  redpandaToastOptions,
   useDisclosure,
   useToast,
 } from '@redpanda-data/ui';
@@ -50,8 +50,8 @@ import type { ConfigEntry } from '../../../../state/restInterfaces';
 import { QuickTable } from '../../../../utils/tsxUtils';
 import { prettyBytesOrNA, prettyMilliseconds } from '../../../../utils/utils';
 import { BrokerList } from '../../../misc/BrokerList';
-import type { ReassignmentState } from '../logic/reassignmentTracker';
 import { reassignmentTracker } from '../ReassignPartitions';
+import type { ReassignmentState } from '../logic/reassignmentTracker';
 import { BandwidthSlider } from './BandwidthSlider';
 
 // TODO - once ActiveReassignments is migrated to FC, we could should move this code to use useToast()
@@ -84,7 +84,7 @@ export class ActiveReassignments extends Component<{
   render() {
     const minThrottle = this.minThrottle;
     const throttleText =
-      minThrottle === undefined ? 'Throttle: Not set (unlimited)' : <>Throttle: {prettyBytesOrNA(minThrottle)}/s</>;
+      minThrottle === undefined ? <>Throttle: Not set (unlimited)</> : <>Throttle: {prettyBytesOrNA(minThrottle)}/s</>;
 
     const currentReassignments = reassignmentTracker.trackingReassignments ?? [];
 
@@ -95,19 +95,14 @@ export class ActiveReassignments extends Component<{
         <div className="currentReassignments" style={{ display: 'flex', placeItems: 'center', marginBottom: '.5em' }}>
           <span className="title">Current Reassignments</span>
 
-          {
-            // RedPand cluster throttles as needed, the api does not support setting the throttle manually
-            !api.isRedpanda && (
-              <Button
-                variant="link"
-                size="sm"
-                style={{ fontSize: 'smaller', padding: '0px 8px' }}
-                onClick={() => (this.showThrottleDialog = true)}
-              >
-                {throttleText}
-              </Button>
-            )
-          }
+          <Button
+            variant="link"
+            size="sm"
+            style={{ fontSize: 'smaller', padding: '0px 8px' }}
+            onClick={() => (this.showThrottleDialog = true)}
+          >
+            {throttleText}
+          </Button>
         </div>
 
         {/* Table */}
@@ -649,7 +644,7 @@ export class ETACol extends Component<{ state: ReassignmentState }> {
 
     if (state.estimateSpeed == null || state.estimateCompletionTime == null) return '...';
 
-    const remainingMs = (state.estimateCompletionTime.getTime() - Date.now()).clamp(0, undefined);
+    const remainingMs = (state.estimateCompletionTime.getTime() - new Date().getTime()).clamp(0, undefined);
 
     return <span>{prettyMilliseconds(remainingMs, { secondsDecimalDigits: 0, unitCount: 2 })}</span>;
   }

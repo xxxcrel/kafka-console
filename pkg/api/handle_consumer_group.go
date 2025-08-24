@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -10,13 +10,13 @@
 package api
 
 import (
-	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kmsg"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/xxxcrel/kafka-console/pkg/console"
 )
@@ -79,7 +79,7 @@ type patchConsumerGroupRequest struct {
 
 func (p *patchConsumerGroupRequest) OK() error {
 	if len(p.Topics) == 0 {
-		return errors.New("at least one topic and partition must be set")
+		return fmt.Errorf("at least one topic and partition must be set")
 	}
 	for _, topic := range p.Topics {
 		if len(topic.Partitions) == 0 {
@@ -151,7 +151,7 @@ type deleteConsumerGroupRequest struct {
 
 func (p *deleteConsumerGroupRequest) OK() error {
 	if len(p.Topics) == 0 {
-		return errors.New("at least one topic and partition must be set")
+		return fmt.Errorf("at least one topic and partition must be set")
 	}
 	for _, topic := range p.Topics {
 		if len(topic.Partitions) == 0 {
@@ -219,7 +219,7 @@ func (api *API) handleDeleteConsumerGroup() http.HandlerFunc {
 				Err:          fmt.Errorf("failed to delete consumer group: %w", err),
 				Status:       http.StatusServiceUnavailable,
 				Message:      fmt.Sprintf("Failed to delete consumer group: %v", err.Error()),
-				InternalLogs: []slog.Attr{slog.String("group_id", groupID)},
+				InternalLogs: []zapcore.Field{zap.String("group_id", groupID)},
 				IsSilent:     false,
 			})
 			return

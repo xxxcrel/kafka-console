@@ -10,8 +10,8 @@
  */
 
 import { observer } from 'mobx-react';
-import type { RefObject } from 'react';
 import React from 'react';
+import type { RefObject } from 'react';
 import { appGlobal } from '../../../state/appGlobal';
 import { api } from '../../../state/backendApi';
 import { uiSettings } from '../../../state/ui';
@@ -19,41 +19,42 @@ import { Button, DefaultSkeleton, InlineSkeleton } from '../../../utils/tsxUtils
 import { PageComponent, type PageInitHelper } from '../Page';
 
 import './Schema.List.scss';
-import { ArchiveIcon, TrashIcon } from '@heroicons/react/outline';
+import { TrashIcon } from '@heroicons/react/outline';
 import {
   Alert,
   AlertIcon,
-  Badge,
-  Box,
   Checkbox,
-  createStandaloneToast,
   DataTable,
   Divider,
+  Empty,
+  Flex,
+  SearchField,
+  Skeleton,
+  Text,
+  VStack,
+} from '@redpanda-data/ui';
+import { action, makeObservable, observable } from 'mobx';
+import PageContent from '../../misc/PageContent';
+import type SearchBar from '../../misc/SearchBar';
+import Section from '../../misc/Section';
+import { SmallStat } from '../../misc/SmallStat';
+import { openDeleteModal, openPermanentDeleteModal } from './modals';
+
+import {
+  Box,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
   DrawerContent,
   DrawerHeader,
   DrawerOverlay,
-  Empty,
-  Flex,
   Heading,
-  SearchField,
-  Skeleton,
   Spinner,
-  Text,
-  Tooltip,
-  VStack,
+  createStandaloneToast,
 } from '@redpanda-data/ui';
-import { action, makeObservable, observable } from 'mobx';
 import { Link } from 'react-router-dom';
 import type { SchemaRegistrySubject } from '../../../state/restInterfaces';
 import { encodeURIComponentPercents } from '../../../utils/utils';
-import PageContent from '../../misc/PageContent';
-import type SearchBar from '../../misc/SearchBar';
-import Section from '../../misc/Section';
-import { SmallStat } from '../../misc/SmallStat';
-import { openDeleteModal, openPermanentDeleteModal } from './modals';
 
 const { ToastContainer, toast } = createStandaloneToast();
 
@@ -174,11 +175,12 @@ class SchemaList extends PageComponent<{}> {
 
     let filteredSubjects = api.schemaSubjects;
     if (uiSettings.schemaList.quickSearch) {
-      filteredSubjects = filteredSubjects.filter((s) => this.isFilterMatch(uiSettings.schemaList.quickSearch, s));
+      filteredSubjects = filteredSubjects
+        .filter(
+          (x) => uiSettings.schemaList.showSoftDeleted || (!uiSettings.schemaList.showSoftDeleted && !x.isSoftDeleted),
+        )
+        .filter((s) => this.isFilterMatch(uiSettings.schemaList.quickSearch, s));
     }
-    filteredSubjects = filteredSubjects.filter(
-      (x) => uiSettings.schemaList.showSoftDeleted || (!uiSettings.schemaList.showSoftDeleted && !x.isSoftDeleted),
-    );
 
     return (
       <PageContent key="b">
@@ -194,7 +196,7 @@ class SchemaList extends PageComponent<{}> {
           variant="outline"
           mb="4"
           width="fit-content"
-          onClick={() => appGlobal.historyPush('/schema-registry/edit-compatibility')}
+          onClick={() => appGlobal.history.push('/schema-registry/edit-compatibility')}
           disabledReason={
             api.userData?.canManageSchemaRegistry === false
               ? "You don't have the 'canManageSchemaRegistry' permission"
@@ -264,7 +266,7 @@ class SchemaList extends PageComponent<{}> {
           <Flex justifyContent={'space-between'} pb={3}>
             <Button
               colorScheme="brand"
-              onClick={() => appGlobal.historyPush('/schema-registry/create')}
+              onClick={() => appGlobal.history.push('/schema-registry/create')}
               disabledReason={
                 api.userData?.canCreateSchemas === false
                   ? "You don't have the 'canCreateSchemas' permission"
@@ -285,7 +287,6 @@ class SchemaList extends PageComponent<{}> {
             data={filteredSubjects}
             pagination
             sorting
-            rowClassName={(row) => (row.original.isSoftDeleted ? 'soft-deleted-row' : '')}
             columns={[
               {
                 header: 'Name',
@@ -293,28 +294,16 @@ class SchemaList extends PageComponent<{}> {
                 size: Number.POSITIVE_INFINITY,
                 cell: ({
                   row: {
-                    original: { name, isSoftDeleted },
+                    original: { name },
                   },
                 }) => (
                   <Box wordBreak="break-word" whiteSpace="break-spaces">
-                    <Flex alignItems="center" gap={2}>
-                      <Link
-                        data-testid="schema-registry-table-name"
-                        to={`/schema-registry/subjects/${encodeURIComponentPercents(name)}?version=latest`}
-                      >
-                        {name}
-                      </Link>
-                      {isSoftDeleted && (
-                        <Tooltip
-                          label="This subject has been soft-deleted. It can be restored or permanently deleted."
-                          hasArrow
-                        >
-                          <Box>
-                            <ArchiveIcon width={16} height={16} style={{ color: 'var(--chakra-colors-gray-400)' }} />
-                          </Box>
-                        </Tooltip>
-                      )}
-                    </Flex>
+                    <Link
+                      data-testid="schema-registry-table-name"
+                      to={`/schema-registry/subjects/${encodeURIComponentPercents(name)}?version=latest`}
+                    >
+                      {name}
+                    </Link>
                   </Box>
                 ),
               },
@@ -358,7 +347,7 @@ class SchemaList extends PageComponent<{}> {
                                 title: 'Subject permanently deleted',
                               });
                               api.refreshSchemaSubjects(true);
-                              appGlobal.historyPush('/schema-registry/');
+                              appGlobal.history.push('/schema-registry/');
                             })
                             .catch((err) => {
                               toast({
@@ -416,26 +405,7 @@ const SchemaTypeColumn = observer((p: { name: string }) => {
     return <Skeleton height="15px" />;
   }
 
-  const getSchemaTypeBadgeProps = (type: string) => {
-    switch (type) {
-      case 'AVRO':
-        return { bg: 'blue.50', color: 'blue.700', variant: 'subtle' as const };
-      case 'PROTOBUF':
-        return { bg: 'teal.50', color: 'teal.700', variant: 'subtle' as const };
-      case 'JSON':
-        return { bg: 'orange.50', color: 'orange.700', variant: 'subtle' as const };
-      default:
-        return { bg: 'gray.50', color: 'gray.700', variant: 'subtle' as const };
-    }
-  };
-
-  const badgeProps = getSchemaTypeBadgeProps(details.type);
-
-  return (
-    <Badge size="sm" {...badgeProps}>
-      {details.type}
-    </Badge>
-  );
+  return <>{details.type}</>;
 });
 
 const SchemaCompatibilityColumn = observer((p: { name: string }) => {
@@ -456,7 +426,7 @@ const LatestVersionColumn = observer((p: { name: string }) => {
   }
 
   if (details.latestActiveVersion < 0) {
-    return <Text color="gray.500">None</Text>;
+    return <></>;
   }
 
   return <>{details.latestActiveVersion}</>;

@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -194,7 +194,7 @@ func produceOrdersWithSchemas(t *testing.T, ctx context.Context, kafkaCl *kgo.Cl
 	protoFile, err := os.ReadFile(filepath.Clean(absProtoPath))
 	require.NoError(t, err)
 
-	ss, err := rcl.CreateSchema(t.Context(), topic+"-value", sr.Schema{
+	ss, err := rcl.CreateSchema(context.Background(), topic+"-value", sr.Schema{
 		Schema: string(protoFile),
 		Type:   sr.TypeProtobuf,
 	})

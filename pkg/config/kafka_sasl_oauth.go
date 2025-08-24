@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -13,7 +13,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -30,7 +29,6 @@ type KafkaSASLOAuthBearer struct {
 	TokenEndpoint string                    `yaml:"tokenEndpoint"`
 	Scope         string                    `yaml:"scope"`
 	Extensions    []KafkaSASLOAuthExtension `yaml:"extensions"`
-	TokenFilepath string                    `yaml:"tokenFilepath"`
 }
 
 // KafkaSASLOAuthExtension is the struct for the SASL OAuth extension support(custom key-value pairs)
@@ -52,10 +50,10 @@ func (c *KafkaSASLOAuthBearer) RegisterFlags(f *flag.FlagSet) {
 func (c *KafkaSASLOAuthBearer) Validate() error {
 	if c.TokenEndpoint != "" {
 		if c.ClientID == "" || c.ClientSecret == "" {
-			return errors.New("OAuth Bearer client credentials must be set")
+			return fmt.Errorf("OAuth Bearer client credentials must be set")
 		}
-	} else if c.Token == "" && c.TokenFilepath == "" {
-		return errors.New("OAuth Bearer token or token file path must be set")
+	} else if c.Token == "" {
+		return fmt.Errorf("OAuth Bearer token must be set")
 	}
 
 	return nil
@@ -111,7 +109,7 @@ func (c *KafkaSASLOAuthBearer) AcquireToken(ctx context.Context) (string, error)
 
 	accessToken, ok := tokenResponse["access_token"].(string)
 	if !ok {
-		return "", errors.New("access_token not found in token response")
+		return "", fmt.Errorf("access_token not found in token response")
 	}
 
 	return accessToken, nil

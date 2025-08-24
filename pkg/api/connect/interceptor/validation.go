@@ -14,13 +14,13 @@ package interceptor
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"slices"
 	"strings"
 
 	commonv1alpha1 "buf.build/gen/go/redpandadata/common/protocolbuffers/go/redpanda/api/common/v1alpha1"
-	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
+	"github.com/bufbuild/protovalidate-go"
+	"go.uber.org/zap"
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/protobuf/proto"
@@ -32,12 +32,12 @@ import (
 
 // ValidationInterceptor validates incoming requests against the provided validation.
 type ValidationInterceptor struct {
-	validator protovalidate.Validator
-	logger    *slog.Logger
+	validator *protovalidate.Validator
+	logger    *zap.Logger
 }
 
 // NewRequestValidationInterceptor creates an interceptor to validate Connect requests.
-func NewRequestValidationInterceptor(validator protovalidate.Validator, logger *slog.Logger) *ValidationInterceptor {
+func NewRequestValidationInterceptor(validator *protovalidate.Validator, logger *zap.Logger) *ValidationInterceptor {
 	return &ValidationInterceptor{
 		validator: validator,
 		logger:    logger,
@@ -102,7 +102,7 @@ func (in *ValidationInterceptor) WrapUnary(next connect.UnaryFunc) connect.Unary
 			if resourceName, ok := findResourceName(fmEr); ok {
 				if e := new(protovalidate.ValidationError); errors.As(err, &e) {
 					e.Violations = slices.DeleteFunc(e.Violations, func(v *protovalidate.Violation) bool {
-						return !UpdateAffectsField(fmEr.GetUpdateMask(), strings.TrimPrefix(v.Proto.GetField().String(), resourceName+"."))
+						return !UpdateAffectsField(fmEr.GetUpdateMask(), strings.TrimPrefix(*v.Proto.FieldPath, resourceName+".")) //nolint:staticcheck // we want to keep using this deprecated field for now.
 					})
 					// If no violations anymore after stripping the obsolete ones - proceed with the call.
 					if len(e.Violations) == 0 {
@@ -129,9 +129,9 @@ func (in *ValidationInterceptor) WrapUnary(next connect.UnaryFunc) connect.Unary
 			}
 			badRequest = apierrors.NewBadRequest(fieldViolations...)
 		case errors.As(err, &runtimeErr):
-			in.logger.ErrorContext(ctx, "validation runtime error", slog.Any("error", runtimeErr))
+			in.logger.Error("validation runtime error", zap.Error(runtimeErr))
 		case errors.As(err, &compilationErr):
-			in.logger.ErrorContext(ctx, "validation compilation error", slog.Any("error", compilationErr))
+			in.logger.Error("validation compilation error", zap.Error(compilationErr))
 		}
 
 		return nil, apierrors.NewConnectError(

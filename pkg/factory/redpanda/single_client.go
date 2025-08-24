@@ -12,7 +12,6 @@ package redpanda
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/redpanda-data/common-go/net"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -26,8 +25,8 @@ var _ ClientFactory = (*SingleClientProvider)(nil)
 // SingleClientProvider is a struct that holds a single instance of the Redpanda
 // Admin API client. It implements the ClientFactory interface.
 type SingleClientProvider struct {
-	cfg    config.RedpandaAdminAPI
-	logger *slog.Logger
+	redpandaCl *rpadmin.AdminAPI
+	cfg        config.RedpandaAdminAPI
 }
 
 // NewSingleClientProvider creates a new SingleClientProvider with the given configuration and logger.
@@ -35,57 +34,40 @@ type SingleClientProvider struct {
 //
 // If schema registry is not configured an instance of DisabledClientProvider is returned.
 // Otherwise, returns an instance of SingleClientProvider or an error if client creation fails.
-func NewSingleClientProvider(cfg *config.Config, l *slog.Logger) (ClientFactory, error) {
+func NewSingleClientProvider(cfg *config.Config) (ClientFactory, error) {
 	redpandaCfg := cfg.Redpanda.AdminAPI
 
 	if !redpandaCfg.Enabled {
 		return &DisabledClientProvider{}, nil
 	}
 
-	return &SingleClientProvider{
-		cfg:    redpandaCfg,
-		logger: l,
-	}, nil
-}
-
-// GetRedpandaAPIClient returns a redpanda admin api for the given context.
-func (p *SingleClientProvider) GetRedpandaAPIClient(ctx context.Context, opts ...ClientOption) (AdminAPIClient, error) {
-	cfg := &ClientOptions{
-		URLs: p.cfg.URLs,
-	}
-
-	for _, opt := range opts {
-		if err := opt(cfg); err != nil {
-			return nil, fmt.Errorf("applying option: %w", err)
-		}
-	}
-
-	// Explicitly set the tlsCfg to nil in case an HTTP target url has been provided
-	scheme, host, err := net.ParseHostMaybeScheme(cfg.URLs[0])
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse admin api url scheme: %w", err)
-	}
-
-	hostname, _ := net.SplitHostPortDefault(host, 443)
-
-	// Build admin client with provided credentials with reloader
-	tlsCfg, err := p.cfg.TLS.TLSConfigWithReloader(
-		ctx,
-		p.logger,
-		hostname,
-	)
+	// Build admin client with provided credentials
+	tlsCfg, err := redpandaCfg.TLS.TLSConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build TLS config: %w", err)
 	}
 
+	// Explicitly set the tlsCfg to nil in case an HTTP target url has been provided
+	scheme, _, err := net.ParseHostMaybeScheme(redpandaCfg.URLs[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse admin api url scheme: %w", err)
+	}
 	if scheme == "http" {
 		tlsCfg = nil
 	}
 
-	adminClient, err := rpadmin.NewAdminAPI(cfg.URLs, p.cfg.RPAdminAuth(), tlsCfg)
+	adminClient, err := rpadmin.NewAdminAPI(redpandaCfg.URLs, redpandaCfg.RPAdminAuth(), tlsCfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create admin client: %w", err)
 	}
 
-	return adminClient, nil
+	return &SingleClientProvider{
+		redpandaCl: adminClient,
+		cfg:        redpandaCfg,
+	}, nil
+}
+
+// GetRedpandaAPIClient returns a redpanda admin api for the given context.
+func (p *SingleClientProvider) GetRedpandaAPIClient(_ context.Context) (AdminAPIClient, error) {
+	return p.redpandaCl, nil
 }

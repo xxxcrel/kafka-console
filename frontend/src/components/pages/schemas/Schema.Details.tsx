@@ -9,6 +9,7 @@
  * by the Apache License, Version 2.0
  */
 
+import { createStandaloneToast } from '@redpanda-data/ui';
 import {
   Alert,
   AlertDescription,
@@ -16,18 +17,18 @@ import {
   AlertTitle,
   Box,
   CodeBlock,
-  createStandaloneToast,
   Divider,
   Flex,
   Grid,
   GridItem,
-  Link,
   ListItem,
+  Skeleton,
   Tabs,
-  Text,
   UnorderedList,
   useToast,
 } from '@redpanda-data/ui';
+import { Text } from '@redpanda-data/ui';
+import { Link } from '@redpanda-data/ui';
 import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import { useState } from 'react';
@@ -38,14 +39,13 @@ import type { SchemaRegistrySubjectDetails, SchemaRegistryVersionedSchema } from
 import { uiState } from '../../../state/uiState';
 import { editQuery } from '../../../utils/queryHelper';
 import { Button, DefaultSkeleton, Label } from '../../../utils/tsxUtils';
-import { decodeURIComponentPercents, encodeURIComponentPercents } from '../../../utils/utils';
+import { decodeURIComponentPercents } from '../../../utils/utils';
 import { KowlDiffEditor } from '../../misc/KowlEditor';
 import PageContent from '../../misc/PageContent';
 import { SingleSelect } from '../../misc/Select';
 import { SmallStat } from '../../misc/SmallStat';
 import { PageComponent } from '../Page';
 import { openDeleteModal, openPermanentDeleteModal } from './modals';
-
 const { ToastContainer, toast } = createStandaloneToast();
 
 @observer
@@ -73,13 +73,8 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
     if (!prevProps) return;
 
     const prevName = decodeURIComponentPercents(prevProps.subjectName);
-    const currentName = decodeURIComponentPercents(this.props.subjectName);
-    const prevVersion = getVersionFromQuery();
-    const currentVersion = getVersionFromQuery();
 
-    if (prevName !== currentName || prevVersion !== currentVersion) {
-      this.subjectNameRaw = currentName;
-      this.subjectNameEncoded = encodeURIComponent(currentName);
+    if (prevName !== this.subjectNameRaw) {
       this.updateTitleAndBreadcrumbs();
       this.refreshData();
     }
@@ -151,7 +146,7 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
           <Button
             variant="outline"
             onClick={() =>
-              appGlobal.historyPush(`/schema-registry/subjects/${this.subjectNameEncoded}/edit-compatibility`)
+              appGlobal.history.push(`/schema-registry/subjects/${this.subjectNameEncoded}/edit-compatibility`)
             }
             disabledReason={
               api.userData?.canManageSchemaRegistry === false
@@ -163,7 +158,7 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
           </Button>
           <Button
             variant="outline"
-            onClick={() => appGlobal.historyPush(`/schema-registry/subjects/${this.subjectNameEncoded}/add-version`)}
+            onClick={() => appGlobal.history.push(`/schema-registry/subjects/${this.subjectNameEncoded}/add-version`)}
             disabledReason={
               api.userData?.canCreateSchemas === false ? "You don't have the 'canCreateSchemas' permission" : undefined
             }
@@ -188,7 +183,7 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
                         title: 'Subject permanently deleted',
                       });
                       api.refreshSchemaSubjects(true);
-                      appGlobal.historyPush('/schema-registry/');
+                      appGlobal.history.push('/schema-registry/');
                     })
                     .catch((err) => {
                       toast({
@@ -291,34 +286,13 @@ const SubjectDefinition = observer((p: { subject: SchemaRegistrySubjectDetails }
   const subject = p.subject;
 
   const queryVersion = getVersionFromQuery();
-
-  // Determine fallback version when no specific version is requested
-  const fallbackVersion =
-    subject.latestActiveVersion === -1 ? subject.schemas.last()?.version : subject.latestActiveVersion;
-
-  // Check if requested version exists in available schemas
-  const requestedVersionExists = queryVersion !== undefined && queryVersion !== 'latest' 
-    ? subject.schemas.some(s => s.version === queryVersion)
-    : true;
-
-  // Use URL parameter if provided and exists, otherwise fall back to latest active version
-  const defaultVersion = queryVersion !== undefined 
-    ? (queryVersion === 'latest' || !requestedVersionExists ? fallbackVersion : queryVersion)
-    : fallbackVersion;
+  const defaultVersion =
+    queryVersion && queryVersion !== 'latest'
+      ? queryVersion
+      : subject.latestActiveVersion === -1 // if we don't have a latestActiveVersion, use the last version there is
+        ? subject.schemas.last()?.version
+        : subject.latestActiveVersion;
   const [selectedVersion, setSelectedVersion] = useState(defaultVersion);
-
-  // Show notification and update URL if requested version doesn't exist
-  if (queryVersion !== undefined && queryVersion !== 'latest' && !requestedVersionExists) {
-    toast({
-      status: 'warning',
-      title: `Version ${queryVersion} not found`,
-      description: `Showing version ${fallbackVersion} instead`,
-      duration: 5000,
-      isClosable: true,
-    });
-    // Update URL to reflect the actual version being shown
-    editQuery((x) => (x.version = String(fallbackVersion)));
-  }
 
   const schema = subject.schemas.first((x) => x.version === selectedVersion);
 
@@ -386,7 +360,7 @@ const SubjectDefinition = observer((p: { subject: SchemaRegistrySubjectDetails }
 
                         const newDetails = api.schemaDetails.get(subject.name);
                         if (!newDetails || !newDetails.latestActiveVersion) {
-                          appGlobal.historyPush('/schema-registry/');
+                          appGlobal.history.push('/schema-registry/');
                         } else {
                           setSelectedVersion(newDetails.latestActiveVersion);
                         }
@@ -433,7 +407,7 @@ const SubjectDefinition = observer((p: { subject: SchemaRegistrySubjectDetails }
 
                       const updatedDetails = api.schemaDetails.get(subject.name);
                       if (updatedDetails)
-                        appGlobal.historyPush(
+                        appGlobal.history.push(
                           `/schema-registry/subjects/${encodeURIComponent(subject.name)}?version=${updatedDetails.latestActiveVersion}`,
                         );
                     })
@@ -452,44 +426,46 @@ const SubjectDefinition = observer((p: { subject: SchemaRegistrySubjectDetails }
               </Button>
             </>
           ) : (
-            <Button
-              variant="outline"
-              ml="auto"
-              disabledReason={
-                api.userData?.canDeleteSchemas === false
-                  ? "You don't have the 'canDeleteSchemas' permission"
-                  : undefined
-              }
-              onClick={() =>
-                openDeleteModal(`${subject.name} version ${schema.version}`, () => {
-                  api
-                    .deleteSchemaSubjectVersion(subject.name, schema.version, false)
-                    .then(() => {
-                      toast({
-                        status: 'success',
-                        duration: 4000,
-                        isClosable: false,
-                        title: 'Schema version deleted',
-                        description: 'You can recover or permanently delete it.',
-                      });
+            <>
+              <Button
+                variant="outline"
+                ml="auto"
+                disabledReason={
+                  api.userData?.canDeleteSchemas === false
+                    ? "You don't have the 'canDeleteSchemas' permission"
+                    : undefined
+                }
+                onClick={() =>
+                  openDeleteModal(`${subject.name} version ${schema.version}`, () => {
+                    api
+                      .deleteSchemaSubjectVersion(subject.name, schema.version, false)
+                      .then(() => {
+                        toast({
+                          status: 'success',
+                          duration: 4000,
+                          isClosable: false,
+                          title: 'Schema version deleted',
+                          description: 'You can recover or permanently delete it.',
+                        });
 
-                      api.refreshSchemaDetails(subject.name, true);
-                      api.refreshSchemaSubjects(true);
-                    })
-                    .catch((err) => {
-                      toast({
-                        status: 'error',
-                        duration: null,
-                        isClosable: true,
-                        title: 'Failed to delete schema version',
-                        description: String(err),
+                        api.refreshSchemaDetails(subject.name, true);
+                        api.refreshSchemaSubjects(true);
+                      })
+                      .catch((err) => {
+                        toast({
+                          status: 'error',
+                          duration: null,
+                          isClosable: true,
+                          title: 'Failed to delete schema version',
+                          description: String(err),
+                        });
                       });
-                    });
-                })
-              }
-            >
-              Delete
-            </Button>
+                  })
+                }
+              >
+                Delete
+              </Button>
+            </>
           )}
         </Flex>
 
@@ -639,24 +615,13 @@ const SchemaReferences = observer(
         {schema.references.length > 0 ? (
           <UnorderedList>
             {schema.references.map((ref) => {
-              // Schema references contain two distinct identifiers:
-              // - ref.name: The import string used within the schema (e.g., "foo/bar/baz.proto")
-              // - ref.subject: The actual Schema Registry subject name (e.g., "foo.bar.baz")
-              //
-              // For consistent UX, we display the subject name (what users navigate to)
-              // rather than the import string. Both "References" and "Referenced By"
-              // sections now consistently show subject names.
-              //
-              // Navigation uses encodeURIComponentPercents() instead of encodeURIComponent()
-              // because schema subject names with periods/slashes cause URL parsing issues
-              // in React Router. The special encoder replaces % with ﹪ to avoid conflicts.
               return (
                 <ListItem key={ref.name + ref.subject + ref.version}>
                   <Link
                     as={ReactRouterLink}
-                    to={`/schema-registry/subjects/${encodeURIComponentPercents(ref.subject)}?version=${ref.version}`}
+                    to={`/schema-registry/subjects/${encodeURIComponent(ref.subject)}?version=${ref.version}`}
                   >
-                    {ref.subject}
+                    {ref.name}
                   </Link>
                 </ListItem>
               );
@@ -674,20 +639,21 @@ const SchemaReferences = observer(
           {/* <Link as={ReactRouterLink} to="/home">Learn More</Link> */}
         </Text>
 
-        {!!referencedBy && referencedBy?.length > 0 ? (
+        {!referencedBy ? (
+          <Flex gap="2" direction="column">
+            <Skeleton height="20px" />
+            <Skeleton height="20px" />
+          </Flex>
+        ) : referencedBy.length > 0 ? (
           <UnorderedList>
             {referencedBy
               .flatMap((x) => x.usages)
               .map((ref) => {
-                // Referenced By data only contains subject names (not import strings),
-                // so this section was already displaying correctly. However, we use
-                // encodeURIComponentPercents() for consistent navigation behavior
-                // with the References section above.
                 return (
                   <ListItem key={ref.subject + ref.version}>
                     <Link
                       as={ReactRouterLink}
-                      to={`/schema-registry/subjects/${encodeURIComponentPercents(ref.subject)}?version=${ref.version}`}
+                      to={`/schema-registry/subjects/${encodeURIComponent(ref.subject)}?version=${ref.version}`}
                     >
                       {ref.subject}
                     </Link>

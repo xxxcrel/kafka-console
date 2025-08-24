@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
+
+	"go.uber.org/zap"
+
 	"github.com/xxxcrel/kafka-console/pkg/api"
 	"github.com/xxxcrel/kafka-console/pkg/config"
-	loggerpkg "github.com/xxxcrel/kafka-console/pkg/logger"
 )
 
 // App struct
@@ -23,30 +24,19 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (app *App) startup(ctx context.Context) {
 	app.ctx = ctx
-	defaultLogger := loggerpkg.NewSlogLogger()
+	startupLogger := zap.NewExample()
 
-	cfg, err := config.LoadConfig(defaultLogger)
+	cfg, err := config.LoadConfig(startupLogger)
 	if err != nil {
-		loggerpkg.FatalStartup("failed to load config", err)
+		startupLogger.Fatal("failed to load config", zap.Error(err))
 	}
 	err = cfg.Validate()
 	if err != nil {
-		loggerpkg.FatalStartup("failed to validate config", err)
+		startupLogger.Fatal("failed to validate config", zap.Error(err))
 	}
 
-	a, err := api.New(&cfg)
-	if err != nil {
-		loggerpkg.FatalStartup("failed to create API", err)
-	}
-
-	// Create startup context with timeout
-	startupTimeout := 6*time.Second + cfg.Kafka.Startup.TotalMaxTime()
-	ctx, cancel := context.WithTimeout(context.Background(), startupTimeout)
-	defer cancel()
-
-	if err := a.Start(ctx); err != nil {
-		loggerpkg.FatalStartup("failed to start API", err)
-	}
+	a := api.New(&cfg)
+	a.Start()
 }
 
 // Greet returns a greeting for the given name

@@ -1,25 +1,24 @@
-import { create } from '@bufbuild/protobuf';
 import { PencilIcon, TrashIcon } from '@heroicons/react/outline';
+import { Link as ChakraLink } from '@redpanda-data/ui';
 import {
   Box,
   Button,
   ButtonGroup,
-  Link as ChakraLink,
   Code,
   ConfirmItemDeleteModal,
   CopyButton,
-  createStandaloneToast,
   DataTable,
   Flex,
   Image,
   SearchField,
   Text,
   Tooltip,
+  createStandaloneToast,
 } from '@redpanda-data/ui';
 import { observer } from 'mobx-react';
 import { Link as ReactRouterLink } from 'react-router-dom';
 import SittingPanda from '../../../../assets/redpanda/SittingPanda.svg';
-import { DeleteSecretRequestSchema, type Secret } from '../../../../protogen/redpanda/api/dataplane/v1/secret_pb';
+import { DeleteSecretRequest, type Secret } from '../../../../protogen/redpanda/api/dataplane/v1/secret_pb';
 import { appGlobal } from '../../../../state/appGlobal';
 import { rpcnSecretManagerApi } from '../../../../state/backendApi';
 import { Features } from '../../../../state/supportedFeatures';
@@ -82,7 +81,11 @@ class RpConnectSecretsList extends PageComponent {
   }
 
   async deleteSecret(id: string) {
-    await rpcnSecretManagerApi.delete(create(DeleteSecretRequestSchema, { id }));
+    await rpcnSecretManagerApi.delete(
+      new DeleteSecretRequest({
+        id,
+      }),
+    );
     this.refreshData(true);
   }
 
@@ -183,10 +186,10 @@ class RpConnectSecretsList extends PageComponent {
                           variant="icon"
                           height="16px"
                           color="gray.500"
-                          onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                          onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            appGlobal.historyPush(`/rp-connect/secrets/${r.id}/edit`);
+                            appGlobal.history.push(`/rp-connect/secrets/${r.id}/edit`);
                           }}
                         >
                           <PencilIcon />

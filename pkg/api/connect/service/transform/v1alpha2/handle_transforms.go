@@ -14,12 +14,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 
 	commonv1alpha1 "buf.build/gen/go/redpandadata/common/protocolbuffers/go/redpanda/api/common/v1alpha1"
-	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
+	"github.com/bufbuild/protovalidate-go"
+	"go.uber.org/zap"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -49,7 +49,7 @@ func (s *Service) HandleDeployTransform() http.HandlerFunc {
 		if r.ContentLength == 0 {
 			s.writeError(w, r, apierrors.NewConnectError(
 				connect.CodeInvalidArgument,
-				errors.New("request body must be a valid multipart/form-data payload, but sent body is empty"),
+				fmt.Errorf("request body must be a valid multipart/form-data payload, but sent body is empty"),
 				apierrors.NewErrorInfo(commonv1alpha1.Reason_REASON_INVALID_INPUT.String()),
 			))
 			return
@@ -70,7 +70,7 @@ func (s *Service) HandleDeployTransform() http.HandlerFunc {
 		if metadataJSON == "" {
 			s.writeError(w, r, apierrors.NewConnectError(
 				connect.CodeInvalidArgument,
-				errors.New("could not find or parse form field metadata"),
+				fmt.Errorf("could not find or parse form field metadata"),
 				apierrors.NewErrorInfo(commonv1alpha1.Reason_REASON_INVALID_INPUT.String()),
 			))
 			return
@@ -145,7 +145,7 @@ func (s *Service) HandleDeployTransform() http.HandlerFunc {
 		if err != nil {
 			s.writeError(w, r, apierrors.NewConnectError(
 				connect.CodeInternal,
-				errors.New("deployed wasm transform, but failed to list it afterwards"),
+				fmt.Errorf("deployed wasm transform, but failed to list it afterwards"),
 				apierrors.NewErrorInfo(v1alpha2.Reason_REASON_TYPE_MAPPING_ERROR.String()),
 			))
 			return
@@ -165,7 +165,7 @@ func (s *Service) HandleDeployTransform() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		if _, err := w.Write(jsonBytes); err != nil {
-			s.logger.ErrorContext(r.Context(), "failed to write response to deploy wasm transform request", slog.Any("error", err))
+			s.logger.Error("failed to write response to deploy wasm transform request", zap.Error(err))
 		}
 	}
 }
@@ -197,9 +197,9 @@ func (s *Service) validateProtoMessage(msg proto.Message) error {
 		}
 		badRequest = apierrors.NewBadRequest(fieldViolations...)
 	case errors.As(err, &runtimeErr):
-		s.logger.Error("validation runtime error", slog.Any("error", runtimeErr))
+		s.logger.Error("validation runtime error", zap.Error(runtimeErr))
 	case errors.As(err, &compilationErr):
-		s.logger.Error("validation compilation error", slog.Any("error", compilationErr))
+		s.logger.Error("validation compilation error", zap.Error(compilationErr))
 	}
 
 	return apierrors.NewConnectError(

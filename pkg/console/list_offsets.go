@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -11,13 +11,10 @@ package console
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
-
-	loggerpkg "github.com/xxxcrel/kafka-console/pkg/logger"
 )
 
 // TopicOffset contains all topics' partitions offsets.
@@ -43,7 +40,7 @@ func (s *Service) ListOffsets(ctx context.Context, topicNames []string, timestam
 	}
 	metadata, err := adminCl.Metadata(ctx, topicNames...)
 	if err != nil {
-		return nil, errors.New("failed to request partition info for topics")
+		return nil, fmt.Errorf("failed to request partition info for topics")
 	}
 	if err := metadata.Topics.Error(); err != nil {
 		return nil, fmt.Errorf("failed to request topic metadata: %w", err)
@@ -122,7 +119,7 @@ func (s *Service) listOffsets(ctx context.Context, kafkaCl *kgo.Client, topicPar
 		if err != nil {
 			shardReq, ok := shard.Req.(*kmsg.ListOffsetsRequest)
 			if !ok {
-				loggerpkg.Fatal(s.logger, "failed to cast ListOffsetsRequest")
+				s.logger.Fatal("failed to cast ListOffsetsRequest")
 			}
 
 			// Create an entry for each failed shard so that we each failed partition is visible too
@@ -147,7 +144,7 @@ func (s *Service) listOffsets(ctx context.Context, kafkaCl *kgo.Client, topicPar
 		// Create an entry for each successfully requested partition
 		res, ok := shard.Resp.(*kmsg.ListOffsetsResponse)
 		if !ok {
-			loggerpkg.Fatal(s.logger, "failed to cast ListOffsetsResponse")
+			s.logger.Fatal("failed to cast ListOffsetsResponse")
 		}
 		for _, topic := range res.Topics {
 			partitions, ok := partitionsByTopic[topic.Topic]

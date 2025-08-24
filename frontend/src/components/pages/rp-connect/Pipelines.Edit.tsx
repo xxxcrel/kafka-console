@@ -9,30 +9,21 @@
  * by the Apache License, Version 2.0
  */
 
-import { create } from '@bufbuild/protobuf';
-import {
-  Box,
-  Button,
-  Link as ChLink,
-  Flex,
-  FormField,
-  Input,
-  NumberInput,
-  useToast,
-  CreateToastFnReturn,
-} from '@redpanda-data/ui';
+import { Box, Button, Flex, FormField, Input, NumberInput, createStandaloneToast } from '@redpanda-data/ui';
+import { Link as ChLink } from '@redpanda-data/ui';
 import { action, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
-import { PipelineUpdateSchema } from 'protogen/redpanda/api/dataplane/v1/pipeline_pb';
 import { Link } from 'react-router-dom';
+import { PipelineUpdate } from '../../../protogen/redpanda/api/dataplane/v1/pipeline_pb';
 import { appGlobal } from '../../../state/appGlobal';
 import { pipelinesApi, rpcnSecretManagerApi } from '../../../state/backendApi';
 import { DefaultSkeleton } from '../../../utils/tsxUtils';
 import PageContent from '../../misc/PageContent';
 import { PageComponent, type PageInitHelper } from '../Page';
-import { formatPipelineError } from './errors';
 import { PipelineEditor } from './Pipelines.Create';
-import { cpuToTasks, MAX_TASKS, MIN_TASKS, tasksToCPU } from './tasks';
+import { formatPipelineError } from './errors';
+import { MAX_TASKS, MIN_TASKS, cpuToTasks, tasksToCPU } from './tasks';
+const { ToastContainer, toast } = createStandaloneToast();
 
 @observer
 class RpConnectPipelinesEdit extends PageComponent<{ pipelineId: string }> {
@@ -42,8 +33,6 @@ class RpConnectPipelinesEdit extends PageComponent<{ pipelineId: string }> {
   @observable editorContent = undefined as unknown as string;
   @observable isUpdating = false;
   @observable secrets: string[] = [];
-  // TODO: Actually show this within the pipeline edit page
-  @observable tags = {} as Record<string, string>;
 
   constructor(p: any) {
     super(p);
@@ -82,29 +71,14 @@ class RpConnectPipelinesEdit extends PageComponent<{ pipelineId: string }> {
       this.description = pipeline.description;
       this.tasks = cpuToTasks(pipeline?.resources?.cpuShares) || MIN_TASKS;
       this.editorContent = pipeline.configYaml;
-      this.tags = pipeline.tags;
     }
 
     const isNameEmpty = !this.displayName;
 
-    const UpdateButton = () => {
-      const toast = useToast();
-
-      return (
-        <Button
-          variant="solid"
-          isDisabled={isNameEmpty || this.isUpdating}
-          loadingText="Updating..."
-          isLoading={this.isUpdating}
-          onClick={action(() => this.updatePipeline(toast))}
-        >
-          Update
-        </Button>
-      )
-    }
-
     return (
       <PageContent>
+        <ToastContainer />
+
         <Box my="2">
           For help creating your pipeline, see our{' '}
           <ChLink href="https://docs.redpanda.com/redpanda-cloud/develop/connect/connect-quickstart/" isExternal>
@@ -157,7 +131,15 @@ class RpConnectPipelinesEdit extends PageComponent<{ pipelineId: string }> {
         </Box>
 
         <Flex alignItems="center" gap="4">
-          <UpdateButton />
+          <Button
+            variant="solid"
+            isDisabled={isNameEmpty || this.isUpdating}
+            loadingText="Updating..."
+            isLoading={this.isUpdating}
+            onClick={action(() => this.updatePipeline())}
+          >
+            Update
+          </Button>
           <Link to={`/rp-connect/${pipelineId}`}>
             <Button variant="link">Cancel</Button>
           </Link>
@@ -166,44 +148,33 @@ class RpConnectPipelinesEdit extends PageComponent<{ pipelineId: string }> {
     );
   }
 
-  async updatePipeline(toast: CreateToastFnReturn) {
+  async updatePipeline() {
     this.isUpdating = true;
     const pipelineId = this.props.pipelineId;
 
     pipelinesApi
       .updatePipeline(
         pipelineId,
-        create(PipelineUpdateSchema, {
+        new PipelineUpdate({
           displayName: this.displayName,
+          tags: {},
           configYaml: this.editorContent,
           description: this.description,
           resources: {
             cpuShares: tasksToCPU(this.tasks) || '0',
             memoryShares: '0', // still required by API but unused
           },
-          tags: {
-            ...this.tags,
-          },
         }),
       )
-      .then(async (r) => {
+      .then(async () => {
         toast({
           status: 'success',
           duration: 4000,
           isClosable: false,
           title: 'Pipeline updated',
         });
-        const retUnits = cpuToTasks(r.response?.pipeline?.resources?.cpuShares);
-        if (retUnits && this.tasks !== retUnits) {
-          toast({
-            status: 'warning',
-            duration: 6000,
-            isClosable: false,
-            title: `Pipeline has been resized to use ${retUnits} compute units`,
-          });
-        }
         await pipelinesApi.refreshPipelines(true);
-        appGlobal.historyPush(`/rp-connect/${pipelineId}`);
+        appGlobal.history.push(`/rp-connect/${pipelineId}`);
       })
       .catch((err) => {
         toast({

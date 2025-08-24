@@ -1,4 +1,4 @@
-import { create } from '@bufbuild/protobuf';
+import { proto3 } from '@bufbuild/protobuf';
 import {
   Alert,
   Box,
@@ -8,8 +8,8 @@ import {
   FormControl,
   Grid,
   GridItem,
-  Heading,
   HStack,
+  Heading,
   IconButton,
   Input,
   Link,
@@ -26,18 +26,17 @@ import { Link as ReactRouterLink } from 'react-router-dom';
 import { setMonacoTheme } from '../../../config';
 import {
   CompressionType,
-  CompressionTypeSchema,
-  KafkaRecordHeaderSchema,
+  KafkaRecordHeader,
   PayloadEncoding,
 } from '../../../protogen/redpanda/api/console/v1alpha1/common_pb';
 import {
-  PublishMessagePayloadOptionsSchema,
-  PublishMessageRequestSchema,
+  PublishMessagePayloadOptions,
+  PublishMessageRequest,
 } from '../../../protogen/redpanda/api/console/v1alpha1/publish_messages_pb';
 import { appGlobal } from '../../../state/appGlobal';
 import { api } from '../../../state/backendApi';
-import { uiSettings } from '../../../state/ui';
 import { uiState } from '../../../state/uiState';
+import { uiSettings } from '../../../state/ui';
 import { Label } from '../../../utils/tsxUtils';
 import { base64ToUInt8Array, isValidBase64, substringWithEllipsis } from '../../../utils/utils';
 import KowlEditor from '../../misc/KowlEditor';
@@ -179,9 +178,10 @@ const PublishTopicForm: FC<{ topicName: string }> = observer(({ topicName }) => 
   const showValueSchemaSelection =
     valuePayloadOptions.encoding === PayloadEncoding.AVRO || valuePayloadOptions.encoding === PayloadEncoding.PROTOBUF;
 
-  const compressionTypes = CompressionTypeSchema.values
-    .filter((value) => value.number !== CompressionType.UNSPECIFIED)
-    .map((value) => ({ label: value.localName, value: value.number as CompressionType }));
+  const compressionTypes = proto3
+    .getEnumType(CompressionType)
+    .values.filter((x) => x.no !== CompressionType.UNSPECIFIED)
+    .map((x) => ({ label: x.localName, value: x.no as CompressionType }));
 
   const availablePartitions = computed(() => {
     const partitions: { label: string; value: number }[] = [{ label: 'Auto (Murmur2)', value: -1 }];
@@ -227,19 +227,19 @@ const PublishTopicForm: FC<{ topicName: string }> = observer(({ topicName }) => 
   const valueSchemaName = watch('value.schemaName');
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    const req = create(PublishMessageRequestSchema);
+    const req = new PublishMessageRequest();
     req.topic = topicName;
     req.partitionId = data.partition;
     req.compression = data.compressionType;
 
     uiState.topicSettings.produceRecordCompression = data.compressionType;
-
+    
     // Headers
     for (const h of data.headers) {
       if (!h.value && !h.value) {
         continue;
       }
-      const kafkaHeader = create(KafkaRecordHeaderSchema);
+      const kafkaHeader = new KafkaRecordHeader();
       kafkaHeader.key = h.key;
       // @ts-ignore js-base64 does not play nice with TypeScript 5: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'.
       kafkaHeader.value = new TextEncoder().encode(h.value);
@@ -259,7 +259,7 @@ const PublishTopicForm: FC<{ topicName: string }> = observer(({ topicName }) => 
 
     // Key
     if (data.key.encoding !== PayloadEncoding.NULL) {
-      req.key = create(PublishMessagePayloadOptionsSchema);
+      req.key = new PublishMessagePayloadOptions();
       try {
         // @ts-ignore js-base64 does not play nice with TypeScript 5: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'.
         req.key.data = encodeData(data.key.data, data.key.encoding);
@@ -277,7 +277,7 @@ const PublishTopicForm: FC<{ topicName: string }> = observer(({ topicName }) => 
 
     // Value
     if (data.value.encoding !== PayloadEncoding.NULL) {
-      req.value = create(PublishMessagePayloadOptionsSchema);
+      req.value = new PublishMessagePayloadOptions();
       try {
         // @ts-ignore js-base64 does not play nice with TypeScript 5: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'.
         req.value.data = encodeData(data.value.data, data.value.encoding);
@@ -308,7 +308,7 @@ const PublishTopicForm: FC<{ topicName: string }> = observer(({ topicName }) => 
         ),
         duration: 3000,
       });
-      appGlobal.historyPush(`/topics/${encodeURIComponent(topicName)}`);
+      appGlobal.history.push(`/topics/${encodeURIComponent(topicName)}`);
     }
   };
 
@@ -438,8 +438,10 @@ const PublishTopicForm: FC<{ topicName: string }> = observer(({ topicName }) => 
 
           {keyPayloadOptions.encoding === PayloadEncoding.PROTOBUF && (
             <Label text="Index">
-              {protoBufInfoElement}
-              <Input my={2} type="number" {...register('key.protobufIndex')} />
+              <>
+                {protoBufInfoElement}
+                <Input my={2} type="number" {...register('key.protobufIndex')} />
+              </>
             </Label>
           )}
 
@@ -544,8 +546,10 @@ const PublishTopicForm: FC<{ topicName: string }> = observer(({ topicName }) => 
 
             {valuePayloadOptions.encoding === PayloadEncoding.PROTOBUF && (
               <Label text="Index">
-                {protoBufInfoElement}
-                <Input my={2} type="number" {...register('value.protobufIndex')} />
+                <>
+                  {protoBufInfoElement}
+                  <Input my={2} type="number" {...register('value.protobufIndex')} />
+                </>
               </Label>
             )}
 

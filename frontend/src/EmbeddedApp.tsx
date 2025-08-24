@@ -23,30 +23,14 @@ import './assets/fonts/kumbh-sans.css';
 
 /* end global stylesheet */
 
-/* start tailwind styles */
-import './globals.css';
+import { appGlobal } from './state/appGlobal';
 
-/* end tailwind styles */
-
-import queryClient from 'queryClient';
-import { TransportProvider } from '@connectrpc/connect-query';
-import { createConnectTransport } from '@connectrpc/connect-web';
 import { ChakraProvider, redpandaTheme, redpandaToastOptions } from '@redpanda-data/ui';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { CustomFeatureFlagProvider } from 'custom-feature-flag-provider';
 import { observer } from 'mobx-react';
-import { protobufRegistry } from 'protobuf-registry';
 import AppContent from './components/layout/Content';
 import { ErrorBoundary } from './components/misc/ErrorBoundary';
 import HistorySetter from './components/misc/HistorySetter';
-import {
-  addBearerTokenInterceptor,
-  checkExpiredLicenseInterceptor,
-  getGrpcBasePath,
-  type SetConfigArguments,
-  setup,
-} from './config';
-import { appGlobal } from './state/appGlobal';
+import { type SetConfigArguments, setup } from './config';
 
 export interface EmbeddedProps extends SetConfigArguments {
   /**
@@ -68,17 +52,13 @@ export interface EmbeddedProps extends SetConfigArguments {
    * In the future we might decide to use memo() as well
    */
   isConsoleReadyToMount?: boolean;
-  /**
-   * LaunchDarkly feature flags to be used in console UI when in embedded mode.
-   */
-  featureFlags?: Record<string, boolean>;
 }
 
 function EmbeddedApp({ basePath, ...p }: EmbeddedProps) {
   useEffect(() => {
     const shellNavigationHandler = (event: Event) => {
       const pathname = (event as CustomEvent<string>).detail;
-      appGlobal.historyPush(pathname);
+      appGlobal.history.push(pathname);
     };
 
     window.addEventListener('[shell] navigated', shellNavigationHandler);
@@ -90,34 +70,19 @@ function EmbeddedApp({ basePath, ...p }: EmbeddedProps) {
 
   setup(p);
 
-  // This transport handles the grpc requests for the embedded app.
-  const transport = createConnectTransport({
-    baseUrl: getGrpcBasePath(p.urlOverride?.grpc),
-    interceptors: [addBearerTokenInterceptor, checkExpiredLicenseInterceptor],
-    jsonOptions: {
-      registry: protobufRegistry,
-    },
-  });
-
   if (!p.isConsoleReadyToMount) {
     return null;
   }
 
   return (
-    <CustomFeatureFlagProvider initialFlags={p.featureFlags}>
-      <BrowserRouter basename={basePath}>
-        <HistorySetter />
-        <ChakraProvider theme={redpandaTheme} toastOptions={redpandaToastOptions} resetCSS={false}>
-          <TransportProvider transport={transport}>
-            <QueryClientProvider client={queryClient}>
-              <ErrorBoundary>
-                <AppContent />
-              </ErrorBoundary>
-            </QueryClientProvider>
-          </TransportProvider>
-        </ChakraProvider>
-      </BrowserRouter>
-    </CustomFeatureFlagProvider>
+    <BrowserRouter basename={basePath}>
+      <HistorySetter />
+      <ChakraProvider theme={redpandaTheme} toastOptions={redpandaToastOptions}>
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
+      </ChakraProvider>
+    </BrowserRouter>
   );
 }
 

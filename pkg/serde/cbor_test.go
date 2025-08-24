@@ -10,6 +10,7 @@
 package serde
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"testing"
@@ -192,7 +193,7 @@ func TestCborSerde_DeserializePayload(t *testing.T) {
 			// serde
 			serde := CborSerde{Config: test.config}
 
-			payload, err := serde.DeserializePayload(t.Context(), test.record(), test.payloadType)
+			payload, err := serde.DeserializePayload(context.Background(), test.record(), test.payloadType)
 			test.validationFunc(t, *payload, err)
 		})
 	}
@@ -211,7 +212,7 @@ func TestCborSerde_SerializeObject(t *testing.T) {
 		expected, err := cbor.Marshal(item)
 		require.NoError(t, err)
 
-		actual, err := serde.SerializeObject(t.Context(), `{"Foo":"bar"}`, PayloadTypeValue)
+		actual, err := serde.SerializeObject(context.Background(), `{"Foo":"bar"}`, PayloadTypeValue)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expected, actual)
@@ -221,14 +222,14 @@ func TestCborSerde_SerializeObject(t *testing.T) {
 		expected, err := cbor.Marshal([]string{"foo", "bar"})
 		require.NoError(t, err)
 
-		actual, err := serde.SerializeObject(t.Context(), `["foo","bar"]`, PayloadTypeValue)
+		actual, err := serde.SerializeObject(context.Background(), `["foo","bar"]`, PayloadTypeValue)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expected, actual)
 	})
 
 	t.Run("string invalid json", func(t *testing.T) {
-		actual, err := serde.SerializeObject(t.Context(), `foo`, PayloadTypeValue)
+		actual, err := serde.SerializeObject(context.Background(), `foo`, PayloadTypeValue)
 		require.Error(t, err)
 		assert.Equal(t, "first byte indicates this it not valid JSON, expected brackets", err.Error())
 		require.Nil(t, actual)
@@ -241,7 +242,7 @@ func TestCborSerde_SerializeObject(t *testing.T) {
 		expected, err := cbor.Marshal(item)
 		require.NoError(t, err)
 
-		actual, err := serde.SerializeObject(t.Context(), `{"Foo":"bar"}`, PayloadTypeValue)
+		actual, err := serde.SerializeObject(context.Background(), `{"Foo":"bar"}`, PayloadTypeValue)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expected, actual)
@@ -254,7 +255,7 @@ func TestCborSerde_SerializeObject(t *testing.T) {
 		expected, err := cbor.Marshal(item)
 		require.NoError(t, err)
 
-		actual, err := serde.SerializeObject(t.Context(), item, PayloadTypeValue)
+		actual, err := serde.SerializeObject(context.Background(), item, PayloadTypeValue)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expected, actual)
@@ -265,7 +266,7 @@ func TestCborSerde_SerializeObject(t *testing.T) {
 		expected, err := cbor.Marshal(item)
 		require.NoError(t, err)
 
-		actual, err := serde.SerializeObject(t.Context(), item, PayloadTypeValue)
+		actual, err := serde.SerializeObject(context.Background(), item, PayloadTypeValue)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expected, actual)
@@ -276,7 +277,7 @@ func TestCborSerde_SerializeObject(t *testing.T) {
 		expected, err := cbor.Marshal(item)
 		require.NoError(t, err)
 
-		actual, err := serde.SerializeObject(t.Context(), []byte(`{"Foo":"bar"}`), PayloadTypeValue)
+		actual, err := serde.SerializeObject(context.Background(), []byte(`{"Foo":"bar"}`), PayloadTypeValue)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expected, actual)
@@ -286,7 +287,7 @@ func TestCborSerde_SerializeObject(t *testing.T) {
 		expected, err := cbor.Marshal([]string{"foo", "bar"})
 		require.NoError(t, err)
 
-		actual, err := serde.SerializeObject(t.Context(), []byte(`["foo","bar"]`), PayloadTypeValue)
+		actual, err := serde.SerializeObject(context.Background(), []byte(`["foo","bar"]`), PayloadTypeValue)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expected, actual)
@@ -299,7 +300,7 @@ func TestCborSerde_SerializeObject(t *testing.T) {
 		expected, err := cbor.Marshal(item)
 		require.NoError(t, err)
 
-		actual, err := serde.SerializeObject(t.Context(), []byte(`{"Foo":"bar"}`), PayloadTypeValue)
+		actual, err := serde.SerializeObject(context.Background(), []byte(`{"Foo":"bar"}`), PayloadTypeValue)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expected, actual)
@@ -313,7 +314,7 @@ func TestCborSerde_SerializeObject(t *testing.T) {
 		input, err := cbor.Marshal(item)
 		require.NoError(t, err)
 
-		actual, err := serde.SerializeObject(t.Context(), input, PayloadTypeValue)
+		actual, err := serde.SerializeObject(context.Background(), input, PayloadTypeValue)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expected, actual)

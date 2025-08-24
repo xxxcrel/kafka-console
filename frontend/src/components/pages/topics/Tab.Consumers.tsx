@@ -36,8 +36,7 @@ export const TopicConsumers: FC<TopicConsumersProps> = observer(({ topic }) => {
     consumers = [];
   }
 
-  // biome-ignore lint/correctness/useHookAtTopLevel: part of TopicConsumers implementation
-  const paginationParams = usePaginationParams(consumers.length, uiState.topicSettings.consumerPageSize);
+  const paginationParams = usePaginationParams(uiState.topicSettings.consumerPageSize, consumers.length);
 
   return (
     <DataTable<TopicConsumer>
@@ -56,7 +55,7 @@ export const TopicConsumers: FC<TopicConsumersProps> = observer(({ topic }) => {
         { header: 'Lag', accessorKey: 'summedLag' },
       ]}
       onRow={(row) => {
-        appGlobal.historyPush(`/groups/${encodeURIComponent(row.original.groupId)}`);
+        appGlobal.history.push(`/groups/${encodeURIComponent(row.original.groupId)}`);
       }}
     />
   );

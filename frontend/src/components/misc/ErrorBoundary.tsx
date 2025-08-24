@@ -18,7 +18,7 @@ import StackTrace from 'stacktrace-js';
 import { envVarDebugAr } from '../../utils/env';
 import { isClipboardAvailable } from '../../utils/featureDetection';
 import { toJson } from '../../utils/jsonUtils';
-import { navigatorClipboardErrorHandler, ObjToKv } from '../../utils/tsxUtils';
+import { ObjToKv, navigatorClipboardErrorHandler } from '../../utils/tsxUtils';
 import { NoClipboardPopover } from './NoClipboardPopover';
 
 // background       rgb(35, 35, 35)
@@ -83,7 +83,11 @@ export class ErrorBoundary extends React.Component<{ children?: React.ReactNode 
         name: 'Stack (Decoded)',
         value: () => {
           if (dataHolder.value == null)
-            return <div style={{ fontSize: '2rem' }}>Decoding stack trace, please wait...</div>;
+            return (
+              <>
+                <div style={{ fontSize: '2rem' }}>Decoding stack trace, please wait...</div>
+              </>
+            );
           return dataHolder.value;
         },
       });
@@ -127,7 +131,7 @@ export class ErrorBoundary extends React.Component<{ children?: React.ReactNode 
         name: 'Environment',
         value: envVarDebugAr.map((e) => `${e.name.padEnd(padLength)}: ${e.value}`).join('\n'),
       });
-    } catch (_ex) {
+    } catch (ex) {
       this.infoItems.push({ name: 'Environment', value: '(error retreiving env list)' });
     }
 
@@ -144,7 +148,7 @@ export class ErrorBoundary extends React.Component<{ children?: React.ReactNode 
         name: 'Location',
         value: locationItems.map((e) => `${e.key.padEnd(padLength)}: ${e.value}`).join('\n'),
       });
-    } catch (_ex) {
+    } catch (ex) {
       this.infoItems.push({
         name: 'Location',
         value: '(error printing location, please include the url in your bug report)',
@@ -183,7 +187,7 @@ export class ErrorBoundary extends React.Component<{ children?: React.ReactNode 
             Please report this at{' '}
             <a
               style={{ textDecoration: 'underline', fontWeight: 'bold' }}
-              href="https://github.com/redpanda-data/console/issues"
+              href="https://github.com/xxxcrel/kafka-console/issues"
             >
               our GitHub Repo
             </a>

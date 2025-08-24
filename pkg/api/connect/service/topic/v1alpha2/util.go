@@ -11,6 +11,7 @@ package topic
 
 import (
 	"errors"
+	"fmt"
 
 	commonv1alpha2 "buf.build/gen/go/redpandadata/common/protocolbuffers/go/redpanda/api/common/v1alpha1"
 	"connectrpc.com/connect"
@@ -32,7 +33,7 @@ func (*Service) handleKafkaTopicError(kafkaErrorCode int16, errorMessage *string
 	case errors.Is(kafkaErr, kerr.UnknownTopicOrPartition):
 		return apierrors.NewConnectError(
 			connect.CodeNotFound,
-			errors.New("the requested topic does not exist"),
+			fmt.Errorf("the requested topic does not exist"),
 			apierrors.NewErrorInfo(
 				commonv1alpha2.Reason_REASON_RESOURCE_NOT_FOUND.String(),
 			))

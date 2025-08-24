@@ -11,74 +11,15 @@
 
 /*eslint block-scoped-var: "error"*/
 
-import { create, type Registry } from '@bufbuild/protobuf';
-import type { ConnectError } from '@connectrpc/connect';
-import { Code } from '@connectrpc/connect';
 import { createStandaloneToast, redpandaTheme, redpandaToastOptions } from '@redpanda-data/ui';
 import { comparer, computed, observable, runInAction, transaction } from 'mobx';
-import { ListMessagesRequestSchema } from 'protogen/redpanda/api/console/v1alpha1/list_messages_pb';
-import type { TransformMetadata } from 'protogen/redpanda/api/dataplane/v1/transform_pb';
 import { config as appConfig, isEmbedded } from '../config';
-import {
-  AuthenticationMethod,
-  type GetIdentityResponse,
-  KafkaAclOperation,
-  RedpandaCapability,
-  SchemaRegistryCapability,
-} from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
-import { KafkaDistribution } from '../protogen/redpanda/api/console/v1alpha1/cluster_status_pb';
-import {
-  PayloadEncoding,
-  PayloadEncodingSchema,
-  CompressionType as ProtoCompressionType,
-} from '../protogen/redpanda/api/console/v1alpha1/common_pb';
-import {
-  type CreateDebugBundleRequest,
-  type CreateDebugBundleResponse,
-  type DebugBundleStatus,
-  DebugBundleStatus_Status,
-  type GetClusterHealthResponse,
-  type GetDebugBundleStatusResponse_DebugBundleBrokerStatus,
-} from '../protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
-import type {
-  License,
-  ListEnterpriseFeaturesResponse_Feature,
-  SetLicenseRequest,
-  SetLicenseResponse,
-} from '../protogen/redpanda/api/console/v1alpha1/license_pb';
-import type {
-  PublishMessageRequest,
-  PublishMessageResponse,
-} from '../protogen/redpanda/api/console/v1alpha1/publish_messages_pb';
-import type { ListTransformsResponse } from '../protogen/redpanda/api/console/v1alpha1/transform_pb';
-import {
-  GetPipelinesBySecretsRequestSchema as GetPipelinesBySecretsRequestSchemaDataPlane,
-  type Pipeline,
-  type PipelineCreate,
-  type PipelineUpdate,
-} from '../protogen/redpanda/api/dataplane/v1/pipeline_pb';
-import {
-  type CreateSecretRequest,
-  type DeleteSecretRequest,
-  type ListSecretScopesRequest,
-  ListSecretsRequestSchema as ListSecretsRequestSchemaDataPlane,
-  Scope,
-  type Secret,
-  type UpdateSecretRequest,
-} from '../protogen/redpanda/api/dataplane/v1/secret_pb';
-import type {
-  KnowledgeBase,
-  KnowledgeBaseCreate,
-  KnowledgeBaseUpdate,
-} from '../protogen/redpanda/api/dataplane/v1alpha3/knowledge_base_pb';
+import { LazyMap } from '../utils/LazyMap';
 import { getBasePath } from '../utils/env';
 import fetchWithTimeout from '../utils/fetchWithTimeout';
 import { toJson } from '../utils/jsonUtils';
-import { LazyMap } from '../utils/LazyMap';
 import { ObjToKv } from '../utils/tsxUtils';
-import { decodeBase64, getOidcSubject, TimeSince } from '../utils/utils';
-import { trackHubspotUser } from '../components/pages/agents/hubspot.helper';
-import { trackHeapUser } from '../components/pages/agents/heap.helper';
+import { TimeSince, decodeBase64, getOidcSubject } from '../utils/utils';
 import { appGlobal } from './appGlobal';
 import {
   AclRequestDefault,
@@ -127,7 +68,6 @@ import {
   type GetTopicsResponse,
   type GetUsersResponse,
   type GroupDescription,
-  isApiError,
   type KafkaConnectors,
   type PartialTopicConfigsResponse,
   type Partition,
@@ -167,10 +107,63 @@ import {
   type TopicPermissions,
   type UserData,
   WrappedApiError,
+  isApiError,
 } from './restInterfaces';
+import { uiState } from './uiState';
+
+import { proto3 } from '@bufbuild/protobuf';
+import type { ConnectError } from '@connectrpc/connect';
+import { Code } from '@connectrpc/connect';
+import {
+  AuthenticationMethod,
+  type GetIdentityResponse,
+  KafkaAclOperation,
+  RedpandaCapability,
+  SchemaRegistryCapability,
+} from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
+import { KafkaDistribution } from '../protogen/redpanda/api/console/v1alpha1/cluster_status_pb';
+import {
+  PayloadEncoding,
+  CompressionType as ProtoCompressionType,
+} from '../protogen/redpanda/api/console/v1alpha1/common_pb';
+import {
+  type CreateDebugBundleRequest,
+  type CreateDebugBundleResponse,
+  type DebugBundleStatus,
+  DebugBundleStatus_Status,
+  type GetClusterHealthResponse,
+  type GetDebugBundleStatusResponse_DebugBundleBrokerStatus,
+} from '../protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
+import type {
+  License,
+  ListEnterpriseFeaturesResponse_Feature,
+  SetLicenseRequest,
+  SetLicenseResponse,
+} from '../protogen/redpanda/api/console/v1alpha1/license_pb';
+import { ListMessagesRequest } from '../protogen/redpanda/api/console/v1alpha1/list_messages_pb';
+import type {
+  PublishMessageRequest,
+  PublishMessageResponse,
+} from '../protogen/redpanda/api/console/v1alpha1/publish_messages_pb';
+import type { ListTransformsResponse } from '../protogen/redpanda/api/console/v1alpha1/transform_pb';
+import {
+  GetPipelinesBySecretsRequest,
+  type Pipeline,
+  type PipelineCreate,
+  type PipelineUpdate,
+} from '../protogen/redpanda/api/dataplane/v1/pipeline_pb';
+import {
+  type CreateSecretRequest,
+  type DeleteSecretRequest,
+  type ListSecretScopesRequest,
+  ListSecretsRequest,
+  Scope,
+  type Secret,
+  type UpdateSecretRequest,
+} from '../protogen/redpanda/api/dataplane/v1/secret_pb';
+import type { TransformMetadata } from '../protogen/redpanda/api/dataplane/v1alpha2/transform_pb';
 import { Features } from './supportedFeatures';
 import { PartitionOffsetOrigin } from './ui';
-import { uiState } from './uiState';
 
 const REST_TIMEOUT_SEC = 25;
 export const REST_CACHE_DURATION_SEC = 20;
@@ -179,8 +172,6 @@ const { toast } = createStandaloneToast({
   theme: redpandaTheme,
   defaultOptions: redpandaToastOptions.defaultOptions,
 });
-
-declare const registry: Registry;
 
 /*
     - If statusCode is not 2xx (any sort of error) -> response content will always be an `ApiError` json object
@@ -241,7 +232,7 @@ async function handle401(res: Response) {
     }
   } else {
     // Redirect to login
-    appGlobal.historyPush('/login');
+    appGlobal.history.push('/login');
   }
 }
 
@@ -369,7 +360,7 @@ export async function handleExpiredLicenseError(r: Response) {
       avatarUrl: '',
       authenticationMethod: AuthenticationMethod.UNSPECIFIED,
     };
-    appGlobal.historyReplace('/trial-expired');
+    appGlobal.history.replace('/trial-expired');
   }
 }
 
@@ -380,15 +371,7 @@ const apiStore = {
   // Data
   endpointCompatibility: null as EndpointCompatibility | null,
 
-  clusterOverview: {
-    kafkaAuthorizerInfo: null,
-    kafkaAuthorizerError: null,
-    kafka: null,
-    redpanda: null,
-    console: null,
-    kafkaConnect: null,
-    schemaRegistry: null,
-  } as ClusterOverview,
+  clusterOverview: null as ClusterOverview | null,
   brokers: null as BrokerWithConfigAndStorage[] | null,
 
   clusters: ['A', 'B', 'C'],
@@ -490,18 +473,6 @@ const apiStore = {
           canViewDebugBundle: r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_DEBUG_BUNDLE),
           canViewConsoleUsers: r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_RBAC),
         } as UserData;
-        
-        // Track user in analytics after successful authentication
-        if (r.displayName) {
-          const userData = {
-            firstName: r.displayName.split(' ')[0] || r.displayName,
-            lastName: r.displayName.split(' ').slice(1).join(' ') || '',
-            email: r.displayName, // Using displayName as email fallback
-          };
-          trackHubspotUser(userData);
-          trackHeapUser(userData);
-        }
-        
         // if (r.status === 401) {
         //   // unauthorized / not logged in
         //   api.userData = null;
@@ -569,9 +540,9 @@ const apiStore = {
         if (err.code === Code.PermissionDenied) {
           // TODO - solve typings, provide corresponding Reason type
           const subject = getOidcSubject(err);
-          appGlobal.historyPush(`/login?error_code=permission_denied&oidc_subject=${subject}`);
+          appGlobal.history.push(`/login?error_code=permission_denied&oidc_subject=${subject}`);
         } else {
-          appGlobal.historyPush('/login');
+          appGlobal.history.push('/login');
         }
       });
   },
@@ -650,10 +621,9 @@ const apiStore = {
   },
 
   async deleteTopic(topicName: string) {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}`, {
-      method: 'DELETE',
-    });
-    return parseOrUnwrap<any>(response, null);
+    return rest(`${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}`, { method: 'DELETE' }).catch(
+      addError,
+    );
   },
 
   async deleteTopicRecords(topicName: string, offset: number, partitionId?: number) {
@@ -914,7 +884,6 @@ const apiStore = {
 
     const requests: Array<Promise<any>> = [
       client.getKafkaAuthorizerInfo({}).catch((e) => {
-        this.clusterOverview.kafkaAuthorizerError = e;
         console.error(e);
         return null;
       }),
@@ -958,7 +927,6 @@ const apiStore = {
     ] = responses;
 
     this.clusterOverview = {
-      ...this.clusterOverview,
       kafkaAuthorizerInfo: kafkaAuthorizerInfoResponse,
       console: consoleInfoResponse,
       kafka: kafkaResponse,
@@ -2095,23 +2063,21 @@ export const rolesApi = observable({
     if (Features.rolesApi) {
       let nextPageToken = '';
       while (true) {
-        const res = await client.listRoles({ request: { pageSize: 500, pageToken: nextPageToken } }).catch((error) => {
+        const res = await client.listRoles({ pageSize: 500, pageToken: nextPageToken }).catch((error) => {
           this.rolesError = error;
           return null;
         });
 
-        if (res === null || res.response === null) {
+        if (res === null) {
           break;
         }
 
-        if (res.response) {
-          const newRoles = res.response?.roles.map((x) => x.name);
-          roles.push(...newRoles);
+        const newRoles = res.roles.map((x) => x.name);
+        roles.push(...newRoles);
 
-          if (!res.response?.nextPageToken || res.response?.nextPageToken.length === 0) break;
+        if (!res.nextPageToken || res.nextPageToken.length === 0) break;
 
-          nextPageToken = res.response?.nextPageToken;
-        }
+        nextPageToken = res.nextPageToken;
       }
     }
 
@@ -2126,7 +2092,7 @@ export const rolesApi = observable({
 
     if (Features.rolesApi) {
       for (const role of this.roles) {
-        rolePromises.push(client.getRole({ request: { roleName: role } }));
+        rolePromises.push(client.getRole({ roleName: role }));
       }
     }
 
@@ -2136,10 +2102,10 @@ export const rolesApi = observable({
 
     for (const r of rolePromises) {
       const res = await r;
-      if (res.response == null || res.response.role == null) continue; // how could this ever happen, maybe someone deleted the role right before we retreived the members?
-      const roleName = res.response.role.name;
+      if (res.role == null) continue; // how could this ever happen, maybe someone deleted the role right before we retreived the members?
+      const roleName = res.role.name;
 
-      const members = res.response.members
+      const members = res.members
         .map((x) => {
           const principalParts = x.principal.split(':');
           if (principalParts.length !== 2) {
@@ -2166,7 +2132,7 @@ export const rolesApi = observable({
     if (!client) throw new Error('security client is not initialized');
 
     if (Features.rolesApi) {
-      await client.createRole({ request: { role: { name } } });
+      await client.createRole({ role: { name } });
     }
   },
 
@@ -2175,7 +2141,7 @@ export const rolesApi = observable({
     if (!client) throw new Error('security client is not initialized');
 
     if (Features.rolesApi) {
-      await client.deleteRole({ request: { roleName: name, deleteAcls } });
+      await client.deleteRole({ roleName: name, deleteAcls });
     }
   },
 
@@ -2184,12 +2150,10 @@ export const rolesApi = observable({
     if (!client) throw new Error('security client is not initialized');
 
     return await client.updateRoleMembership({
-      request: {
-        roleName: roleName,
-        add: addUsers.map((u) => ({ principal: `User:${u}` })),
-        remove: removeUsers.map((u) => ({ principal: `User:${u}` })),
-        create,
-      },
+      roleName: roleName,
+      add: addUsers.map((u) => ({ principal: `User:${u}` })),
+      remove: removeUsers.map((u) => ({ principal: `User:${u}` })),
+      create,
     });
   },
 });
@@ -2197,6 +2161,14 @@ export const rolesApi = observable({
 export const pipelinesApi = observable({
   pipelines: undefined as undefined | Pipeline[],
   pipelinesError: null as ConnectError | null,
+
+  // async lintConfig(config: string): Promise<LintConfigResponse> {
+  //     const client = appConfig.pipelinesClient;
+  //     if (!client) throw new Error('pipelines client is not initialized');
+  //
+  //     const r = await client.lintConfig({ yamlConfig: config }, { timeoutMs: 3000 });
+  //     return r;
+  // },
 
   async refreshPipelines(_force: boolean): Promise<void> {
     const client = appConfig.pipelinesClient;
@@ -2234,13 +2206,13 @@ export const pipelinesApi = observable({
     const client = appConfig.pipelinesClient;
     if (!client) throw new Error('pipelines client is not initialized');
 
-    return await client.createPipeline({ request: { pipeline } });
+    await client.createPipeline({ request: { pipeline } });
   },
   async updatePipeline(id: string, pipelineUpdate: PipelineUpdate) {
     const client = appConfig.pipelinesClient;
     if (!client) throw new Error('pipelines client is not initialized');
 
-    return await client.updatePipeline({
+    await client.updatePipeline({
       request: {
         id,
         pipeline: pipelineUpdate,
@@ -2261,77 +2233,6 @@ export const pipelinesApi = observable({
   },
 });
 
-export const knowledgebaseApi = observable({
-  knowledgeBases: undefined as undefined | KnowledgeBase[],
-  knowledgeBasesError: null as ConnectError | null,
-
-  async refreshKnowledgeBases(_force: boolean): Promise<void> {
-    const client = appConfig.knowledgebaseClient;
-    if (!client) throw new Error('knowledgebase client is not initialized');
-
-    const knowledgeBases = [];
-    this.knowledgeBasesError = null;
-
-    let nextPageToken = '';
-    while (true) {
-      const res = await client
-        .listKnowledgeBases({ pageSize: 10, pageToken: nextPageToken })
-        .catch((error: ConnectError) => {
-          this.knowledgeBasesError = error;
-          return undefined;
-        });
-
-      // Handle response structure (some APIs return res.response, others return res directly)
-      const response = (res as any)?.response || res;
-      if (!response) break;
-
-      knowledgeBases.push(...response.knowledgeBases);
-
-      if (!response.nextPageToken || response.nextPageToken.length === 0) break;
-      nextPageToken = response.nextPageToken;
-    }
-
-    this.knowledgeBases = knowledgeBases;
-  },
-
-  async deleteKnowledgeBase(id: string) {
-    const client = appConfig.knowledgebaseClient;
-    if (!client) throw new Error('knowledgebase client is not initialized');
-
-    await client.deleteKnowledgeBase({ id });
-  },
-  async createKnowledgeBase(knowledgeBase: KnowledgeBaseCreate) {
-    const client = appConfig.knowledgebaseClient;
-    if (!client) throw new Error('knowledgebase client is not initialized');
-    const result = await client.createKnowledgeBase({ knowledgeBase });
-    return result;
-  },
-  async updateKnowledgeBase(id: string, knowledgeBaseUpdate: KnowledgeBaseUpdate, updateMask?: string[]) {
-    const client = appConfig.knowledgebaseClient;
-    if (!client) throw new Error('knowledgebase client is not initialized');
-
-    await client.updateKnowledgeBase({
-      id,
-      knowledgeBase: knowledgeBaseUpdate,
-      updateMask: updateMask
-        ? {
-            paths: updateMask,
-          }
-        : undefined,
-    });
-  },
-  async getKnowledgeBase(id: string): Promise<KnowledgeBase> {
-    const client = appConfig.knowledgebaseClient;
-    if (!client) throw new Error('knowledgebase client is not initialized');
-
-    const response = await client.getKnowledgeBase({ id });
-    if (!response.knowledgeBase) {
-      throw new Error('Knowledge base not found');
-    }
-    return response.knowledgeBase;
-  },
-});
-
 export const rpcnSecretManagerApi = observable({
   secrets: undefined as undefined | Secret[],
   secretsByPipeline: undefined as { secretId: string; pipelines: Pipeline[] }[] | undefined,
@@ -2349,7 +2250,7 @@ export const rpcnSecretManagerApi = observable({
     let nextPageToken = '';
     while (true) {
       const res = await client.listSecrets({
-        request: create(ListSecretsRequestSchemaDataPlane, {
+        request: new ListSecretsRequest({
           pageToken: nextPageToken,
           pageSize: 100,
         }),
@@ -2401,12 +2302,10 @@ export const rpcnSecretManagerApi = observable({
     return isEnable;
   },
   async getPipelinesBySecret() {
-    const client = appConfig.pipelinesClient;
+    const client = appConfig.pipelinesClientV2;
     if (!client) throw new Error('redpanda connect dataplane pipeline is not initialized');
 
-    const pipelinesBySecrets = await client.getPipelinesBySecrets({
-      request: create(GetPipelinesBySecretsRequestSchemaDataPlane),
-    });
+    const pipelinesBySecrets = await client.getPipelinesBySecrets({ request: new GetPipelinesBySecretsRequest() });
     return pipelinesBySecrets.response?.pipelinesForSecret.map(({ secretId, pipelines }) => {
       return {
         secretId: secretId,
@@ -2429,7 +2328,7 @@ export const transformsApi = observable({
       let res: ListTransformsResponse;
       try {
         res = await client.listTransforms({ request: { pageSize: 500, pageToken: nextPageToken } });
-      } catch (_err) {
+      } catch (err) {
         break;
       }
       const r = res.response;
@@ -2524,7 +2423,7 @@ export function createMessageSearch() {
       const messageSearchAbortController = (this.abortController = new AbortController());
 
       // do it
-      const req = create(ListMessagesRequestSchema);
+      const req = new ListMessagesRequest();
       req.topic = searchRequest.topicName;
       req.startOffset = BigInt(searchRequest.startOffset);
       req.startTimestamp = BigInt(searchRequest.startTimestamp);
@@ -2672,7 +2571,7 @@ export function createMessageSearch() {
                       encoding: key?.encoding,
                       encodingName:
                         key?.encoding != null
-                          ? PayloadEncodingSchema.values.find((value) => value.number === key.encoding)?.localName
+                          ? proto3.getEnumType(PayloadEncoding).findNumber(key.encoding)?.localName
                           : undefined,
                       message: res,
                     });
@@ -2748,7 +2647,7 @@ export function createMessageSearch() {
                       encoding: val?.encoding,
                       encodingName:
                         val?.encoding != null
-                          ? PayloadEncodingSchema.values.find((value) => value.number === val.encoding)?.localName
+                          ? proto3.getEnumType(PayloadEncoding).findNumber(val.encoding)?.localName
                           : undefined,
                       message: res,
                     });
@@ -2945,7 +2844,7 @@ export interface MessageSearchRequest {
 }
 
 async function parseOrUnwrap<T>(response: Response, text: string | null): Promise<T> {
-  let obj: undefined | any;
+  let obj: undefined | any = undefined;
   if (text === null) {
     if (response.bodyUsed) throw new Error('response content already consumed');
     text = await response.text();

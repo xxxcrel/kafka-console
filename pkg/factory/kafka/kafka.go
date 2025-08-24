@@ -15,10 +15,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log/slog"
 	"net"
-	"os"
-	"strings"
 	"time"
 
 	commonv1alpha1 "buf.build/gen/go/redpandadata/common/protocolbuffers/go/redpanda/api/common/v1alpha1"
@@ -35,12 +32,12 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/oauth"
 	"github.com/twmb/franz-go/pkg/sasl/plain"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
-	"github.com/twmb/franz-go/plugin/kslog"
+	"github.com/twmb/franz-go/plugin/kzap"
 	"github.com/twmb/go-cache/cache"
+	"go.uber.org/zap"
 
 	apierrors "github.com/xxxcrel/kafka-console/pkg/api/connect/errors"
 	"github.com/xxxcrel/kafka-console/pkg/config"
-	loggerpkg "github.com/xxxcrel/kafka-console/pkg/logger"
 )
 
 // ClientFactory defines the interface for creating and retrieving Kafka clients.
@@ -63,13 +60,13 @@ var _ ClientFactory = (*CachedClientProvider)(nil)
 // Kafka-specific settings.
 type CachedClientProvider struct {
 	cfg         *config.Config
-	logger      *slog.Logger
+	logger      *zap.Logger
 	clientCache *cache.Cache[string, *kgo.Client]
 }
 
 // NewCachedClientProvider creates a new CachedClientProvider with the specified
 // configuration and logger, initializing the client cache with defined settings.
-func NewCachedClientProvider(cfg *config.Config, logger *slog.Logger) *CachedClientProvider {
+func NewCachedClientProvider(cfg *config.Config, logger *zap.Logger) *CachedClientProvider {
 	cacheSettings := []cache.Opt{
 		cache.MaxAge(30 * time.Second),
 		cache.MaxErrorAge(time.Second),
@@ -116,8 +113,8 @@ func (f *CachedClientProvider) createClient() (*kgo.Client, error) {
 // If TLS certificates can't be read an error will be returned.
 //
 //nolint:gocognit,cyclop // This function is lengthy, but it's only plumbing configurations. Seems okay to me.
-func NewKgoConfig(cfg config.Kafka, logger *slog.Logger, metricsNamespace string) ([]kgo.Opt, error) {
-	metricHooks := newClientHooks(loggerpkg.Named(logger, "kafka_client_hooks"), metricsNamespace)
+func NewKgoConfig(cfg config.Kafka, logger *zap.Logger, metricsNamespace string) ([]kgo.Opt, error) {
+	metricHooks := newClientHooks(logger.Named("kafka_client_hooks"), metricsNamespace)
 
 	opts := []kgo.Opt{
 		kgo.SeedBrokers(cfg.Brokers...),
@@ -129,7 +126,7 @@ func NewKgoConfig(cfg config.Kafka, logger *slog.Logger, metricsNamespace string
 		kgo.KeepControlRecords(),
 		// Refresh metadata more often than the default, when the client notices that it's stale.
 		kgo.MetadataMinAge(time.Second),
-		kgo.WithLogger(kslog.New(loggerpkg.Named(logger, "kafka_client"))),
+		kgo.WithLogger(kzap.New(logger.Named("kafka_client"))),
 		kgo.WithHooks(metricHooks),
 	}
 
@@ -170,8 +167,7 @@ func NewKgoConfig(cfg config.Kafka, logger *slog.Logger, metricsNamespace string
 		// OAuth Bearer
 		if cfg.SASL.Mechanism == config.SASLMechanismOAuthBearer {
 			var mechanism sasl.Mechanism
-			switch {
-			case cfg.SASL.OAUth.TokenEndpoint != "":
+			if cfg.SASL.OAUth.TokenEndpoint != "" {
 				mechanism = oauth.Oauth(func(ctx context.Context) (oauth.Auth, error) {
 					shortToken, err := cfg.SASL.OAUth.AcquireToken(ctx)
 					return oauth.Auth{
@@ -179,22 +175,13 @@ func NewKgoConfig(cfg config.Kafka, logger *slog.Logger, metricsNamespace string
 						Extensions: kafkaSASLOAuthExtensionsToStrMap(cfg.SASL.OAUth.Extensions),
 					}, err
 				})
-			case cfg.SASL.OAUth.TokenFilepath != "":
-				mechanism = oauth.Oauth(func(_ context.Context) (oauth.Auth, error) {
-					token, err := os.ReadFile(cfg.SASL.OAUth.TokenFilepath)
-					if err != nil {
-						return oauth.Auth{}, fmt.Errorf("failed to open token file: %w", err)
-					}
-					return oauth.Auth{
-						Token: strings.TrimSpace(string(token)),
-					}, nil
-				})
-			default:
+			} else {
 				mechanism = oauth.Auth{
 					Token:      cfg.SASL.OAUth.Token,
 					Extensions: kafkaSASLOAuthExtensionsToStrMap(cfg.SASL.OAUth.Extensions),
 				}.AsMechanism()
 			}
+
 			opts = append(opts, kgo.SASL(mechanism))
 		}
 

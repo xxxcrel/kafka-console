@@ -13,15 +13,15 @@ package transform
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
 
 	commonv1alpha1 "buf.build/gen/go/redpandadata/common/protocolbuffers/go/redpanda/api/common/v1alpha1"
-	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
+	"github.com/bufbuild/protovalidate-go"
 	"github.com/redpanda-data/common-go/api/pagination"
+	"go.uber.org/zap"
 
 	apierrors "github.com/xxxcrel/kafka-console/pkg/api/connect/errors"
 	"github.com/xxxcrel/kafka-console/pkg/config"
@@ -35,8 +35,8 @@ var _ dataplanev1connect.TransformServiceHandler = (*Service)(nil)
 // Service is the implementation of the transform service.
 type Service struct {
 	cfg                    *config.Config
-	logger                 *slog.Logger
-	validator              protovalidate.Validator
+	logger                 *zap.Logger
+	validator              *protovalidate.Validator
 	redpandaClientProvider redpandafactory.ClientFactory
 	mapper                 mapper
 	errorWriter            *connect.ErrorWriter
@@ -45,8 +45,8 @@ type Service struct {
 
 // NewService creates a new transform service handler.
 func NewService(cfg *config.Config,
-	logger *slog.Logger,
-	protoValidator protovalidate.Validator,
+	logger *zap.Logger,
+	protoValidator *protovalidate.Validator,
 	redpandaClientProvider redpandafactory.ClientFactory,
 ) *Service {
 	return &Service{
@@ -63,12 +63,12 @@ func NewService(cfg *config.Config,
 // writeError writes an error using connect.ErrorWriter and also logs this event.
 func (s *Service) writeError(w http.ResponseWriter, r *http.Request, err error) {
 	childLogger := s.logger.With(
-		slog.String("request_method", r.Method),
-		slog.String("request_path", r.URL.Path),
+		zap.String("request_method", r.Method),
+		zap.String("request_path", r.URL.Path),
 	)
 
 	apierrors.HandleHTTPError(r.Context(), w, r, err)
-	childLogger.WarnContext(r.Context(), "", slog.Any("error", err))
+	childLogger.Warn("", zap.Error(err))
 }
 
 // ListTransforms lists all the transforms matching the filter deployed to Redpanda

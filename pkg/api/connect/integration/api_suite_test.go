@@ -21,7 +21,6 @@ import (
 
 	"github.com/cloudhut/common/rest"
 	adminapi "github.com/redpanda-data/common-go/rpadmin"
-	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
@@ -29,7 +28,6 @@ import (
 	"github.com/testcontainers/testcontainers-go/network"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
-	"github.com/twmb/franz-go/pkg/sr"
 
 	"github.com/xxxcrel/kafka-console/pkg/api"
 	"github.com/xxxcrel/kafka-console/pkg/config"
@@ -39,13 +37,12 @@ import (
 type APISuite struct {
 	suite.Suite
 
-	redpandaContainer    *redpanda.Container
-	kConnectContainer    testcontainers.Container
-	network              *testcontainers.DockerNetwork
-	kafkaClient          *kgo.Client
-	kafkaAdminClient     *kadm.Client
-	redpandaAdminClient  *adminapi.AdminAPI
-	schemaRegistryClient *rpsr.Client
+	redpandaContainer   *redpanda.Container
+	kConnectContainer   testcontainers.Container
+	network             *testcontainers.DockerNetwork
+	kafkaClient         *kgo.Client
+	kafkaAdminClient    *kadm.Client
+	redpandaAdminClient *adminapi.AdminAPI
 
 	cfg *config.Config
 	api *api.API
@@ -73,7 +70,7 @@ func (s *APISuite) SetupSuite() {
 
 	// 2. Start Redpanda Docker container
 	container, err := redpanda.Run(ctx,
-		"redpandadata/redpanda:v25.2.1",
+		"redpandadata/redpanda:v23.3.5",
 		redpanda.WithEnableWasmTransform(),
 		network.WithNetwork([]string{"redpanda"}, s.network),
 		redpanda.WithListener("redpanda:29092"),
@@ -114,12 +111,6 @@ func (s *APISuite) SetupSuite() {
 	require.NoError(err)
 	s.redpandaAdminClient = adminApiClient
 
-	srCl, err := sr.NewClient(sr.URLs(schemaRegistryAddress))
-	require.NoError(err)
-	rpsrCl, err := rpsr.NewClient(srCl)
-	require.NoError(err)
-	s.schemaRegistryClient = rpsrCl
-
 	// 5. Configure & start Redpanda Console
 	httpListenPort := rand.Intn(50000) + 10000
 	s.cfg = &config.Config{}
@@ -148,25 +139,17 @@ func (s *APISuite) SetupSuite() {
 			},
 		},
 	}
-	s.api, err = api.New(s.cfg)
-	require.NoError(err)
+	s.api = api.New(s.cfg)
 
-	go func() {
-		if err := s.api.Start(context.Background()); err != nil {
-			s.T().Errorf("failed to start API: %v", err)
-		}
-	}()
+	go s.api.Start()
 
 	// 5. Wait until Console API is up
 	httpServerAddress := net.JoinHostPort("localhost", strconv.Itoa(httpListenPort))
 	retries := 60
 	for retries > 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-		if _, err := (&net.Dialer{}).DialContext(ctx, "tcp", httpServerAddress); err == nil {
-			cancel()
+		if _, err := net.DialTimeout("tcp", httpServerAddress, 100*time.Millisecond); err == nil {
 			break
 		}
-		cancel()
 		time.Sleep(100 * time.Millisecond)
 		retries--
 	}

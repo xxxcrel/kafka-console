@@ -12,7 +12,6 @@ package console
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kfake"
 	"github.com/twmb/franz-go/pkg/kmsg"
+	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/config"
 	kafkafactory "github.com/xxxcrel/kafka-console/pkg/factory/kafka"
@@ -200,7 +200,7 @@ func TestLogDirsByTopic(t *testing.T) {
 			}
 		})
 
-		ctx, cancel := context.WithTimeout(t.Context(), 6*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
 
 		_, fakeAdminClient := testutil.CreateClients(t, fakeCluster.ListenAddrs())
@@ -212,11 +212,11 @@ func TestLogDirsByTopic(t *testing.T) {
 		require.NoError(t, fakeCluster.MoveTopicPartition(topicName, 2, 2))
 
 		consoleSvc := Service{
-			kafkaClientFactory: kafkafactory.NewCachedClientProvider(&kafkaCfg, slog.New(slog.NewTextHandler(nil, &slog.HandlerOptions{Level: slog.LevelError + 1}))),
-			logger:             slog.New(slog.NewTextHandler(nil, &slog.HandlerOptions{Level: slog.LevelError + 1})),
+			kafkaClientFactory: kafkafactory.NewCachedClientProvider(&kafkaCfg, zap.NewNop()),
+			logger:             zap.NewNop(),
 		}
 
-		logDirsByTopic, err := consoleSvc.logDirsByTopic(t.Context())
+		logDirsByTopic, err := consoleSvc.logDirsByTopic(context.Background())
 		require.NoError(t, err)
 		require.Len(t, logDirsByTopic, 1)
 		require.NotNil(t, logDirsByTopic[topicName])
@@ -276,7 +276,7 @@ func TestLogDirsByTopic(t *testing.T) {
 			}
 		})
 
-		ctx, cancel := context.WithTimeout(t.Context(), 6*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
 
 		_, fakeAdminClient := testutil.CreateClients(t, fakeCluster.ListenAddrs())
@@ -288,11 +288,11 @@ func TestLogDirsByTopic(t *testing.T) {
 		require.NoError(t, fakeCluster.MoveTopicPartition(topicName, 2, 2))
 
 		consoleSvc := Service{
-			kafkaClientFactory: kafkafactory.NewCachedClientProvider(&kafkaCfg, slog.New(slog.NewTextHandler(nil, &slog.HandlerOptions{Level: slog.LevelError + 1}))),
-			logger:             slog.New(slog.NewTextHandler(nil, &slog.HandlerOptions{Level: slog.LevelError + 1})),
+			kafkaClientFactory: kafkafactory.NewCachedClientProvider(&kafkaCfg, zap.NewNop()),
+			logger:             zap.NewNop(),
 		}
 
-		logDirsByTopic, err := consoleSvc.logDirsByTopic(t.Context())
+		logDirsByTopic, err := consoleSvc.logDirsByTopic(context.Background())
 		require.NoError(t, err)
 		require.Len(t, logDirsByTopic, 1)
 		require.NotNil(t, logDirsByTopic[topicName])

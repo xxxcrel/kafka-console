@@ -1,7 +1,7 @@
 // Copyright 2023 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -10,6 +10,7 @@
 package serde
 
 import (
+	"context"
 	"encoding/binary"
 	"testing"
 
@@ -53,7 +54,7 @@ func TestUintSerde_DeserializePayload(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			payload, err := serde.DeserializePayload(t.Context(), test.record, test.payloadType)
+			payload, err := serde.DeserializePayload(context.Background(), test.record, test.payloadType)
 			test.validationFunc(t, *payload, err)
 		})
 	}
@@ -179,7 +180,7 @@ func TestUintSerde_SerializeObject(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			data, err := serde.SerializeObject(t.Context(), test.input, test.payloadType, test.options...)
+			data, err := serde.SerializeObject(context.Background(), test.input, test.payloadType, test.options...)
 			test.validationFunc(t, data, err)
 		})
 	}

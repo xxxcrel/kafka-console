@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -24,6 +24,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kfake"
 	"github.com/twmb/franz-go/pkg/kmsg"
+	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/console"
 	"github.com/xxxcrel/kafka-console/pkg/testutil"
@@ -39,10 +40,11 @@ func (s *APIIntegrationTestSuite) TestHandleCreateTopic() {
 	require := require.New(t)
 	assert := assert.New(t)
 
-	// Using slog for logging in tests
+	logCfg := zap.NewDevelopmentConfig()
+	logCfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
 
 	t.Run("happy path", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		input := &createTopicRequest{
@@ -92,7 +94,7 @@ func (s *APIIntegrationTestSuite) TestHandleCreateTopic() {
 	})
 
 	t.Run("happy path multi partition", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		input := &createTopicRequest{
@@ -144,7 +146,7 @@ func (s *APIIntegrationTestSuite) TestHandleCreateTopic() {
 	})
 
 	t.Run("no partition", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		input := &createTopicRequest{
@@ -170,7 +172,7 @@ func (s *APIIntegrationTestSuite) TestHandleCreateTopic() {
 	})
 
 	t.Run("no replication", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		input := &createTopicRequest{
@@ -196,7 +198,7 @@ func (s *APIIntegrationTestSuite) TestHandleCreateTopic() {
 	})
 
 	t.Run("invalid topic name", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		input := &createTopicRequest{
@@ -234,8 +236,7 @@ func (s *APIIntegrationTestSuite) TestHandleCreateTopic() {
 		newConfig.MetricsNamespace = "create_topic_fail"
 
 		// new console service
-		newApi, err := New(newConfig)
-		require.NoError(err)
+		newApi := New(newConfig)
 
 		// save old
 		oldConsoleSvc := s.api.ConsoleSvc
@@ -282,7 +283,7 @@ func (s *APIIntegrationTestSuite) TestHandleCreateTopic() {
 		}()
 
 		// make the request
-		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		input := &createTopicRequest{

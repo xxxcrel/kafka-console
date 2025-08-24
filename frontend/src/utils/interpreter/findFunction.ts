@@ -15,7 +15,6 @@
 //
 
 import { IsDev } from '../env';
-
 declare let value: any; // set/injected by backend
 
 // declare function find(propName: string, ignoreCase?:boolean): any;

@@ -94,7 +94,7 @@ const ConfigEditorForm: FC<{
   const onSubmit: SubmitHandler<Inputs> = async ({ valueType, customValue }) => {
     const operation = valueType === 'infinite' || valueType === 'custom' ? 'SET' : 'DELETE';
 
-    let value: number | string | undefined | null;
+    let value: number | string | undefined | null = undefined;
     if (valueType === 'infinite') {
       value = getInfiniteValueForEntry(editedEntry);
     } else if (valueType === 'custom') {
@@ -330,7 +330,6 @@ const ConfigEntryComponent = observer(
 
         <span className="configButtons">
           <Tooltip label={nonEdittableReason} placement="left" isDisabled={canEdit} hasArrow>
-            {/** biome-ignore lint/a11y/noStaticElementInteractions: part of ConfigEntryComponent implementation */}
             <span
               className={`btnEdit${canEdit ? '' : ' disabled'}`}
               onClick={() => {
@@ -373,15 +372,7 @@ function isTopicConfigEdittable(
     return { canEdit: false, reason: "You don't have permissions to change topic configuration entries" };
 
   if (isServerless()) {
-    const edittableEntries = [
-      'retention.ms',
-      'retention.bytes',
-      'cleanup.policy',
-      'write.caching',
-      'max.message.bytes',
-      'unclean.leader.election.enable',
-      'min.insync.replicas',
-    ];
+    const edittableEntries = ['retention.ms', 'retention.bytes'];
 
     if (edittableEntries.includes(entry.name)) {
       return { canEdit: true };

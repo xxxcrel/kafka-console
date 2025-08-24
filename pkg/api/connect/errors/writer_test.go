@@ -2,7 +2,6 @@ package errors
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap/zaptest"
 )
 
 // MockConnectRPCErrorWriter is a testify Mock for the ConnectRPCErrorWriter interface.
@@ -75,7 +75,8 @@ func TestConsoleErrorWriter(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create a mock writer and a logger
 			mockConnectWriter := new(MockConnectRPCErrorWriter)
-			logger := slog.New(slog.NewTextHandler(nil, &slog.HandlerOptions{Level: slog.LevelError + 1}))
+			logger := zaptest.NewLogger(t)
+			defer logger.Sync()
 
 			// Create an instance of ConsoleErrorWriter
 			consoleErrorWriter := NewConsoleErrorWriter(logger)

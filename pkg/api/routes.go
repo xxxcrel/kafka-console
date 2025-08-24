@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -10,22 +10,22 @@
 package api
 
 import (
-	"log/slog"
 	"net/http"
-	"time"
 
-	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
+	"github.com/bufbuild/protovalidate-go"
 	"github.com/cloudhut/common/middleware"
 	"github.com/cloudhut/common/rest"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	commoninterceptor "github.com/redpanda-data/common-go/api/interceptor"
 	"github.com/redpanda-data/common-go/api/metrics"
+	"go.uber.org/zap"
 	connectgateway "go.vallahaye.net/connect-gateway"
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -40,7 +40,6 @@ import (
 	apikafkaconnectsvcv1alpha1 "github.com/xxxcrel/kafka-console/pkg/api/connect/service/kafkaconnect/v1alpha1"
 	apikafkaconnectsvcv1alpha2 "github.com/xxxcrel/kafka-console/pkg/api/connect/service/kafkaconnect/v1alpha2"
 	licensesvc "github.com/xxxcrel/kafka-console/pkg/api/connect/service/license"
-	quotasvcv1 "github.com/xxxcrel/kafka-console/pkg/api/connect/service/quota/v1"
 	topicsvcv1 "github.com/xxxcrel/kafka-console/pkg/api/connect/service/topic/v1"
 	topicsvcv1alpha1 "github.com/xxxcrel/kafka-console/pkg/api/connect/service/topic/v1alpha1"
 	topicsvcv1alpha2 "github.com/xxxcrel/kafka-console/pkg/api/connect/service/topic/v1alpha2"
@@ -50,7 +49,6 @@ import (
 	apiusersvcv1 "github.com/xxxcrel/kafka-console/pkg/api/connect/service/user/v1"
 	apiusersvcv1alpha1 "github.com/xxxcrel/kafka-console/pkg/api/connect/service/user/v1alpha1"
 	apiusersvcv1alpha2 "github.com/xxxcrel/kafka-console/pkg/api/connect/service/user/v1alpha2"
-	loggerpkg "github.com/xxxcrel/kafka-console/pkg/logger"
 	"github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1/consolev1alpha1connect"
 	"github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/dataplane/v1/dataplanev1connect"
 	"github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/dataplane/v1alpha1/dataplanev1alpha1connect"
@@ -63,24 +61,24 @@ func (api *API) setupConnectWithGRPCGateway(r chi.Router) {
 	// Setup Interceptors
 	v, err := protovalidate.New()
 	if err != nil {
-		loggerpkg.Fatal(api.Logger, "failed to create proto validator", slog.Any("error", err))
+		api.Logger.Fatal("failed to create proto validator", zap.Error(err))
 	}
 
 	// Define interceptors that shall be used in the community version of Console. We may add further
 	// interceptors by calling the hooks.
 	apiProm, err := metrics.NewPrometheus(
-		metrics.WithRegistry(api.PrometheusRegistry),
+		metrics.WithRegistry(prometheus.DefaultRegisterer),
 		metrics.WithMetricsNamespace("redpanda_api"),
 	)
 	if err != nil {
-		loggerpkg.Fatal(api.Logger, "failed to create prometheus adapter", slog.Any("error", err))
+		api.Logger.Fatal("failed to create prometheus adapter", zap.Error(err))
 	}
 	observerInterceptor := commoninterceptor.NewObserver(apiProm.ObserverAdapter())
 	baseInterceptors := []connect.Interceptor{
 		observerInterceptor,
-		interceptor.NewErrorLogInterceptor(api.Logger),
-		interceptor.NewRequestValidationInterceptor(v, loggerpkg.Named(api.Logger, "validator")),
-		interceptor.NewEndpointCheckInterceptor(&api.Cfg.Console.API, loggerpkg.Named(api.Logger, "endpoint_checker")),
+		interceptor.NewErrorLogInterceptor(),
+		interceptor.NewRequestValidationInterceptor(v, api.Logger.Named("validator")),
+		interceptor.NewEndpointCheckInterceptor(&api.Cfg.Console.API, api.Logger.Named("endpoint_checker")),
 	}
 
 	api.Hooks.Route.InitConnectRPCRouter(r)
@@ -109,27 +107,22 @@ func (api *API) setupConnectWithGRPCGateway(r chi.Router) {
 		runtime.WithUnescapingMode(runtime.UnescapingModeAllExceptReserved),
 	)
 
-	sunsetInterceptor := commoninterceptor.NewSunset(
-		time.Date(2025, time.November, 30, 0, 0, 0, 0, time.UTC),
-		commoninterceptor.WithDeprecationDate(time.Date(2025, time.May, 30, 0, 0, 0, 0, time.UTC)),
-	)
-
 	// v1
-	aclSvcV1 := apiaclsvcv1.NewService(api.Cfg, loggerpkg.Named(api.Logger, "kafka_service"), api.ConsoleSvc)
-	topicSvcV1 := topicsvcv1.NewService(api.Cfg, loggerpkg.Named(api.Logger, "topic_service"), api.ConsoleSvc)
-	var userSvcV1 dataplanev1connect.UserServiceHandler = apiusersvcv1.NewService(api.Cfg, loggerpkg.Named(api.Logger, "user_service"), api.ConsoleSvc, api.RedpandaClientProvider)
-	quotaSvcV1 := quotasvcv1.NewService(api.Cfg, loggerpkg.Named(api.Logger, "quota_service"), api.ConsoleSvc)
-	transformSvcV1 := transformsvcv1.NewService(api.Cfg, loggerpkg.Named(api.Logger, "transform_service"), v, api.RedpandaClientProvider)
-	kafkaConnectSvcV1 := apikafkaconnectsvcv1.NewService(api.Cfg, loggerpkg.Named(api.Logger, "kafka_connect_service"), api.ConnectSvc)
+
+	aclSvcV1 := apiaclsvcv1.NewService(api.Cfg, api.Logger.Named("kafka_service"), api.ConsoleSvc)
+	topicSvcV1 := topicsvcv1.NewService(api.Cfg, api.Logger.Named("topic_service"), api.ConsoleSvc)
+	var userSvcV1 dataplanev1connect.UserServiceHandler = apiusersvcv1.NewService(api.Cfg, api.Logger.Named("user_service"), api.ConsoleSvc, api.RedpandaClientProvider)
+	transformSvcV1 := transformsvcv1.NewService(api.Cfg, api.Logger.Named("transform_service"), v, api.RedpandaClientProvider)
+	kafkaConnectSvcV1 := apikafkaconnectsvcv1.NewService(api.Cfg, api.Logger.Named("kafka_connect_service"), api.ConnectSvc)
 	consoleTransformSvcV1 := &transformsvcv1.ConsoleService{Impl: transformSvcV1}
 
 	// v1alpha2
 
-	aclSvcV1alpha2 := apiaclsvcv1alpha2.NewService(api.Cfg, loggerpkg.Named(api.Logger, "kafka_service"), api.ConsoleSvc)
-	topicSvcV1alpha2 := topicsvcv1alpha2.NewService(api.Cfg, loggerpkg.Named(api.Logger, "topic_service"), api.ConsoleSvc)
-	var userSvcV1alpha2 dataplanev1alpha2connect.UserServiceHandler = apiusersvcv1alpha2.NewService(api.Cfg, loggerpkg.Named(api.Logger, "user_service"), api.RedpandaClientProvider, api.ConsoleSvc)
-	transformSvcV1alpha2 := transformsvcv1alpha2.NewService(api.Cfg, loggerpkg.Named(api.Logger, "transform_service"), v, api.RedpandaClientProvider)
-	kafkaConnectSvcV1alpha2 := apikafkaconnectsvcv1alpha2.NewService(api.Cfg, loggerpkg.Named(api.Logger, "kafka_connect_service"), api.ConnectSvc)
+	aclSvcV1alpha2 := apiaclsvcv1alpha2.NewService(api.Cfg, api.Logger.Named("kafka_service"), api.ConsoleSvc)
+	topicSvcV1alpha2 := topicsvcv1alpha2.NewService(api.Cfg, api.Logger.Named("topic_service"), api.ConsoleSvc)
+	var userSvcV1alpha2 dataplanev1alpha2connect.UserServiceHandler = apiusersvcv1alpha2.NewService(api.Cfg, api.Logger.Named("user_service"), api.RedpandaClientProvider, api.ConsoleSvc)
+	transformSvcV1alpha2 := transformsvcv1alpha2.NewService(api.Cfg, api.Logger.Named("transform_service"), v, api.RedpandaClientProvider)
+	kafkaConnectSvcV1alpha2 := apikafkaconnectsvcv1alpha2.NewService(api.Cfg, api.Logger.Named("kafka_connect_service"), api.ConnectSvc)
 
 	// v1alpha1
 
@@ -139,14 +132,14 @@ func (api *API) setupConnectWithGRPCGateway(r chi.Router) {
 	kafkaConnectSvcV1alpha1 := apikafkaconnectsvcv1alpha1.NewService(kafkaConnectSvcV1alpha2)
 	topicSvcV1alpha1 := topicsvcv1alpha1.NewService(topicSvcV1alpha2)
 	transformSvcV1alpha1 := transformsvcv1alpha1.NewService(transformSvcV1alpha2)
-	consoleSvc := consolesvc.NewService(loggerpkg.Named(api.Logger, "console_service"), api.ConsoleSvc)
-	licenseSvc, err := licensesvc.NewService(loggerpkg.Named(api.Logger, "license_service"), api.RedpandaClientProvider, api.License)
+	consoleSvc := consolesvc.NewService(api.Logger.Named("console_service"), api.ConsoleSvc)
+	licenseSvc, err := licensesvc.NewService(api.Logger.Named("license_service"), api.RedpandaClientProvider, api.License)
 	if err != nil {
-		loggerpkg.Fatal(api.Logger, "failed to create license service", slog.Any("error", err))
+		api.Logger.Fatal("failed to create license service", zap.Error(err))
 	}
 	clusterStatusSvc := clusterstatus.NewService(
 		api.Cfg,
-		loggerpkg.Named(api.Logger, "redpanda_cluster_status_service"),
+		api.Logger.Named("redpanda_cluster_status_service"),
 		api.KafkaClientProvider,
 		api.RedpandaClientProvider,
 		api.SchemaClientProvider,
@@ -179,11 +172,9 @@ func (api *API) setupConnectWithGRPCGateway(r chi.Router) {
 			dataplanev1connect.ACLServiceName:                aclSvcV1,
 			dataplanev1connect.TopicServiceName:              topicSvcV1,
 			dataplanev1connect.UserServiceName:               userSvcV1,
-			dataplanev1connect.QuotaServiceName:              quotaSvcV1,
 			dataplanev1connect.TransformServiceName:          transformSvcV1,
 			dataplanev1connect.KafkaConnectServiceName:       kafkaConnectSvcV1,
 			dataplanev1connect.CloudStorageServiceName:       dataplanev1connect.UnimplementedCloudStorageServiceHandler{},
-			dataplanev1connect.SecurityServiceName:           dataplanev1connect.UnimplementedSecurityServiceHandler{},
 		},
 	})
 
@@ -206,7 +197,6 @@ func (api *API) setupConnectWithGRPCGateway(r chi.Router) {
 
 	r.Mount("/v1alpha1", gwMux)
 	r.Mount("/v1alpha2", gwMux)
-	r.Mount("/v1alpha3", gwMux)
 	r.Mount("/v1", gwMux)
 
 	// Wasm Transforms
@@ -218,62 +208,61 @@ func (api *API) setupConnectWithGRPCGateway(r chi.Router) {
 
 	userSvcPathV1Alpha1, userSvcHandlerV1Alpha1 := dataplanev1alpha1connect.NewUserServiceHandler(
 		hookOutput.Services[dataplanev1alpha1connect.UserServiceName].(dataplanev1alpha1connect.UserServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	aclSvcPathV1Alpha1, aclSvcHandlerV1Alpha1 := dataplanev1alpha1connect.NewACLServiceHandler(
 		hookOutput.Services[dataplanev1alpha1connect.ACLServiceName].(dataplanev1alpha1connect.ACLServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	kafkaConnectPathV1Alpha1, kafkaConnectHandlerV1Alpha1 := dataplanev1alpha1connect.NewKafkaConnectServiceHandler(
 		hookOutput.Services[dataplanev1alpha1connect.KafkaConnectServiceName].(dataplanev1alpha1connect.KafkaConnectServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	topicSvcPathV1Alpha1, topicSvcHandlerV1Alpha1 := dataplanev1alpha1connect.NewTopicServiceHandler(
 		hookOutput.Services[dataplanev1alpha1connect.TopicServiceName].(dataplanev1alpha1connect.TopicServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	transformSvcPathV1alpha1, transformSvcHandlerV1alpha1 := dataplanev1alpha1connect.NewTransformServiceHandler(
 		hookOutput.Services[dataplanev1alpha1connect.TransformServiceName].(dataplanev1alpha1connect.TransformServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 
 	// Console v1alpha1
 
 	consoleServicePath, consoleServiceHandler := consolev1alpha1connect.NewConsoleServiceHandler(
 		hookOutput.Services[consolev1alpha1connect.ConsoleServiceName].(consolev1alpha1connect.ConsoleServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	securityServicePath, securityServiceHandler := consolev1alpha1connect.NewSecurityServiceHandler(
 		hookOutput.Services[consolev1alpha1connect.SecurityServiceName].(consolev1alpha1connect.SecurityServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	consoleTransformSvcPath, consoleTransformSvcHandler := consolev1alpha1connect.NewTransformServiceHandler(
 		hookOutput.Services[consolev1alpha1connect.TransformServiceName].(consolev1alpha1connect.TransformServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	licenseSvcPath, licenseSvcHandler := consolev1alpha1connect.NewLicenseServiceHandler(hookOutput.Services[consolev1alpha1connect.LicenseServiceName].(consolev1alpha1connect.LicenseServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	authenticationSvcPath, authenticationSvcHandler := consolev1alpha1connect.NewAuthenticationServiceHandler(hookOutput.Services[consolev1alpha1connect.AuthenticationServiceName].(consolev1alpha1connect.AuthenticationServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	clusterStatusSvcPath, clusterStatusSvcHandler := consolev1alpha1connect.NewClusterStatusServiceHandler(hookOutput.Services[consolev1alpha1connect.ClusterStatusServiceName].(consolev1alpha1connect.ClusterStatusServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	consoleSecretsServicePath, consoleSecretsServiceHandler := consolev1alpha1connect.NewSecretServiceHandler(
 		hookOutput.Services[consolev1alpha1connect.SecretServiceName].(consolev1alpha1connect.SecretServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 
 	// v1alpha2
 
 	aclSvcPathV1Alpha2, aclSvcHandlerV1Alpha2 := dataplanev1alpha2connect.NewACLServiceHandler(
 		hookOutput.Services[dataplanev1alpha2connect.ACLServiceName].(dataplanev1alpha2connect.ACLServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	topicSvcPathV1Alpha2, topicSvcHandlerV1Alpha2 := dataplanev1alpha2connect.NewTopicServiceHandler(
 		hookOutput.Services[dataplanev1alpha2connect.TopicServiceName].(dataplanev1alpha2connect.TopicServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	userSvcPathV1Alpha2, userSvcHandlerV1alpha2 := dataplanev1alpha2connect.NewUserServiceHandler(
 		hookOutput.Services[dataplanev1alpha2connect.UserServiceName].(dataplanev1alpha2connect.UserServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	transformSvcPathV1Alpha2, transformSvcHandlerV1Alpha2 := dataplanev1alpha2connect.NewTransformServiceHandler(
 		hookOutput.Services[dataplanev1alpha2connect.TransformServiceName].(dataplanev1alpha2connect.TransformServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	kafkaConnectSvcPathV1Alpha2, kafkaConnectSvcHandlerV1Alpha2 := dataplanev1alpha2connect.NewKafkaConnectServiceHandler(
 		hookOutput.Services[dataplanev1alpha2connect.KafkaConnectServiceName].(dataplanev1alpha2connect.KafkaConnectServiceHandler),
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
-	cloudStorageSvcV1Alpha2 := hookOutput.Services[dataplanev1alpha2connect.CloudStorageServiceName].(dataplanev1alpha2connect.CloudStorageServiceHandler) //nolint:revive // we control the map
+		connect.WithInterceptors(hookOutput.Interceptors...))
 	cloudStorageSvcPathV1Alpha2, cloudStorageSvcHandlerV1Alpha2 := dataplanev1alpha2connect.NewCloudStorageServiceHandler(
-		cloudStorageSvcV1Alpha2,
-		connect.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+		hookOutput.Services[dataplanev1alpha2connect.CloudStorageServiceName].(dataplanev1alpha2connect.CloudStorageServiceHandler),
+		connect.WithInterceptors(hookOutput.Interceptors...))
 
 	// v1
 
@@ -286,22 +275,14 @@ func (api *API) setupConnectWithGRPCGateway(r chi.Router) {
 	userSvcPathV1, userSvcHandlerV1 := dataplanev1connect.NewUserServiceHandler(
 		hookOutput.Services[dataplanev1connect.UserServiceName].(dataplanev1connect.UserServiceHandler),
 		connect.WithInterceptors(hookOutput.Interceptors...))
-	quotaSvcPathV1, quotaSvcHandlerV1 := dataplanev1connect.NewQuotaServiceHandler(
-		hookOutput.Services[dataplanev1connect.QuotaServiceName].(dataplanev1connect.QuotaServiceHandler),
-		connect.WithInterceptors(hookOutput.Interceptors...))
 	transformSvcPathV1, transformSvcHandlerV1 := dataplanev1connect.NewTransformServiceHandler(
 		hookOutput.Services[dataplanev1connect.TransformServiceName].(dataplanev1connect.TransformServiceHandler),
 		connect.WithInterceptors(hookOutput.Interceptors...))
 	kafkaConnectSvcPathV1, kafkaConnectSvcHandlerV1 := dataplanev1connect.NewKafkaConnectServiceHandler(
 		hookOutput.Services[dataplanev1connect.KafkaConnectServiceName].(dataplanev1connect.KafkaConnectServiceHandler),
 		connect.WithInterceptors(hookOutput.Interceptors...))
-	cloudStorageSvcV1 := hookOutput.Services[dataplanev1connect.CloudStorageServiceName].(dataplanev1connect.CloudStorageServiceHandler) //nolint:revive // we control the map
 	cloudStorageSvcPathV1, cloudStorageSvcHandlerV1 := dataplanev1connect.NewCloudStorageServiceHandler(
-		cloudStorageSvcV1,
-		connect.WithInterceptors(hookOutput.Interceptors...))
-	securitySvcV1 := hookOutput.Services[dataplanev1connect.SecurityServiceName].(dataplanev1connect.SecurityServiceHandler) //nolint:revive // we control the map
-	securitySvcPathV1, securitySvcHandlerV1 := dataplanev1connect.NewSecurityServiceHandler(
-		securitySvcV1,
+		hookOutput.Services[dataplanev1connect.CloudStorageServiceName].(dataplanev1connect.CloudStorageServiceHandler),
 		connect.WithInterceptors(hookOutput.Interceptors...))
 
 	ossServices := []ConnectService{
@@ -406,11 +387,6 @@ func (api *API) setupConnectWithGRPCGateway(r chi.Router) {
 			Handler:     userSvcHandlerV1,
 		},
 		{
-			ServiceName: dataplanev1connect.QuotaServiceName,
-			MountPath:   quotaSvcPathV1,
-			Handler:     quotaSvcHandlerV1,
-		},
-		{
 			ServiceName: dataplanev1connect.TransformServiceName,
 			MountPath:   transformSvcPathV1,
 			Handler:     transformSvcHandlerV1,
@@ -430,11 +406,6 @@ func (api *API) setupConnectWithGRPCGateway(r chi.Router) {
 			MountPath:   consoleSecretsServicePath,
 			Handler:     consoleSecretsServiceHandler,
 		},
-		{
-			ServiceName: dataplanev1connect.SecurityServiceName,
-			MountPath:   securitySvcPathV1,
-			Handler:     securitySvcHandlerV1,
-		},
 	}
 
 	// Order matters. OSS services first, so Enterprise handlers override OSS.
@@ -450,31 +421,27 @@ func (api *API) setupConnectWithGRPCGateway(r chi.Router) {
 	// v1alpha1
 
 	// Register gRPC-Gateway Handlers of OSS. Enterprise handlers are directly registered in the hook via the *runtime.ServeMux passed.
-	dataplanev1alpha1connect.RegisterUserServiceHandlerGatewayServer(gwMux, userSvcV1alpha1, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
-	dataplanev1alpha1connect.RegisterACLServiceHandlerGatewayServer(gwMux, aclSvcV1alpha1, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
-	dataplanev1alpha1connect.RegisterKafkaConnectServiceHandlerGatewayServer(gwMux, kafkaConnectSvcV1alpha1, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
-	dataplanev1alpha1connect.RegisterTopicServiceHandlerGatewayServer(gwMux, topicSvcV1alpha1, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
-	dataplanev1alpha1connect.RegisterTransformServiceHandlerGatewayServer(gwMux, transformSvcV1alpha1, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+	dataplanev1alpha1connect.RegisterUserServiceHandlerGatewayServer(gwMux, userSvcV1alpha1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
+	dataplanev1alpha1connect.RegisterACLServiceHandlerGatewayServer(gwMux, aclSvcV1alpha1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
+	dataplanev1alpha1connect.RegisterKafkaConnectServiceHandlerGatewayServer(gwMux, kafkaConnectSvcV1alpha1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
+	dataplanev1alpha1connect.RegisterTopicServiceHandlerGatewayServer(gwMux, topicSvcV1alpha1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
+	dataplanev1alpha1connect.RegisterTransformServiceHandlerGatewayServer(gwMux, transformSvcV1alpha1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
 
 	// v1alpha2
 
-	dataplanev1alpha2connect.RegisterACLServiceHandlerGatewayServer(gwMux, aclSvcV1alpha2, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
-	dataplanev1alpha2connect.RegisterTopicServiceHandlerGatewayServer(gwMux, topicSvcV1alpha2, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
-	dataplanev1alpha2connect.RegisterUserServiceHandlerGatewayServer(gwMux, userSvcV1alpha2, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
-	dataplanev1alpha2connect.RegisterTransformServiceHandlerGatewayServer(gwMux, transformSvcV1alpha2, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
-	dataplanev1alpha2connect.RegisterKafkaConnectServiceHandlerGatewayServer(gwMux, kafkaConnectSvcV1alpha2, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
-	dataplanev1alpha2connect.RegisterCloudStorageServiceHandlerGatewayServer(gwMux, cloudStorageSvcV1Alpha2, connectgateway.WithInterceptors(append(hookOutput.Interceptors, sunsetInterceptor)...))
+	dataplanev1alpha2connect.RegisterACLServiceHandlerGatewayServer(gwMux, aclSvcV1alpha2, connectgateway.WithInterceptors(hookOutput.Interceptors...))
+	dataplanev1alpha2connect.RegisterTopicServiceHandlerGatewayServer(gwMux, topicSvcV1alpha2, connectgateway.WithInterceptors(hookOutput.Interceptors...))
+	dataplanev1alpha2connect.RegisterUserServiceHandlerGatewayServer(gwMux, userSvcV1alpha2, connectgateway.WithInterceptors(hookOutput.Interceptors...))
+	dataplanev1alpha2connect.RegisterTransformServiceHandlerGatewayServer(gwMux, transformSvcV1alpha2, connectgateway.WithInterceptors(hookOutput.Interceptors...))
+	dataplanev1alpha2connect.RegisterKafkaConnectServiceHandlerGatewayServer(gwMux, kafkaConnectSvcV1alpha2, connectgateway.WithInterceptors(hookOutput.Interceptors...))
 
 	// v1
 
 	dataplanev1connect.RegisterACLServiceHandlerGatewayServer(gwMux, aclSvcV1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
 	dataplanev1connect.RegisterTopicServiceHandlerGatewayServer(gwMux, topicSvcV1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
 	dataplanev1connect.RegisterUserServiceHandlerGatewayServer(gwMux, userSvcV1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
-	dataplanev1connect.RegisterQuotaServiceHandlerGatewayServer(gwMux, quotaSvcV1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
 	dataplanev1connect.RegisterTransformServiceHandlerGatewayServer(gwMux, transformSvcV1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
 	dataplanev1connect.RegisterKafkaConnectServiceHandlerGatewayServer(gwMux, kafkaConnectSvcV1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
-	dataplanev1connect.RegisterCloudStorageServiceHandlerGatewayServer(gwMux, cloudStorageSvcV1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
-	dataplanev1connect.RegisterSecurityServiceHandlerGatewayServer(gwMux, securitySvcV1, connectgateway.WithInterceptors(hookOutput.Interceptors...))
 
 	// mount
 
@@ -491,9 +458,9 @@ func (api *API) routes() *chi.Mux {
 
 	v, err := protovalidate.New()
 	if err != nil {
-		loggerpkg.Fatal(api.Logger, "failed to create proto validator", slog.Any("error", err))
+		api.Logger.Fatal("failed to create proto validator", zap.Error(err))
 	}
-	transformSvc := transformsvcv1alpha2.NewService(api.Cfg, loggerpkg.Named(api.Logger, "transform_service"), v, api.RedpandaClientProvider)
+	transformSvc := transformsvcv1alpha2.NewService(api.Cfg, api.Logger.Named("transform_service"), v, api.RedpandaClientProvider)
 
 	instrument := middleware.NewInstrument(api.Cfg.MetricsNamespace)
 	recoverer := middleware.Recoverer{Logger: api.Logger}
@@ -510,7 +477,7 @@ func (api *API) routes() *chi.Mux {
 		AllowOriginFunc: func(r *http.Request, _ string) bool {
 			isAllowed := checkOriginFn(r)
 			if !isAllowed {
-				api.Logger.Debug("CORS check failed", slog.String("request_origin", r.Header.Get("Origin")))
+				api.Logger.Debug("CORS check failed", zap.String("request_origin", r.Header.Get("Origin")))
 			}
 			return isAllowed
 		},
@@ -528,7 +495,7 @@ func (api *API) routes() *chi.Mux {
 	baseRouter.Group(func(router chi.Router) {
 		// Init middlewares - Do set up of any shared/third-party middleware and handlers
 		if api.Cfg.REST.CompressionLevel > 0 {
-			api.Logger.Debug("using compression for all http routes", slog.Int("level", api.Cfg.REST.CompressionLevel))
+			api.Logger.Debug("using compression for all http routes", zap.Int("level", api.Cfg.REST.CompressionLevel))
 			compressor := chimiddleware.NewCompressor(api.Cfg.REST.CompressionLevel)
 			router.Use(compressor.Handler)
 		}

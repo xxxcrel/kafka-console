@@ -12,9 +12,10 @@ package console
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"sort"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // BrokerWithLogDirs described by some basic broker properties
@@ -79,7 +80,7 @@ func (s *Service) GetBrokersWithLogDirs(ctx context.Context) ([]BrokerWithLogDir
 		// When an error is set we still receive a partial response from the admin client.
 		// Also, describing broker log dirs is not considered mandatory for serving a
 		// response here.
-		s.logger.WarnContext(childCtx, "describing broker log dirs returned an error for one or more shards", slog.Any("error", err))
+		s.logger.Warn("describing broker log dirs returned an error for one or more shards", zap.Error(err))
 	}
 
 	sortedLogDirs := describedLogDirs.Sorted()
@@ -87,10 +88,10 @@ func (s *Service) GetBrokersWithLogDirs(ctx context.Context) ([]BrokerWithLogDir
 	totalBytesByNodeID := make(map[int32]int64)
 	for _, logDir := range sortedLogDirs {
 		if logDir.Err != nil {
-			s.logger.WarnContext(childCtx, "failed to described this broker's log dir",
-				slog.Int("broker_id", int(logDir.Broker)),
-				slog.String("log_dir", logDir.Dir),
-				slog.Any("error", logDir.Err))
+			s.logger.Warn("failed to described this broker's log dir",
+				zap.Int32("broker_id", logDir.Broker),
+				zap.String("log_dir", logDir.Dir),
+				zap.Error(logDir.Err))
 			continue
 		}
 

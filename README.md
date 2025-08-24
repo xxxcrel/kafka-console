@@ -63,7 +63,7 @@ We maintain a docker-compose file that launches Redpanda and Console: [/docs/loc
 
 [Slack](https://redpanda.com/slack) is the main way the community interacts with one another in real time :)
 
-[GitHub Issues](https://github.com/redpanda-data/console/issues) can be used for issues, questions and feature requests.
+[GitHub Issues](https://github.com/xxxcrel/kafka-console/issues) can be used for issues, questions and feature requests.
 
 [Code of conduct](https://github.com/redpanda-data/redpanda/blob/dev/CODE_OF_CONDUCT.md) code of conduct for the community
 

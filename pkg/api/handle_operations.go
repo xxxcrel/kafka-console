@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -10,7 +10,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -90,7 +89,7 @@ type patchPartitionsRequest struct {
 
 func (p *patchPartitionsRequest) OK() error {
 	if p.Topics == nil {
-		return errors.New("at least one topic and partition must be set")
+		return fmt.Errorf("at least one topic and partition must be set")
 	}
 	for _, topic := range p.Topics {
 		if topic.Partitions == nil {
@@ -157,7 +156,7 @@ type patchConfigsRequest struct {
 
 func (p *patchConfigsRequest) OK() error {
 	if p.Resources == nil {
-		return errors.New("at least one resource must be set")
+		return fmt.Errorf("at least one resource must be set")
 	}
 	for i, res := range p.Resources {
 		err := res.OK()
@@ -198,7 +197,7 @@ func (p *patchConfigsRequestResource) OK() error {
 	}
 
 	if p.Configs == nil {
-		return errors.New("at least one config must be set")
+		return fmt.Errorf("at least one config must be set")
 	}
 
 	for i, cfg := range p.Configs {
@@ -224,7 +223,7 @@ type patchConfigsRequestResourceConfig struct {
 
 func (p *patchConfigsRequestResourceConfig) OK() error {
 	if p.Name == "" {
-		return errors.New("config name must be specified")
+		return fmt.Errorf("config name must be specified")
 	}
 	if p.Op < 0 || p.Op > 4 {
 		return fmt.Errorf("invalid op '%d' specified. must be between 0 and 4", p.Op)

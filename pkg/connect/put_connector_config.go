@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -11,13 +11,13 @@ package connect
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/cloudhut/common/rest"
 	con "github.com/cloudhut/connect-client"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // PutConnectorConfig overwrites an existent connector config.
@@ -30,7 +30,7 @@ func (s *Service) PutConnectorConfig(ctx context.Context, clusterName string, co
 	className, ok := req.Config["connector.class"].(string)
 	if !ok || className == "" {
 		return con.ConnectorInfo{}, &rest.Error{
-			Err:      errors.New("connector class is not set"),
+			Err:      fmt.Errorf("connector class is not set"),
 			Status:   http.StatusBadRequest,
 			Message:  "Connector class is not set",
 			IsSilent: false,
@@ -52,7 +52,7 @@ func (s *Service) PutConnectorConfig(ctx context.Context, clusterName string, co
 			Err:          fmt.Errorf("failed to patch connector config: %w", err),
 			Status:       GetStatusCodeFromAPIError(err, http.StatusInternalServerError),
 			Message:      fmt.Sprintf("Failed to patch Connector config: %v", err.Error()),
-			InternalLogs: []slog.Attr{slog.String("cluster_name", clusterName), slog.String("connector_name", connectorName)},
+			InternalLogs: []zapcore.Field{zap.String("cluster_name", clusterName), zap.String("connector_name", connectorName)},
 			IsSilent:     false,
 		}
 	}

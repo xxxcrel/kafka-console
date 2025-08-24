@@ -116,7 +116,7 @@
 
 - [SECURITY] Built with Go 1.23.4 to fix [CVE-2024-45337](https://nvd.nist.gov/vuln/detail/CVE-2024-45337).
 - [IMPROVEMENT] Add "Try Again" button if debug bundle creation failed.
-- [BUFGIX] Properly handle paths that require escaping in environments that use URL rewriting [1526](https://github.com/redpanda-data/console/pull/1526). 
+- [BUFGIX] Properly handle paths that require escaping in environments that use URL rewriting [1526](https://github.com/xxxcrel/kafka-console/pull/1526). 
 
 ## v2.8.0 / 2024-12-03
 
@@ -205,42 +205,42 @@
 ## v2.4.5 / 2024-03-06
 
 - [SECURITY] Update Go to v1.22.1 to address multiple [CVEs](https://groups.google.com/g/golang-announce/c/5pwGVUPoMbg).
-- [IMPROVEMENT] Wrap long topic names instead of truncating them in the topics list [#1159](https://github.com/redpanda-data/console/pull/1159).
+- [IMPROVEMENT] Wrap long topic names instead of truncating them in the topics list [#1159](https://github.com/xxxcrel/kafka-console/pull/1159).
 
 ## v2.4.4 / 2024-03-04
 
-- [BUGFIX] Fix for glob patterns for adapting the preview in the list messages table [#1116](https://github.com/redpanda-data/console/pull/1116).
-- [BUGFIX] Show last available page in paginated search results to avoid blank page content [#1121](https://github.com/redpanda-data/console/pull/1121).
-- [BUGFIX] Send heartbeats in HTTP stream to load messages to avoid idle timeouts from LoadBalancers and reverse proxies [#1109](https://github.com/redpanda-data/console/pull/1109).
-- [IMPROVEMENT] Better handling for long resource names (e.g. topic names) in the UI [#1124](https://github.com/redpanda-data/console/pull/1124).
-- [IMPROVEMENT] Add option to download messages that are too large to be displayed by default [#1129](https://github.com/redpanda-data/console/pull/1129).
-- [IMPROVEMENT] Add `offset.lag.max` option to advanced configuration in the MirrorMaker2 connector setup [#1131](https://github.com/redpanda-data/console/pull/1131).
+- [BUGFIX] Fix for glob patterns for adapting the preview in the list messages table [#1116](https://github.com/xxxcrel/kafka-console/pull/1116).
+- [BUGFIX] Show last available page in paginated search results to avoid blank page content [#1121](https://github.com/xxxcrel/kafka-console/pull/1121).
+- [BUGFIX] Send heartbeats in HTTP stream to load messages to avoid idle timeouts from LoadBalancers and reverse proxies [#1109](https://github.com/xxxcrel/kafka-console/pull/1109).
+- [IMPROVEMENT] Better handling for long resource names (e.g. topic names) in the UI [#1124](https://github.com/xxxcrel/kafka-console/pull/1124).
+- [IMPROVEMENT] Add option to download messages that are too large to be displayed by default [#1129](https://github.com/xxxcrel/kafka-console/pull/1129).
+- [IMPROVEMENT] Add `offset.lag.max` option to advanced configuration in the MirrorMaker2 connector setup [#1131](https://github.com/xxxcrel/kafka-console/pull/1131).
 
 ## v2.4.3 / 2024-02-08
 
-- [BUGFIX] Persist pagination settings in local storage [#1095](https://github.com/redpanda-data/console/pull/1095).
-- [BUGFIX] Re-add search bar to filter connectors by their name [#1094](https://github.com/redpanda-data/console/pull/1094).
-- [BUGFIX] Only update the custom offset in the message search if it's a number [#1092](https://github.com/redpanda-data/console/pull/1092).
-- [BUGFIX] Pushdown filters no longer failed to match when plain strings in key or value were used [#1093](https://github.com/redpanda-data/console/pull/1093).
-- [IMPROVEMENT] Cache custom offset input in message search [#1092](https://github.com/redpanda-data/console/pull/1092).
+- [BUGFIX] Persist pagination settings in local storage [#1095](https://github.com/xxxcrel/kafka-console/pull/1095).
+- [BUGFIX] Re-add search bar to filter connectors by their name [#1094](https://github.com/xxxcrel/kafka-console/pull/1094).
+- [BUGFIX] Only update the custom offset in the message search if it's a number [#1092](https://github.com/xxxcrel/kafka-console/pull/1092).
+- [BUGFIX] Pushdown filters no longer failed to match when plain strings in key or value were used [#1093](https://github.com/xxxcrel/kafka-console/pull/1093).
+- [IMPROVEMENT] Cache custom offset input in message search [#1092](https://github.com/xxxcrel/kafka-console/pull/1092).
 
 ## v2.4.2 / 2024-02-06
 
 - [BUGFIX] Fix pagination issue in frontend.
-- [BUGFIX] Fix regex filtering issue in ACL screen in frontend [#1080](https://github.com/redpanda-data/console/issues/1080).
-- [BUGFIX] Fix inconsistent filtering issue with list messages API when using pushdown filters [#1073](https://github.com/redpanda-data/console/issues/1073).
-- [IMPROVEMENT] Optimize schema registry protobuf refresh to reduce memory usage [#1040](https://github.com/redpanda-data/console/pull/1040).
+- [BUGFIX] Fix regex filtering issue in ACL screen in frontend [#1080](https://github.com/xxxcrel/kafka-console/issues/1080).
+- [BUGFIX] Fix inconsistent filtering issue with list messages API when using pushdown filters [#1073](https://github.com/xxxcrel/kafka-console/issues/1073).
+- [IMPROVEMENT] Optimize schema registry protobuf refresh to reduce memory usage [#1040](https://github.com/xxxcrel/kafka-console/pull/1040).
 
 ## v2.4.1 / 2024-02-02
 
 - [BUGFIX] Fix bug in schema registry URL paths for subject names that used escaping characters (i.e. %2F)
-- [BUGFIX] The pagination component to select different pages always shows up now [#1034](https://github.com/redpanda-data/console/issues/1032)
+- [BUGFIX] The pagination component to select different pages always shows up now [#1034](https://github.com/xxxcrel/kafka-console/issues/1032)
 - [BUGFIX] When sorting the Kafka topics by size the order was off, the column ordering is fixed now
-- [BUGFIX] Using the "copy value" action for a Kafka record no longer includes the payload property multiple times [#1054](https://github.com/redpanda-data/console/issues/1054)
-- [BUGFIX] Selecting the "size" column as the only column to show in the table settings used to throw an exception [#1051](https://github.com/redpanda-data/console/issues/1051)
-- [BUGFIX] Fix decoding for msgpack encoded payloads [#1034](https://github.com/redpanda-data/console/issues/1034)
-- [BUGFIX] Under certain circumstances the download messages button downloaded an empty JSON array instead of the shown records [#1031](https://github.com/redpanda-data/console/issues/1031)
-- [BUGFIX] Searching for topics in the topicslist' quicksearch box using a regex did no longer work [#1026](https://github.com/redpanda-data/console/issues/1026)
+- [BUGFIX] Using the "copy value" action for a Kafka record no longer includes the payload property multiple times [#1054](https://github.com/xxxcrel/kafka-console/issues/1054)
+- [BUGFIX] Selecting the "size" column as the only column to show in the table settings used to throw an exception [#1051](https://github.com/xxxcrel/kafka-console/issues/1051)
+- [BUGFIX] Fix decoding for msgpack encoded payloads [#1034](https://github.com/xxxcrel/kafka-console/issues/1034)
+- [BUGFIX] Under certain circumstances the download messages button downloaded an empty JSON array instead of the shown records [#1031](https://github.com/xxxcrel/kafka-console/issues/1031)
+- [BUGFIX] Searching for topics in the topicslist' quicksearch box using a regex did no longer work [#1026](https://github.com/xxxcrel/kafka-console/issues/1026)
 - [IMPROVEMENT] Document new `console.maxDeserializationPayloadSize` config to control max message size that is still shown in the frontend
 
 ## v2.3.10 / 2024-01-29
@@ -354,7 +354,7 @@
 
 ## v2.1.1 / 2022-12-01
 
-- [ENHANCEMENT] Auto refresh capability in the frontend (via https://github.com/redpanda-data/console/pull/536 by @victorgawk)
+- [ENHANCEMENT] Auto refresh capability in the frontend (via https://github.com/xxxcrel/kafka-console/pull/536 by @victorgawk)
 - [BUGFIX] Some Avro serialized messages failed to deserialize. We replaced LinkedIn's go-avro library with [hamba/avro](https://github.com/hamba/avro) which supports more types
 
 **Enterprise changelog:**

@@ -9,6 +9,9 @@
  * by the Apache License, Version 2.0
  */
 
+import { observer } from 'mobx-react';
+import React, { useMemo } from 'react';
+
 import { PencilIcon, TrashIcon } from '@heroicons/react/solid';
 import { SkipIcon } from '@primer/octicons-react';
 import {
@@ -27,8 +30,6 @@ import {
   Text,
 } from '@redpanda-data/ui';
 import { action, computed, makeObservable, observable } from 'mobx';
-import { observer } from 'mobx-react';
-import React, { useMemo } from 'react';
 import {
   MdCheckCircleOutline,
   MdHourglassBottom,
@@ -153,7 +154,11 @@ class GroupDetails extends PageComponent<{ groupId: string }> {
     return (
       <PageContent className="groupDetails">
         <Flex gap={2}>
-          <Button variant="outline" onClick={() => this.editGroup()} disabledReason={cannotEditGroupReason(group)}>
+          <Button
+            variant="outline"
+            onClick={() => this.editGroup()}
+            disabledReason={cannotEditGroupReason(group)}
+          >
             Edit Group
           </Button>
           <DeleteOffsetsModal
@@ -182,7 +187,7 @@ class GroupDetails extends PageComponent<{ groupId: string }> {
                   }
                   value={group.coordinatorId}
                 />
-                <Statistic title="Total Lag" value={numberToThousandsString(group.lagSum)} />
+                <Statistic title="Total Lag" value={group.lagSum} />
               </Flex>
             </div>
           </Section>
@@ -266,7 +271,7 @@ const GroupByTopics = observer(function GroupByTopics(props: {
     let regExp = /.*/s; // match everything by default
     try {
       regExp = new RegExp(props.quickSearch, 'i');
-    } catch (_e) {
+    } catch (e) {
       console.warn('Invalid expression');
     }
     return regExp;
@@ -349,7 +354,7 @@ const GroupByTopics = observer(function GroupByTopics(props: {
             <Button
               variant="link"
               size="sm"
-              onClick={() => appGlobal.historyPush(`/topics/${encodeURIComponent(g.topicName)}`)}
+              onClick={() => appGlobal.history.push(`/topics/${encodeURIComponent(g.topicName)}`)}
             >
               Go to topic
             </Button>

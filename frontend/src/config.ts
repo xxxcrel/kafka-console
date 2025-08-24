@@ -9,33 +9,32 @@
  * by the Apache License, Version 2.0
  */
 import {
-  type Client,
   Code,
   ConnectError,
   type Interceptor as ConnectRpcInterceptor,
-  createClient,
+  type PromiseClient,
+  type StreamRequest,
+  type UnaryRequest,
+  createPromiseClient,
 } from '@connectrpc/connect';
 import { createConnectTransport } from '@connectrpc/connect-web';
-import { loader, type Monaco } from '@monaco-editor/react';
-import { getAgentSidebarItemTitle } from 'components/pages/agents/agent-list-page';
-import memoizeOne from 'memoize-one';
+import { type Monaco, loader } from '@monaco-editor/react';
 import { autorun, configure, observable, when } from 'mobx';
-// biome-ignore lint/performance/noNamespaceImport: part of monaco editor
 import * as monaco from 'monaco-editor';
-import { protobufRegistry } from 'protobuf-registry';
-import { AuthenticationService } from 'protogen/redpanda/api/console/v1alpha1/authentication_pb';
-import { ClusterStatusService } from 'protogen/redpanda/api/console/v1alpha1/cluster_status_pb';
-import { ConsoleService } from 'protogen/redpanda/api/console/v1alpha1/console_service_pb';
-import { DebugBundleService } from 'protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
-import { LicenseService } from 'protogen/redpanda/api/console/v1alpha1/license_pb';
-import { PipelineService } from 'protogen/redpanda/api/console/v1alpha1/pipeline_pb';
-import { SecretService } from 'protogen/redpanda/api/console/v1alpha1/secret_pb';
-import { SecurityService } from 'protogen/redpanda/api/console/v1alpha1/security_pb';
-import { TransformService } from 'protogen/redpanda/api/console/v1alpha1/transform_pb';
-import { UserService } from 'protogen/redpanda/api/dataplane/v1/user_pb';
-import { KnowledgeBaseService } from 'protogen/redpanda/api/dataplane/v1alpha3/knowledge_base_pb';
-import { DEFAULT_API_BASE, FEATURE_FLAGS } from './components/constants';
+
+import memoizeOne from 'memoize-one';
+import { DEFAULT_API_BASE } from './components/constants';
 import { APP_ROUTES } from './components/routes';
+import { AuthenticationService } from './protogen/redpanda/api/console/v1alpha1/authentication_connect';
+import { ClusterStatusService } from './protogen/redpanda/api/console/v1alpha1/cluster_status_connect';
+import { ConsoleService } from './protogen/redpanda/api/console/v1alpha1/console_service_connect';
+import { DebugBundleService } from './protogen/redpanda/api/console/v1alpha1/debug_bundle_connect';
+import { LicenseService } from './protogen/redpanda/api/console/v1alpha1/license_connect';
+import { PipelineService } from './protogen/redpanda/api/console/v1alpha1/pipeline_connect';
+import { PipelineService as PipelineServiceV2 } from './protogen/redpanda/api/console/v1alpha1/pipeline_connect';
+import { SecretService as RPCNSecretService } from './protogen/redpanda/api/console/v1alpha1/secret_connect';
+import { SecurityService } from './protogen/redpanda/api/console/v1alpha1/security_connect';
+import { TransformService } from './protogen/redpanda/api/console/v1alpha1/transform_connect';
 import { appGlobal } from './state/appGlobal';
 import { api } from './state/backendApi';
 import { uiState } from './state/uiState';
@@ -45,11 +44,11 @@ declare const __webpack_public_path__: string;
 
 const getRestBasePath = (overrideUrl?: string) => overrideUrl ?? DEFAULT_API_BASE;
 
-export const getGrpcBasePath = (overrideUrl?: string) => overrideUrl ?? getBasePath();
+const getGrpcBasePath = (overrideUrl?: string) => overrideUrl ?? getBasePath();
 
-export const addBearerTokenInterceptor: ConnectRpcInterceptor = (next) => async (request) => {
-  if (config.jwt) request.header.set('Authorization', `Bearer ${config.jwt}`);
-  return await next(request);
+const addBearerTokenInterceptor: ConnectRpcInterceptor = (next) => async (req: UnaryRequest | StreamRequest) => {
+  if (config.jwt) req.header.append('Authorization', `Bearer ${config.jwt}`);
+  return await next(req);
 };
 
 /**
@@ -61,9 +60,9 @@ export const addBearerTokenInterceptor: ConnectRpcInterceptor = (next) => async 
  * If such an error is detected, it redirects the user to the `/trial-expired` page.
  *
  */
-export const checkExpiredLicenseInterceptor: ConnectRpcInterceptor = (next) => async (request) => {
+const checkExpiredLicenseInterceptor: ConnectRpcInterceptor = (next) => async (req: UnaryRequest | StreamRequest) => {
   try {
-    return await next(request);
+    return await next(req);
   } catch (error) {
     if (error instanceof ConnectError) {
       if (error.code === Code.FailedPrecondition) {
@@ -76,7 +75,7 @@ export const checkExpiredLicenseInterceptor: ConnectRpcInterceptor = (next) => a
               // @ts-ignore - TODO fix type checks for IncomingDetail, BE should provide types for debug field
               detail.debug.reason === 'REASON_ENTERPRISE_LICENSE_EXPIRED'
             ) {
-              appGlobal.historyReplace('/trial-expired');
+              appGlobal.history.replace('/trial-expired');
             }
           }
         }
@@ -100,7 +99,6 @@ export interface SetConfigArguments {
   setSidebarItems?: (items: SidebarItem[]) => void;
   setBreadcrumbs?: (items: Breadcrumb[]) => void;
   isServerless?: boolean;
-  featureFlags?: Record<keyof typeof FEATURE_FLAGS, boolean>;
 }
 
 export interface SidebarItem {
@@ -118,17 +116,16 @@ export interface Breadcrumb {
 interface Config {
   restBasePath: string;
   grpcBasePath: string;
-  authenticationClient?: Client<typeof AuthenticationService>;
-  licenseClient?: Client<typeof LicenseService>;
-  consoleClient?: Client<typeof ConsoleService>;
-  debugBundleClient?: Client<typeof DebugBundleService>;
-  securityClient?: Client<typeof SecurityService>;
-  pipelinesClient?: Client<typeof PipelineService>;
-  rpcnSecretsClient?: Client<typeof SecretService>;
-  transformsClient?: Client<typeof TransformService>;
-  clusterStatusClient?: Client<typeof ClusterStatusService>;
-  knowledgebaseClient?: Client<typeof KnowledgeBaseService>;
-  userClient?: Client<typeof UserService>;
+  authenticationClient?: PromiseClient<typeof AuthenticationService>;
+  licenseClient?: PromiseClient<typeof LicenseService>;
+  consoleClient?: PromiseClient<typeof ConsoleService>;
+  debugBundleClient?: PromiseClient<typeof DebugBundleService>;
+  securityClient?: PromiseClient<typeof SecurityService>;
+  pipelinesClient?: PromiseClient<typeof PipelineService>;
+  pipelinesClientV2?: PromiseClient<typeof PipelineServiceV2>;
+  rpcnSecretsClient?: PromiseClient<typeof RPCNSecretService>;
+  transformsClient?: PromiseClient<typeof TransformService>;
+  clusterStatusClient?: PromiseClient<typeof ClusterStatusService>;
   fetch: WindowOrWorkerGlobalScope['fetch'];
   assetsPath: string;
   jwt?: string;
@@ -136,7 +133,6 @@ interface Config {
   setSidebarItems: (items: SidebarItem[]) => void;
   setBreadcrumbs: (items: Breadcrumb[]) => void;
   isServerless: boolean;
-  featureFlags: Record<keyof typeof FEATURE_FLAGS, boolean>;
 }
 
 // Config object is an mobx observable, always make sure you call it from
@@ -151,10 +147,9 @@ export const config: Config = observable({
   setSidebarItems: () => {},
   setBreadcrumbs: () => {},
   isServerless: false,
-  featureFlags: FEATURE_FLAGS,
 });
 
-const setConfig = ({ fetch, urlOverride, jwt, isServerless, featureFlags, ...args }: SetConfigArguments) => {
+const setConfig = ({ fetch, urlOverride, jwt, isServerless, ...args }: SetConfigArguments) => {
   const assetsUrl =
     urlOverride?.assets === 'WEBPACK' ? String(__webpack_public_path__).removeSuffix('/') : urlOverride?.assets;
 
@@ -162,22 +157,18 @@ const setConfig = ({ fetch, urlOverride, jwt, isServerless, featureFlags, ...arg
   const transport = createConnectTransport({
     baseUrl: getGrpcBasePath(urlOverride?.grpc),
     interceptors: [addBearerTokenInterceptor, checkExpiredLicenseInterceptor],
-    jsonOptions: {
-      registry: protobufRegistry,
-    },
   });
 
-  const licenseGrpcClient = createClient(LicenseService, transport);
-  const consoleGrpcClient = createClient(ConsoleService, transport);
-  const debugBundleGrpcClient = createClient(DebugBundleService, transport);
-  const securityGrpcClient = createClient(SecurityService, transport);
-  const pipelinesGrpcClient = createClient(PipelineService, transport);
-  const secretGrpcClient = createClient(SecretService, transport);
-  const authenticationGrpcClient = createClient(AuthenticationService, transport);
-  const transformClient = createClient(TransformService, transport);
-  const clusterStatusGrpcClient = createClient(ClusterStatusService, transport);
-  const knowledgebaseGrpcClient = createClient(KnowledgeBaseService, transport);
-  const userGrpcClient = createClient(UserService, transport);
+  const licenseGrpcClient = createPromiseClient(LicenseService, transport);
+  const consoleGrpcClient = createPromiseClient(ConsoleService, transport);
+  const debugBundleGrpcClient = createPromiseClient(DebugBundleService, transport);
+  const securityGrpcClient = createPromiseClient(SecurityService, transport);
+  const pipelinesGrpcClient = createPromiseClient(PipelineService, transport);
+  const pipelinesV2GrpcClient = createPromiseClient(PipelineServiceV2, transport);
+  const secretGrpcClient = createPromiseClient(RPCNSecretService, transport);
+  const authenticationGrpcClient = createPromiseClient(AuthenticationService, transport);
+  const transformClient = createPromiseClient(TransformService, transport);
+  const clusterStatusGrpcClient = createPromiseClient(ClusterStatusService, transport);
   Object.assign(config, {
     jwt,
     isServerless,
@@ -191,12 +182,10 @@ const setConfig = ({ fetch, urlOverride, jwt, isServerless, featureFlags, ...arg
     debugBundleClient: debugBundleGrpcClient,
     securityClient: securityGrpcClient,
     pipelinesClient: pipelinesGrpcClient,
+    pipelinesClientV2: pipelinesV2GrpcClient,
     transformsClient: transformClient,
     rpcnSecretsClient: secretGrpcClient,
     clusterStatusClient: clusterStatusGrpcClient,
-    knowledgebaseClient: knowledgebaseGrpcClient,
-    userClient: userGrpcClient,
-    featureFlags, // Needed for legacy UI purposes where we don't use functional components.
     ...args,
   });
   return config;
@@ -255,36 +244,24 @@ export function isEmbedded() {
   return config.jwt != null;
 }
 
-/**
- * @description use in non-functional components if you must
- * @param featureFlag feature flag key to track
- * @returns feature flag value, false if no feature flag with that key exists, false if the feature flags are not loaded.
- */
-export function isFeatureFlagEnabled(featureFlag: keyof typeof FEATURE_FLAGS) {
-  return config.featureFlags?.[featureFlag] ?? false;
-}
-
 export function isServerless() {
   return config.isServerless;
 }
 
-const routesIgnoredInEmbedded = ['/overview', '/reassign-partitions', '/admin'];
+const routesIgnoredInEmbedded = ['/overview', '/quotas', '/reassign-partitions', '/admin'];
 
-const routesIgnoredInServerless = ['/overview', '/quotas', '/reassign-partitions', '/admin', '/transforms'];
+const routesIgnoredInServerless = [
+  '/overview',
+  '/schema-registry',
+  '/quotas',
+  '/reassign-partitions',
+  '/admin',
+  '/transforms',
+];
 
 export const embeddedAvailableRoutesObservable = observable({
   get routes() {
-    return APP_ROUTES.map((route) => {
-      if (route.path === '/agents' || route.path === '/knowledgebases') {
-        return {
-          ...route,
-          // Needed because we cannot use JSX in this file
-          title: getAgentSidebarItemTitle({ route }),
-        };
-      }
-      return route;
-    })
-      .filter((x) => x.icon != null) // routes without icon are "nested", so they shouldn't be visible directly
+    return APP_ROUTES.filter((x) => x.icon != null) // routes without icon are "nested", so they shouldn't be visible directly
       .filter((x) => !routesIgnoredInEmbedded.includes(x.path)) // things that should not be visible in embedded/cloud mode
       .filter((x) => {
         if (x.visibilityCheck) {

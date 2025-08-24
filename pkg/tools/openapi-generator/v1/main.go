@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -172,7 +172,7 @@ func updateSecurity(doc3 *openapi3.T) {
 					Extensions: map[string]any{
 						"x-client-id": "dQjapNIAHhF7EQqQToRla3yEII9sUSap",
 					},
-					AuthorizationURL: "https://auth.prd.cloud.redpanda.com/oauth/authorize",
+					AuthorizationURL: "https://prod-cloudv2.us.auth0.com/oauth/authorize",
 					Scopes:           map[string]string{},
 				},
 			},
@@ -471,7 +471,7 @@ func updateUsers(doc3 *openapi3.T) {
 			connectErrorToErrorStatus(
 				apierrors.NewConnectError(
 					connect.CodeNotFound,
-					errors.New("user not found"),
+					fmt.Errorf("user not found"),
 					apierrors.NewErrorInfo(commonv1alpha1.Reason_REASON_RESOURCE_NOT_FOUND.String()),
 				),
 			),
@@ -660,7 +660,7 @@ func newBadRequestError(fieldValidations ...*errdetails.BadRequest_FieldViolatio
 	return connectErrorToErrorStatus(
 		apierrors.NewConnectError(
 			connect.CodeInvalidArgument,
-			errors.New("provided parameters are invalid"),
+			fmt.Errorf("provided parameters are invalid"),
 			apierrors.NewErrorInfo(commonv1alpha1.Reason_REASON_INVALID_INPUT.String()),
 			apierrors.NewBadRequest(fieldValidations...),
 		),

@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -11,13 +11,13 @@ package console
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kmsg"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // DeleteTopic deletes a Kafka Topic (if possible and not disabled).
@@ -29,11 +29,6 @@ func (s *Service) DeleteTopic(ctx context.Context, topicName string) *rest.Error
 
 	req := kmsg.NewDeleteTopicsRequest()
 	req.TopicNames = []string{topicName}
-	req.Topics = []kmsg.DeleteTopicsRequestTopic{
-		{
-			Topic: kmsg.StringPtr(topicName),
-		},
-	}
 	req.TimeoutMillis = 30 * 1000 // 30s
 
 	res, err := req.RequestWith(ctx, cl)
@@ -42,17 +37,17 @@ func (s *Service) DeleteTopic(ctx context.Context, topicName string) *rest.Error
 			Err:          err,
 			Status:       http.StatusServiceUnavailable,
 			Message:      fmt.Sprintf("Failed to execute delete topic command: %v", err.Error()),
-			InternalLogs: []slog.Attr{slog.String("topic_name", topicName)},
+			InternalLogs: []zapcore.Field{zap.String("topic_name", topicName)},
 			IsSilent:     false,
 		}
 	}
 
 	if len(res.Topics) != 1 {
 		return &rest.Error{
-			Err:          errors.New("topics array in response is empty"),
+			Err:          fmt.Errorf("topics array in response is empty"),
 			Status:       http.StatusServiceUnavailable,
 			Message:      "Unexpected Kafka response: No topics set in the response",
-			InternalLogs: []slog.Attr{slog.String("topic_name", topicName)},
+			InternalLogs: []zapcore.Field{zap.String("topic_name", topicName)},
 			IsSilent:     false,
 		}
 	}
@@ -63,7 +58,7 @@ func (s *Service) DeleteTopic(ctx context.Context, topicName string) *rest.Error
 			Err:          err,
 			Status:       http.StatusServiceUnavailable,
 			Message:      fmt.Sprintf("Failed to delete Kafka topic: %v", err.Error()),
-			InternalLogs: []slog.Attr{slog.String("topic_name", topicName)},
+			InternalLogs: []zapcore.Field{zap.String("topic_name", topicName)},
 			IsSilent:     false,
 		}
 	}

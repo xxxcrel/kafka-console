@@ -11,12 +11,14 @@ package interceptor
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"connectrpc.com/connect"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/xxxcrel/kafka-console/pkg/logging"
 )
 
 var _ connect.Interceptor = &ErrorLogInterceptor{}
@@ -26,13 +28,11 @@ var _ connect.Interceptor = &ErrorLogInterceptor{}
 // are written before the interceptors would be called, such as:
 // - Authentication errors (enterprise HTTP middleware)
 // - JSON Unmarshalling errors of request body (happens prior calling interceptors)
-type ErrorLogInterceptor struct {
-	logger *slog.Logger
-}
+type ErrorLogInterceptor struct{}
 
 // NewErrorLogInterceptor creates a new ErrorLogInterceptor.
-func NewErrorLogInterceptor(logger *slog.Logger) *ErrorLogInterceptor {
-	return &ErrorLogInterceptor{logger: logger}
+func NewErrorLogInterceptor() *ErrorLogInterceptor {
+	return &ErrorLogInterceptor{}
 }
 
 // WrapUnary creates an interceptor to validate Connect requests.
@@ -85,14 +85,15 @@ func (in *ErrorLogInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFu
 		}
 
 		// 6. Log error details with decorated logger
-		in.logger.WarnContext(ctx, "",
-			slog.String("timestamp", start.Format(time.RFC3339)),
-			slog.String("procedure", procedure),
-			slog.String("request_duration", requestDuration.String()),
-			slog.String("status_code", statusCodeStr),
-			slog.Int("request_size_bytes", requestSize),
-			slog.String("peer_address", req.Peer().Addr), // Will be empty for requests made through gRPC GW
-			slog.Any("error", err),
+		logger := logging.FromContext(ctx)
+		logger.Warn("",
+			zap.String("timestamp", start.Format(time.RFC3339)),
+			zap.String("procedure", procedure),
+			zap.String("request_duration", requestDuration.String()),
+			zap.String("status_code", statusCodeStr),
+			zap.Int("request_size_bytes", requestSize),
+			zap.String("peer_address", req.Peer().Addr), // Will be empty for requests made through gRPC GW
+			zap.Error(err),
 		)
 		return response, err
 	}

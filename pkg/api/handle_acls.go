@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -10,7 +10,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -198,19 +197,19 @@ func (c *CreateACLRequest) OK() error {
 	switch c.ResourcePatternType {
 	case kmsg.ACLResourcePatternTypeLiteral, kmsg.ACLResourcePatternTypePrefixed:
 	default:
-		return errors.New("resourcePatternType is invalid, must be either LITERAL (3) or PREFIXED (4)")
+		return fmt.Errorf("resourcePatternType is invalid, must be either LITERAL (3) or PREFIXED (4)")
 	}
 
 	// Check Operation - must not be Any (1)
 	if c.Operation == kmsg.ACLOperationAny {
-		return errors.New("operation type any (1) is not allowed for creating a new ACL")
+		return fmt.Errorf("operation type any (1) is not allowed for creating a new ACL")
 	}
 
 	// Permission type must be either 'deny' (2) or 'any' (1)
 	switch c.PermissionType {
 	case kmsg.ACLPermissionTypeDeny, kmsg.ACLPermissionTypeAllow:
 	default:
-		return errors.New("given permission type is invalid, it must be either allow (3) or deny (2)")
+		return fmt.Errorf("given permission type is invalid, it must be either allow (3) or deny (2)")
 	}
 
 	return nil

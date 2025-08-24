@@ -14,13 +14,13 @@ import {
   InputGroup,
   InputLeftAddon,
   InputRightAddon,
-  isSingleValue,
   NumberInput,
   Select,
   Slider,
   SliderFilledTrack,
   SliderThumb,
   SliderTrack,
+  isSingleValue,
 } from '@redpanda-data/ui';
 import { isServerless } from '../../../../config';
 import { api } from '../../../../state/backendApi';
@@ -465,7 +465,7 @@ const KeyValuePair = observer((p: { entries: TopicConfigEntry[]; entry: TopicCon
       <Button
         variant="outline"
         className="iconButton deleteButton"
-        onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        onClick={(event) => {
           event.stopPropagation();
           p.entries.remove(p.entry);
         }}
@@ -646,7 +646,10 @@ export function DurationSelect(p: {
   );
 }
 
-export function RatioInput(p: { value: number; onChange: (ratio: number) => void }) {
+export function RatioInput(p: {
+  value: number;
+  onChange: (ratio: number) => void;
+}) {
   return (
     <Flex alignItems="center" gap={2}>
       <Slider min={0} max={100} step={1} onChange={(x) => p.onChange(x / 100)} value={Math.round(p.value * 100)}>

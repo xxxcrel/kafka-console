@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -10,8 +10,8 @@
 package config
 
 import (
-	"errors"
 	"flag"
+	"fmt"
 	"time"
 )
 
@@ -53,7 +53,7 @@ func (c *KafkaSASLAwsMskIam) RegisterFlags(f *flag.FlagSet) {
 // Validate the given SASL AWS MSK IAM configuration options.
 func (c *KafkaSASLAwsMskIam) Validate() error {
 	if (c.AccessKey == "" && c.SecretKey != "") || (c.AccessKey != "" && c.SecretKey == "") {
-		return errors.New("invalid AWS IAM configuration. Both access and secret keys are required")
+		return fmt.Errorf("invalid AWS IAM configuration. Both access and secret keys are required")
 	}
 
 	// if both or neither are set, it's valid

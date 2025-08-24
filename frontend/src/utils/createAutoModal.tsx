@@ -24,7 +24,7 @@ import {
 } from '@redpanda-data/ui';
 import { action, observable } from 'mobx';
 import { observer } from 'mobx-react';
-import React, { type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import React, { type ReactNode, type CSSProperties, type ReactElement } from 'react';
 import { toJson } from './jsonUtils';
 
 export type AutoModalProps = {
@@ -43,7 +43,7 @@ export type AutoModalProps = {
 
 export type AutoModal<TArg> = {
   show: (arg: TArg) => void;
-  Component: () => JSX.Element | null;
+  Component: () => JSX.Element;
 };
 
 // Create a wrapper for <Modal/>  takes care of rendering depending on 'visible'
@@ -64,7 +64,7 @@ export default function createAutoModal<TShowArg, TModalState>(options: {
   // called when 'onOk' has returned (and not thrown an exception)
   onSuccess?: (state: TModalState, result: any) => void;
 }): AutoModal<TShowArg> {
-  let userState: TModalState | undefined;
+  let userState: TModalState | undefined = undefined;
   const state = observable<{
     modalProps: AutoModalProps | null;
     visible: boolean;
@@ -170,7 +170,7 @@ export default function createAutoModal<TShowArg, TModalState>(options: {
 
   // The component the user uses to render/mount into the jsx tree
   const Component = observer(() => {
-    if (!state.modalProps) return null;
+    if (!state.modalProps) return <></>;
 
     let content: ReactElement;
 
@@ -210,7 +210,7 @@ export default function createAutoModal<TShowArg, TModalState>(options: {
                 {modalState === 'normal' && (
                   <Button
                     variant="ghost"
-                    onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                    onClick={(e) => {
                       state.modalProps?.onCancel?.(e);
                     }}
                   >
@@ -223,7 +223,7 @@ export default function createAutoModal<TShowArg, TModalState>(options: {
                   isLoading={state.loading}
                   // biome-ignore lint/style/noNonNullAssertion: not touching to avoid breaking code during migration
                   isDisabled={!options.isOkEnabled?.(userState!)}
-                  onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                  onClick={(e) => {
                     state.modalProps?.onOk?.(e);
                   }}
                 >

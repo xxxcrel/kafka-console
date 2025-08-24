@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -13,13 +13,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"slices"
 	"sort"
 
 	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kadm"
+	"go.uber.org/zap"
 )
 
 // ConsumerGroupOverview for a Kafka Consumer Group
@@ -92,11 +92,11 @@ func (s *Service) GetConsumerGroupsOverview(ctx context.Context, groupIDs []stri
 		if se.AllFailed {
 			return nil, errorToRestError(err)
 		}
-		s.logger.WarnContext(ctx, "failed to describe consumer groups from some shards", slog.Int("failed_shards", len(se.Errs)))
+		s.logger.Warn("failed to describe consumer groups from some shards", zap.Int("failed_shards", len(se.Errs)))
 		for _, shardErr := range se.Errs {
-			s.logger.WarnContext(ctx, "shard error for describing consumer groups",
-				slog.Int("broker_id", int(shardErr.Broker.NodeID)),
-				slog.Any("error", shardErr.Err))
+			s.logger.Warn("shard error for describing consumer groups",
+				zap.Int32("broker_id", shardErr.Broker.NodeID),
+				zap.Error(shardErr.Err))
 		}
 	}
 
@@ -121,8 +121,8 @@ func (s *Service) convertKgoGroupDescriptions(describedGroups kadm.DescribedGrou
 	for _, group := range describedGroups.Sorted() {
 		if group.Err != nil {
 			s.logger.Warn("failed to describe consumer group",
-				slog.String("group_id", group.Group),
-				slog.Int("coordinator_id", int(group.Coordinator.NodeID)))
+				zap.String("group_id", group.Group),
+				zap.Int32("coordinator_id", group.Coordinator.NodeID))
 			continue
 		}
 

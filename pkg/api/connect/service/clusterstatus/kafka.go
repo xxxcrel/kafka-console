@@ -12,18 +12,18 @@ package clusterstatus
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kerr"
+	"go.uber.org/zap"
 
 	consolev1alpha1 "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1"
 )
 
 // kafkaStatusChecker encapsulates the logic to derive Kafka cluster status.
 type kafkaStatusChecker struct {
-	logger *slog.Logger
+	logger *zap.Logger
 }
 
 // statusFromMetadata computes the health status from Kafka metadata.
@@ -108,8 +108,8 @@ func (k *kafkaStatusChecker) statusFromMetadata(metadata kadm.Metadata) *console
 	// Log any errors encountered during iteration.
 	if errorCount > 0 {
 		k.logger.Warn("failed to iterate over some topics or partitions to derive cluster status",
-			slog.Int("error_count", errorCount),
-			slog.Any("error", lastError))
+			zap.Int("error_count", errorCount),
+			zap.Error(lastError))
 	}
 
 	return status

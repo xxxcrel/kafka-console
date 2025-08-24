@@ -159,7 +159,9 @@ export function openValidationErrorsModal(result: {
   const { isValid, errorDetails, isCompatible } = result;
 
   const compatBox =
-    isCompatible === undefined || isValid === false ? null : isCompatible ? (
+    isCompatible === undefined || isValid === false ? (
+      <></>
+    ) : isCompatible ? (
       <Alert status="success" variant="subtle">
         <AlertIcon />
         No compatibility issues
@@ -177,7 +179,9 @@ export function openValidationErrorsModal(result: {
         {errorDetails?.trim()}
       </Box>
     </Box>
-  ) : null;
+  ) : (
+    <></>
+  );
 
   openInfoModal({
     title: (

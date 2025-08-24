@@ -12,9 +12,8 @@ package api
 import (
 	"context"
 	"io/fs"
-	"log/slog"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/factory/kafka"
 	redpandafactory "github.com/xxxcrel/kafka-console/pkg/factory/redpanda"
@@ -28,9 +27,8 @@ type options struct {
 	kafkaClientProvider    kafka.ClientFactory
 	redpandaClientProvider redpandafactory.ClientFactory
 	schemaClientProvider   schema.ClientFactory
-	logger                 *slog.Logger
+	logger                 *zap.Logger
 	cacheNamespaceFn       func(context.Context) (string, error)
-	prometheusRegistry     prometheus.Registerer
 }
 
 // Option is a function that applies some configuration to the options struct.
@@ -83,38 +81,24 @@ func WithSchemaClientFactory(factory schema.ClientFactory) Option {
 	}
 }
 
-// WithLogger sets a custom logger instance to use instead of creating one from config.
-// This allows enterprise to provide a fully configured logger with custom handlers,
-// formatters, and other enterprise-specific logging features.
-func WithLogger(logger *slog.Logger) Option {
+// WithLogger allows to plug in your own pre-configured zap.Logger. If provided
+// we will not try to set up our own logger.
+func WithLogger(logger *zap.Logger) Option {
 	return func(o *options) {
 		o.logger = logger
 	}
 }
 
 // WithCacheNamespaceFn is an option to set a function that determines the
-// namespace for caching compiled resources such as schemas. This is specifically
-// used for resource caching (compiled Avro/Protobuf/JSON schemas) and should be
-// set in multi-tenant environments where tenants should be strictly isolated
+// namespace for caching objects such as schemas. This should be set in
+// multi-tenant environments where users and tenants should be strictly isolated
 // from each other.
 //
-// The function must return a unique identifier for the current tenant that can
-// be used as a namespace for resource caching. Examples include virtual cluster IDs,
-// tenant IDs, or organization IDs. Only within that namespace resources will be cached
-// and looked-up.
-//
-// Note: This function is NOT used for client caching (Kafka, Schema Registry, Admin API clients).
-// It only affects the caching of compiled/processed resources.
+// The function has to return a unique identifier for the currently logged-in
+// user that can be used as a namespace for caching. Only within that namespace
+// cache objects will be stored and looked-up then.
 func WithCacheNamespaceFn(fn func(context.Context) (string, error)) Option {
 	return func(o *options) {
 		o.cacheNamespaceFn = fn
-	}
-}
-
-// WithPrometheusRegistry sets the Prometheus registry to use for registering metrics.
-// This registry is used exclusively for registering application metrics.
-func WithPrometheusRegistry(registry prometheus.Registerer) Option {
-	return func(o *options) {
-		o.prometheusRegistry = registry
 	}
 }

@@ -1,10 +1,7 @@
-import { create } from '@bufbuild/protobuf';
 import {
   Button,
-  createStandaloneToast,
   Flex,
   FormField,
-  isSingleValue,
   Modal,
   ModalBody,
   ModalContent,
@@ -14,11 +11,13 @@ import {
   PasswordInput,
   Select,
   Text,
+  createStandaloneToast,
+  isSingleValue,
   useDisclosure,
 } from '@redpanda-data/ui';
 import { useState } from 'react';
 import {
-  CreateSecretRequestSchema,
+  CreateSecretRequest,
   Scope,
   type Secret,
 } from '../../../../protogen/redpanda/api/dataplane/v1/secret_pb';
@@ -53,7 +52,7 @@ const SecretsQuickAdd = ({ isOpen, onAdd, onCloseAddSecret }: SecretsQuickAddPro
       setIsCreating(true);
       const result = await rpcnSecretManagerApi
         .create(
-          create(CreateSecretRequestSchema, {
+          new CreateSecretRequest({
             id: id,
             // @ts-ignore js-base64 does not play nice with TypeScript 5: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Uint8Array<ArrayBuffer>'.
             secretData: base64ToUInt8Array(encodeBase64(secret)),
@@ -118,22 +117,18 @@ const SecretsQuickAdd = ({ isOpen, onAdd, onCloseAddSecret }: SecretsQuickAddPro
     <Modal isOpen={isOpen} onClose={closeModal} isCentered={true} size={'md'}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Select or add secret</ModalHeader>
+        <ModalHeader>Add secret</ModalHeader>
         <ModalBody>
           <Flex flexDirection="column" gap={5} w={300}>
-            <Text>Select an existing secret or create a new one. Secrets are available across all pipelines.</Text>
+            <Text>Add or create a new secret in your pipeline. This secret will be available across pipelines,</Text>
             <FormField
               label="Secret name"
               errorText={isNameValid(id)}
               isInvalid={!!isNameValid(id)}
-              description={
-                isNewSecret
-                  ? 'Creating new secret (stored in upper case)'
-                  : 'Select existing or type new name to create'
-              }
+              description={isNewSecret && 'This secret name will be stored in upper case.'}
             >
               <Select<Secret>
-                placeholder="Select or create secret"
+                placeholder="Find secret"
                 inputValue={searchValue}
                 onInputChange={setSearchValue}
                 isMulti={false}
@@ -184,7 +179,7 @@ const SecretsQuickAdd = ({ isOpen, onAdd, onCloseAddSecret }: SecretsQuickAddPro
               void addSecret(id);
             }}
           >
-            Select
+            Add
           </Button>
         </ModalFooter>
       </ModalContent>

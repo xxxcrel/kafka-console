@@ -14,7 +14,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
@@ -23,6 +22,7 @@ import (
 	commonv1alpha1 "buf.build/gen/go/redpandadata/common/protocolbuffers/go/redpanda/api/common/v1alpha1"
 	"connectrpc.com/connect"
 	"github.com/redpanda-data/common-go/api/pagination"
+	"go.uber.org/zap"
 
 	apierrors "github.com/xxxcrel/kafka-console/pkg/api/connect/errors"
 	"github.com/xxxcrel/kafka-console/pkg/config"
@@ -38,7 +38,7 @@ var _ dataplanev1connect.UserServiceHandler = (*Service)(nil)
 // RPCs to manage Redpanda or Kafka users.
 type Service struct {
 	cfg                    *config.Config
-	logger                 *slog.Logger
+	logger                 *zap.Logger
 	consoleSvc             console.Servicer
 	defaulter              defaulter
 	redpandaClientProvider redpandafactory.ClientFactory
@@ -46,7 +46,7 @@ type Service struct {
 
 // NewService creates a new user service handler.
 func NewService(cfg *config.Config,
-	logger *slog.Logger,
+	logger *zap.Logger,
 	consoleSvc console.Servicer,
 	redpandaClientProvider redpandafactory.ClientFactory,
 ) *Service {

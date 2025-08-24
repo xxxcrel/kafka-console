@@ -16,7 +16,8 @@ import { api } from '../../../state/backendApi';
 import { Button, DefaultSkeleton } from '../../../utils/tsxUtils';
 import { PageComponent, type PageInitHelper } from '../Page';
 import './Schema.List.scss';
-import { Box, CodeBlock, Empty, Flex, Grid, GridItem, RadioGroup, Text, useToast, VStack } from '@redpanda-data/ui';
+import { RadioGroup } from '@redpanda-data/ui';
+import { Box, CodeBlock, Empty, Flex, Grid, GridItem, Text, VStack, useToast } from '@redpanda-data/ui';
 import type { SchemaRegistryCompatibilityMode } from '../../../state/restInterfaces';
 import PageContent from '../../misc/PageContent';
 import Section from '../../misc/Section';
@@ -88,8 +89,8 @@ class EditSchemaCompatibilityPage extends PageComponent<{ subjectName: string }>
           onClose={() => {
             // Navigate back to the "caller" of the page, depending on what
             // variant of the editCompatibility page we are on(can be global, or subject)
-            if (subjectName) appGlobal.historyReplace(`/schema-registry/subjects/${encodeURIComponent(subjectName)}`);
-            else appGlobal.historyReplace('/schema-registry');
+            if (subjectName) appGlobal.history.replace(`/schema-registry/subjects/${encodeURIComponent(subjectName)}`);
+            else appGlobal.history.replace('/schema-registry');
           }}
         />
       </PageContent>

@@ -132,4 +132,4 @@ mappings:
 
 ### Full configuration
 
-Take a look at the reference config how to configure Protobuf in Console: [/docs/config/console.yaml](https://github.com/redpanda-data/console/blob/master/docs/config/console.yaml)
+Take a look at the reference config how to configure Protobuf in Console: [/docs/config/console.yaml](https://github.com/xxxcrel/kafka-console/blob/master/docs/config/console.yaml)

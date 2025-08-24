@@ -8,7 +8,7 @@ you are here!
 
 The basics:
 
-* Use the [Issue Tracker](https://github.com/redpanda-data/console/issues) to
+* Use the [Issue Tracker](https://github.com/xxxcrel/kafka-console/issues) to
   report bugs, crashes, performance issues, etc... Please include as much detail
   as possible.
 

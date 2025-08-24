@@ -10,10 +10,10 @@
  */
 
 import { SearchField } from '@redpanda-data/ui';
-import { type IReactionDisposer, reaction } from 'mobx';
+import { type IReactionDisposer, autorun, transaction } from 'mobx';
 import { observer } from 'mobx-react';
 import React, { Component } from 'react';
-import { AnimatePresence, animProps_span_searchResult, MotionSpan } from '../../utils/animationProps';
+import { AnimatePresence, MotionSpan, animProps_span_searchResult } from '../../utils/animationProps';
 import { FilterableDataSource } from '../../utils/filterableDataSource';
 
 // todo: extract out where the filterText is retreived from / saved.
@@ -28,7 +28,7 @@ class SearchBar<TItem> extends Component<{
   placeholderText?: string;
 }> {
   private filteredSource = {} as FilterableDataSource<TItem>;
-  reactionDisposer: IReactionDisposer | undefined = undefined;
+  autorunDisposer: IReactionDisposer | undefined = undefined;
 
   /*
         todo: autocomplete:
@@ -41,17 +41,20 @@ class SearchBar<TItem> extends Component<{
     super(p);
     this.filteredSource = new FilterableDataSource<TItem>(this.props.dataSource, this.props.isFilterMatch);
     this.filteredSource.filterText = this.props.filterText;
+
     this.onChange = this.onChange.bind(this);
   }
 
   componentDidMount() {
-    this.reactionDisposer = reaction(
-      // Track the filtered data
-      () => this.filteredSource.data,
-      (filteredData) => {
-        this.props.onFilteredDataChanged(filteredData);
-      },
-    );
+    this.autorunDisposer = autorun(() => {
+      const data = this.filteredSource.data;
+
+      transaction(() => {
+        setTimeout(() => {
+          this.props.onFilteredDataChanged(data);
+        });
+      });
+    });
   }
 
   onChange(text: string) {
@@ -61,7 +64,7 @@ class SearchBar<TItem> extends Component<{
 
   componentWillUnmount() {
     this.filteredSource.dispose();
-    if (this.reactionDisposer) this.reactionDisposer();
+    if (this.autorunDisposer) this.autorunDisposer();
   }
 
   render() {

@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -12,12 +12,13 @@ package connect
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/cloudhut/common/rest"
 	con "github.com/cloudhut/connect-client"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/xxxcrel/kafka-console/pkg/config"
 )
@@ -158,8 +159,8 @@ func (s *Service) GetAllClusterConnectors(ctx context.Context) ([]*ClusterConnec
 			connectors, err := c.ListConnectorsExpanded(ctx)
 			errMsg := ""
 			if err != nil {
-				s.Logger.WarnContext(ctx, "failed to list connectors from Kafka connect cluster",
-					slog.String("cluster_name", cfg.Name), slog.String("cluster_address", cfg.URL), slog.Any("error", err))
+				s.Logger.Warn("failed to list connectors from Kafka connect cluster",
+					zap.String("cluster_name", cfg.Name), zap.String("cluster_address", cfg.URL), zap.Error(err))
 				errMsg = err.Error()
 
 				ch <- &ClusterConnectors{
@@ -173,8 +174,8 @@ func (s *Service) GetAllClusterConnectors(ctx context.Context) ([]*ClusterConnec
 
 			root, err := c.GetRoot(ctx)
 			if err != nil {
-				s.Logger.WarnContext(ctx, "failed to list root resource from Kafka connect cluster",
-					slog.String("cluster_name", cfg.Name), slog.String("cluster_address", cfg.URL), slog.Any("error", err))
+				s.Logger.Warn("failed to list root resource from Kafka connect cluster",
+					zap.String("cluster_name", cfg.Name), zap.String("cluster_address", cfg.URL), zap.Error(err))
 				errMsg = err.Error()
 			}
 
@@ -218,8 +219,8 @@ func (s *Service) GetClusterConnectors(ctx context.Context, clusterName string) 
 	connectors, err := c.Client.ListConnectorsExpanded(ctx)
 	errMsg := ""
 	if err != nil {
-		s.Logger.WarnContext(ctx, "failed to list connectors from Kafka connect cluster",
-			slog.String("cluster_name", c.Cfg.Name), slog.String("cluster_address", c.Cfg.URL), slog.Any("error", err))
+		s.Logger.Warn("failed to list connectors from Kafka connect cluster",
+			zap.String("cluster_name", c.Cfg.Name), zap.String("cluster_address", c.Cfg.URL), zap.Error(err))
 		errMsg = err.Error()
 	}
 
@@ -245,7 +246,7 @@ func (s *Service) GetConnector(ctx context.Context, clusterName string, connecto
 			Err:          err,
 			Status:       http.StatusServiceUnavailable,
 			Message:      fmt.Sprintf("Failed to get connector info: %v", err.Error()),
-			InternalLogs: []slog.Attr{slog.String("cluster_name", clusterName), slog.String("connector", connector)},
+			InternalLogs: []zapcore.Field{zap.String("cluster_name", clusterName), zap.String("connector", connector)},
 			IsSilent:     false,
 		}
 	}
@@ -256,7 +257,7 @@ func (s *Service) GetConnector(ctx context.Context, clusterName string, connecto
 			Err:          err,
 			Status:       http.StatusServiceUnavailable,
 			Message:      fmt.Sprintf("Failed to get connector state: %v", err.Error()),
-			InternalLogs: []slog.Attr{slog.String("cluster_name", clusterName), slog.String("connector", connector)},
+			InternalLogs: []zapcore.Field{zap.String("cluster_name", clusterName), zap.String("connector", connector)},
 			IsSilent:     false,
 		}
 	}
@@ -302,7 +303,7 @@ func (s *Service) GetConnectorInfo(ctx context.Context, clusterName string, conn
 			Err:          err,
 			Status:       GetStatusCodeFromAPIError(err, http.StatusServiceUnavailable),
 			Message:      fmt.Sprintf("Failed to get connector state: %v", err.Error()),
-			InternalLogs: []slog.Attr{slog.String("cluster_name", clusterName), slog.String("connector", connector)},
+			InternalLogs: []zapcore.Field{zap.String("cluster_name", clusterName), zap.String("connector", connector)},
 			IsSilent:     false,
 		}
 	}
@@ -328,7 +329,7 @@ func (s *Service) GetConnectorStatus(ctx context.Context, clusterName string, co
 			Err:          err,
 			Status:       GetStatusCodeFromAPIError(err, http.StatusServiceUnavailable),
 			Message:      fmt.Sprintf("Failed to get connector state: %v", err.Error()),
-			InternalLogs: []slog.Attr{slog.String("cluster_name", clusterName), slog.String("connector", connector)},
+			InternalLogs: []zapcore.Field{zap.String("cluster_name", clusterName), zap.String("connector", connector)},
 			IsSilent:     false,
 		}
 	}
@@ -410,7 +411,7 @@ type holisticConnectorState struct {
 	Errors []ClusterConnectorInfoError
 }
 
-//nolint:cyclop,gocognit // lots of inspection of state and tasks to determine status and errors
+//nolint:cyclop // lots of inspection of state and tasks to determine status and errors
 func getHolisticStateFromConnector(status con.ConnectorStateInfo, aggregatedTasksStatus aggregatedConnectorTasksStatus) holisticConnectorState {
 	// LOGIC:
 	// HEALTHY: Connector is in running state, > 0 tasks, all of them in running state.

@@ -1,6 +1,6 @@
 import { Alert, AlertDescription, AlertIcon, Box, Flex, Link, Text } from '@redpanda-data/ui';
 import { observer } from 'mobx-react';
-import { type FC, type ReactElement, useEffect, useState } from 'react';
+import { type FC, type ReactElement, useEffect } from 'react';
 import {
   type License,
   License_Type,
@@ -8,58 +8,28 @@ import {
 } from '../../protogen/redpanda/api/console/v1alpha1/license_pb';
 import { api } from '../../state/backendApi';
 import {
-  coreHasEnterpriseFeatures,
   ENTERPRISE_FEATURES_DOCS_LINK,
+  LICENSE_WEIGHT,
+  MS_IN_DAY,
+  UpgradeButton,
+  UploadLicenseButton,
+  coreHasEnterpriseFeatures,
   getEnterpriseCTALink,
   getMillisecondsToExpiration,
   getPrettyExpirationDate,
   getPrettyTimeToExpiration,
-  isBakedInTrial,
-  LICENSE_WEIGHT,
-  MS_IN_DAY,
-  RegisterButton,
-  UpgradeButton,
-  UploadLicenseButton,
 } from './licenseUtils';
-import { RegisterModal } from './RegisterModal';
 
 const getLicenseAlertContentForFeature = (
   _featureName: 'rbac' | 'reassignPartitions',
   license: License | undefined,
   enterpriseFeaturesUsed: ListEnterpriseFeaturesResponse_Feature[],
-  bakedInTrial: boolean,
-  onRegisterModalOpen: () => void,
 ): { message: ReactElement; status: 'warning' | 'info' } | null => {
-  if (license === undefined) {
+  if (license === undefined || license.type !== License_Type.TRIAL) {
     return null;
   }
 
   const msToExpiration = getMillisecondsToExpiration(license);
-
-  if (license.type === License_Type.TRIAL && api.isRedpanda) {
-    if (bakedInTrial) {
-      return {
-        message: (
-          <Box>
-            <Text>This is an enterprise feature. Register for an additional 30 days of enterprise features.</Text>
-            <Flex gap={2} my={2}>
-              <RegisterButton onRegisterModalOpen={onRegisterModalOpen} />
-            </Flex>
-          </Box>
-        ),
-        status: msToExpiration > 5 * MS_IN_DAY ? 'info' : 'warning',
-      };
-    } else {
-      return {
-        message: (
-          <Box>
-            <Text>This is an enterprise feature.</Text>
-          </Box>
-        ),
-        status: msToExpiration > 5 * MS_IN_DAY ? 'info' : 'warning',
-      };
-    }
-  }
 
   // Redpanda
   if (api.isRedpanda) {
@@ -168,33 +138,18 @@ const getLicenseAlertContentForFeature = (
 
 export const FeatureLicenseNotification: FC<{ featureName: 'reassignPartitions' | 'rbac' }> = observer(
   ({ featureName }) => {
-    const [registerModalOpen, setIsRegisterModalOpen] = useState(false);
-    
     useEffect(() => {
       void api.refreshClusterOverview();
       void api.listLicenses();
     }, []);
 
-    const licenses = api.licenses
+    const license = api.licenses
       .filter((license) => license.type === License_Type.TRIAL || license.type === License_Type.COMMUNITY)
       .sort((a, b) => LICENSE_WEIGHT[a.type] - LICENSE_WEIGHT[b.type]) // Sort by priority
-
-    // Choose the license with the latest expiration time
-    const license = licenses.reduce((latest, current) => {
-      const latestExpiration = Number(latest.expiresAt);
-      const currentExpiration = Number(current.expiresAt);
-      return currentExpiration > latestExpiration ? current : latest;
-    });
-
-    // Trial is either baked-in or extended. We need to check if any of the licenses are baked-in.
-    // We say the trial is baked-in if and only if all the licenses are baked-in. There can be a situation where, 
-    // use has registered a license, it's updated in the brokers, but the console doesn't have the license re-loaded yet.
-    const bakedInTrial = licenses.every(license => isBakedInTrial(license));
+      .first();
 
     const enterpriseFeaturesUsed = api.enterpriseFeaturesUsed;
-    const alertContent = getLicenseAlertContentForFeature(featureName, license, enterpriseFeaturesUsed, bakedInTrial, () => {
-      setIsRegisterModalOpen(true);
-    });
+    const alertContent = getLicenseAlertContentForFeature(featureName, license, enterpriseFeaturesUsed);
 
     // This component needs info about whether we're using Redpanda or Kafka, without fetching clusterOverview first, we might get a malformed result
     if (api.clusterOverview === null) {
@@ -217,8 +172,6 @@ export const FeatureLicenseNotification: FC<{ featureName: 'reassignPartitions' 
           <AlertIcon />
           <AlertDescription>{message}</AlertDescription>
         </Alert>
-
-        <RegisterModal isOpen={registerModalOpen} onClose={() => setIsRegisterModalOpen(false)} />
       </Box>
     );
   },

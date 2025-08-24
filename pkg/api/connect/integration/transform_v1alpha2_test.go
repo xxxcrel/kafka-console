@@ -16,7 +16,6 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"mime/multipart"
 	"net/http"
@@ -55,7 +54,7 @@ func (s *APISuite) TestDeployTransform_v1alpha2() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 24*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 24*time.Second)
 		defer cancel()
 
 		tfName := "test-valid-identity-transform"
@@ -154,7 +153,7 @@ func (s *APISuite) TestDeployTransform_v1alpha2() {
 		kafkaConsumerCl, err := kgo.NewClient(consumerOpts...)
 		require.NoError(err)
 
-		consumeCtx, cancel := context.WithTimeoutCause(ctx, 6*time.Second, errors.New("consumer context deadline exceeded"))
+		consumeCtx, cancel := context.WithTimeoutCause(ctx, 6*time.Second, fmt.Errorf("consumer context deadline exceeded"))
 		defer cancel()
 		fetches := kafkaConsumerCl.PollRecords(consumeCtx, 1)
 		assert.Empty(fetches.Errors(), "unexpected errors when polling record in output topic")
@@ -169,7 +168,7 @@ func (s *APISuite) TestDeployTransform_v1alpha2() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		body := &bytes.Buffer{}
@@ -216,7 +215,7 @@ func (s *APISuite) TestDeployTransform_v1alpha2() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		body := &bytes.Buffer{}
@@ -267,7 +266,7 @@ func (s *APISuite) TestDeployTransform_v1alpha2() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		body := &bytes.Buffer{}
@@ -308,7 +307,7 @@ func (s *APISuite) TestDeployTransform_v1alpha2() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		var errResponse string
@@ -330,7 +329,7 @@ func (s *APISuite) TestDeployTransform_v1alpha2() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		// This team we try to deploy a WASM transform for something that the API does not validate
@@ -361,7 +360,7 @@ func (s *APISuite) TestGetTransform_v1alpha2() {
 	inputTopicName := "wasm-tfm-create-test-c"
 	outputTopicName := "wasm-tfm-create-test-d"
 
-	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)
 
 	// Create pre-requisites for getting the transform
@@ -418,7 +417,7 @@ func (s *APISuite) TestGetTransform_v1alpha2() {
 		assert := assertpkg.New(t)
 		require := requirepkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		type partitionTransformStatus struct {
@@ -460,10 +459,10 @@ func (s *APISuite) TestGetTransform_v1alpha2() {
 	})
 
 	t.Run("get transform with special chars in name - valid request (http)", func(t *testing.T) {
-		// Skip this test, until https://github.com/redpanda-data/redpanda/issues/16643 is fixed.
+		// Skip this test, until https://github.com/xxxcrel/redpanda/issues/16643 is fixed.
 		t.Skip()
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		transformNameWithSpecialChars := "some-transform/name that&requires! encoding"
@@ -518,7 +517,7 @@ func (s *APISuite) TestGetTransform_v1alpha2() {
 	t.Run("get non-existent transform (http)", func(t *testing.T) {
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 6*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		t.Cleanup(cancel)
 
 		var httpRes string
@@ -559,7 +558,7 @@ func (s *APISuite) TestListTransforms_v1alpha2() {
 	tfNameTwo := "test-lt-tf-2"
 	inputTopicName := "wasm-tfm-lt-test-c"
 	outputTopicName := "wasm-tfm-lt-test-d"
-	ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 	defer cancel()
 
 	transformClient := v1alpha2connect.NewTransformServiceClient(http.DefaultClient, s.httpAddress())
@@ -683,7 +682,7 @@ func (s *APISuite) TestDeleteTransforms_v1alpha2() {
 	require := requirepkg.New(t)
 	assert := assertpkg.New(t)
 
-	ctx, cancel := context.WithTimeout(t.Context(), 24*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 24*time.Second)
 	defer cancel()
 
 	inputTopicName := "wasm-tfm-test-delete-input"
@@ -722,13 +721,12 @@ func (s *APISuite) TestDeleteTransforms_v1alpha2() {
 		}))
 		assert.NoError(err)
 
-		// Ensure the transform no longer exists (with retry for eventual consistency)
-		require.Eventually(func() bool {
-			_, err = transformClient.GetTransform(ctx, connect.NewRequest(&v1alpha2.GetTransformRequest{
-				Name: tfName,
-			}))
-			return err != nil && connect.CodeOf(err) == connect.CodeNotFound
-		}, 5*time.Second, 100*time.Millisecond, "transform should eventually be deleted")
+		// Ensure the transform no longer exists
+		_, err = transformClient.GetTransform(ctx, connect.NewRequest(&v1alpha2.GetTransformRequest{
+			Name: tfName,
+		}))
+		assert.Error(err)
+		assert.Equal(connect.CodeNotFound.String(), connect.CodeOf(err).String())
 	})
 
 	t.Run("delete transform with valid request (http)", func(t *testing.T) {
@@ -758,13 +756,12 @@ func (s *APISuite) TestDeleteTransforms_v1alpha2() {
 			Fetch(ctx)
 		assert.NoError(err)
 
-		// Ensure the transform no longer exists (with retry for eventual consistency)
-		require.Eventually(func() bool {
-			_, err = transformClient.GetTransform(ctx, connect.NewRequest(&v1alpha2.GetTransformRequest{
-				Name: tfName,
-			}))
-			return err != nil && connect.CodeOf(err) == connect.CodeNotFound
-		}, 5*time.Second, 100*time.Millisecond, "transform should eventually be deleted")
+		// Ensure the transform no longer exists
+		_, err = transformClient.GetTransform(ctx, connect.NewRequest(&v1alpha2.GetTransformRequest{
+			Name: tfName,
+		}))
+		assert.Error(err)
+		assert.Equal(connect.CodeNotFound.String(), connect.CodeOf(err).String())
 	})
 
 	t.Run("try to delete non-existent transform (connect-go)", func(t *testing.T) {

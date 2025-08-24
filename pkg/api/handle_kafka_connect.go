@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -114,7 +114,7 @@ type putConnectorConfigRequest struct {
 
 func (c *putConnectorConfigRequest) OK() error {
 	if len(c.Config) == 0 {
-		return errors.New("you must at least put one config item into the config")
+		return fmt.Errorf("you must at least put one config item into the config")
 	}
 	return nil
 }
@@ -131,11 +131,6 @@ func (api *API) handlePutConnectorConfig() http.HandlerFunc {
 		connectorName := rest.GetURLParam(r, "connector")
 
 		var req putConnectorConfigRequest
-		restErr := rest.Decode(w, r, &req)
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
 
 		cInfo, restErr := api.ConnectSvc.PutConnectorConfig(r.Context(), clusterName, connectorName, req.ToClientRequest())
 		if restErr != nil {
@@ -293,7 +288,7 @@ func (api *API) handleRestartConnectorTask() http.HandlerFunc {
 		taskID, err := strconv.Atoi(taskIDstr)
 		if err != nil {
 			rest.SendRESTError(w, r, api.Logger, &rest.Error{
-				Err:      errors.New("failed to parse task id as number"),
+				Err:      fmt.Errorf("failed to parse task id as number"),
 				Status:   http.StatusBadRequest,
 				Message:  "Invalid TaskID given. TaskID must be a number.",
 				IsSilent: false,

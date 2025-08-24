@@ -13,8 +13,7 @@ import { observer, useLocalObservable } from 'mobx-react';
 import { type FC, useEffect, useState } from 'react';
 import { api } from '../../../state/backendApi';
 import '../../../utils/arrayExtensions';
-import { create } from '@bufbuild/protobuf';
-import { timestampDate, timestampFromDate } from '@bufbuild/protobuf/wkt';
+import { Timestamp } from '@bufbuild/protobuf';
 import {
   Alert,
   AlertIcon,
@@ -28,19 +27,18 @@ import {
   Grid,
   GridItem,
   Input,
-  isMultiValue,
-  isSingleValue,
   PasswordInput,
   Select,
   Text,
+  isMultiValue,
+  isSingleValue,
 } from '@redpanda-data/ui';
 import { makeObservable, observable } from 'mobx';
 import { MdDeleteOutline } from 'react-icons/md';
 import { Link as ReactRouterLink } from 'react-router-dom';
 import {
-  type CreateDebugBundleRequest,
-  CreateDebugBundleRequestSchema,
-  LabelSelectorSchema,
+  CreateDebugBundleRequest,
+  LabelSelector,
   type SCRAMAuth,
   SCRAMAuth_Mechanism,
 } from '../../../protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
@@ -122,10 +120,7 @@ export class AdminDebugBundle extends PageComponent<{}> {
           >
             Bundle generation in progress...
           </Button>
-          <Text>
-            Started{' '}
-            {api.debugBundleStatus?.createdAt && timestampDate(api.debugBundleStatus?.createdAt).toLocaleString()}
-          </Text>
+          <Text>Started {api.debugBundleStatus?.createdAt?.toDate().toLocaleString()}</Text>
         </Box>
       );
     }
@@ -155,7 +150,7 @@ export class AdminDebugBundle extends PageComponent<{}> {
                 .createDebugBundle(data)
                 .then(async (result) => {
                   await api.refreshDebugBundleStatuses();
-                  appGlobal.historyPush(`/debug-bundle/progress/${result.jobId}`);
+                  appGlobal.history.push(`/debug-bundle/progress/${result.jobId}`);
                 })
                 .catch((err: ErrorResponse) => {
                   this.createBundleError = err;
@@ -272,7 +267,7 @@ const NewDebugBundleForm: FC<{
   const generateNewDebugBundle = () => {
     onSubmit(
       advancedForm
-        ? create(CreateDebugBundleRequestSchema, {
+        ? new CreateDebugBundleRequest({
             authentication:
               formState.scramUsername || formState.scramPassword
                 ? {
@@ -287,17 +282,17 @@ const NewDebugBundleForm: FC<{
             brokerIds: formState.brokerIds,
             controllerLogsSizeLimitBytes: formState.controllerLogsSizeLimitBytes,
             cpuProfilerWaitSeconds: formState.cpuProfilerWaitSeconds,
-            logsSince: formState.logsSince ? timestampFromDate(new Date(formState.logsSince)) : undefined,
+            logsSince: formState.logsSince ? Timestamp.fromDate(new Date(formState.logsSince)) : undefined,
             logsSizeLimitBytes: formState.logsSizeLimitBytes * formState.logsSizeLimitUnit,
-            logsUntil: formState.logsUntil ? timestampFromDate(new Date(formState.logsUntil)) : undefined,
+            logsUntil: formState.logsUntil ? Timestamp.fromDate(new Date(formState.logsUntil)) : undefined,
             metricsIntervalSeconds: formState.metricsIntervalSeconds,
             tlsEnabled: formState.tlsEnabled,
             tlsInsecureSkipVerify: formState.tlsInsecureSkipVerify,
             namespace: formState.namespace,
-            labelSelector: formState.labelSelectors.map((x) => create(LabelSelectorSchema, x)),
+            labelSelector: formState.labelSelectors.map((x) => new LabelSelector(x)),
             partitions: formState.partitions,
           })
-        : create(CreateDebugBundleRequestSchema),
+        : new CreateDebugBundleRequest(),
     );
   };
 

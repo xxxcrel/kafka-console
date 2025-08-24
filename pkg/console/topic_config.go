@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -11,14 +11,13 @@ package console
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kmsg"
+	"go.uber.org/zap"
 )
 
 // TopicConfig is a TopicName along with all it's config entries
@@ -133,7 +132,7 @@ func (s *Service) GetTopicConfigs(ctx context.Context, topicName string, configN
 	if val, exists := response[topicName]; exists {
 		if val.Error != nil && val.Error.Code == kerr.UnknownTopicOrPartition.Code {
 			return nil, &rest.Error{
-				Err:      errors.New("the requested topic does not exist"),
+				Err:      fmt.Errorf("the requested topic does not exist"),
 				Status:   http.StatusNotFound,
 				Message:  fmt.Sprintf("Could not fetch topic config because the requested topic '%v' does not exist.", topicName),
 				IsSilent: false,
@@ -177,7 +176,7 @@ func (s *Service) GetTopicsConfigs(ctx context.Context, topicNames []string, con
 	for _, res := range response.Resources {
 		kafkaErr := newKafkaError(res.ErrorCode)
 		if kafkaErr != nil {
-			s.logger.WarnContext(ctx, "config resource response has an error", slog.String("resource_name", res.ResourceName), slog.Any("error", kafkaErr))
+			s.logger.Warn("config resource response has an error", zap.String("resource_name", res.ResourceName), zap.Error(kafkaErr))
 		}
 
 		entries := make([]*TopicConfigEntry, len(res.Configs))

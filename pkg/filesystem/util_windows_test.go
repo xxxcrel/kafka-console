@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -12,7 +12,6 @@
 package filesystem
 
 import (
-	"log/slog"
 	"os"
 	"syscall"
 	"testing"
@@ -20,6 +19,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/config"
 )
@@ -28,7 +28,7 @@ type FileSystemTestSuite struct {
 	suite.Suite
 
 	cfg              config.Filesystem
-	log              *slog.Logger
+	log              *zap.Logger
 	workingDirectory string
 }
 
@@ -87,7 +87,10 @@ func (s *FileSystemTestSuite) SetupSuite() {
 
 	s.cfg = s.createBaseConfig()
 
-	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logCfg := zap.NewDevelopmentConfig()
+	logCfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	log, err := logCfg.Build()
+	require.NoError(err)
 
 	s.log = log
 }

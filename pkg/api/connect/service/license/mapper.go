@@ -30,7 +30,6 @@ func (mapper) adminAPILicenseInformationToProto(in rpadmin.License) *v1alpha1.Li
 	year := 24 * time.Hour * 365
 	expiresAt := time.Now().Add(10 * year).Unix()
 	licenseType := v1alpha1.License_TYPE_COMMUNITY
-	organization := ""
 
 	if in.Loaded {
 		if in.Properties.Type == rpAdminLicenseTypeEnterprise {
@@ -40,14 +39,12 @@ func (mapper) adminAPILicenseInformationToProto(in rpadmin.License) *v1alpha1.Li
 		}
 
 		expiresAt = in.Properties.Expires
-		organization = in.Properties.Organization
 	}
 
 	return &v1alpha1.License{
-		Source:       v1alpha1.License_SOURCE_REDPANDA_CORE,
-		Type:         licenseType,
-		ExpiresAt:    expiresAt,
-		Organization: organization,
+		Source:    v1alpha1.License_SOURCE_REDPANDA_CORE,
+		Type:      licenseType,
+		ExpiresAt: expiresAt,
 	}
 }
 
@@ -64,10 +61,9 @@ func (mapper) consoleLicenseToProto(in license.License) *v1alpha1.License {
 		licenseType = v1alpha1.License_TYPE_COMMUNITY
 	}
 	return &v1alpha1.License{
-		Source:       v1alpha1.License_SOURCE_REDPANDA_CONSOLE,
-		Type:         licenseType,
-		ExpiresAt:    in.ExpiresAt,
-		Organization: in.Organization,
+		Source:    v1alpha1.License_SOURCE_REDPANDA_CONSOLE,
+		Type:      licenseType,
+		ExpiresAt: in.ExpiresAt,
 	}
 }
 

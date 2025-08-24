@@ -14,10 +14,11 @@ import { autorun, makeObservable, observable, transaction } from 'mobx';
 import { DEFAULT_TABLE_PAGE_SIZE } from '../components/constants';
 import type { ConnectTabKeys } from '../components/pages/connect/Overview';
 import type { TopicTabId } from '../components/pages/topics/Topic.Details';
-import { CompressionType, PayloadEncoding } from '../protogen/redpanda/api/console/v1alpha1/common_pb';
+import { PayloadEncoding } from '../protogen/redpanda/api/console/v1alpha1/common_pb';
 import { clone } from '../utils/jsonUtils';
 import { assignDeep, randomId } from '../utils/utils';
 import { AclRequestDefault, type GetAclsRequest } from './restInterfaces';
+import { CompressionType } from '../protogen/redpanda/api/console/v1alpha1/common_pb';
 
 const settingsName = 'uiSettings-v3';
 
@@ -102,7 +103,6 @@ export const DEFAULT_SEARCH_PARAMS = {
   page: 0,
   pageSize: 10,
   sorting: [] as SortingState,
-  quickSearch: '',
 
   filtersEnabled: false,
   filters: [] as FilterEntry[],
@@ -232,10 +232,6 @@ const defaultUiSettings = {
   },
 
   pipelinesList: {
-    quickSearch: '',
-  },
-
-  knowledgeBaseList: {
     quickSearch: '',
   },
 

@@ -20,7 +20,6 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/carlmjohnson/requests"
-	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -34,11 +33,11 @@ import (
 func (s *APISuite) DeleteAllACLs_v1(ctx context.Context) error {
 	acls := kadm.NewACLs().
 		Allow().
-		Deny().
-		AnyResource().
-		AllowHosts().
-		DenyHosts().
 		ResourcePatternType(kadm.ACLPatternAny).
+		Groups().
+		Topics().
+		TransactionalIDs().
+		Clusters().
 		Operations(kadm.OpAny)
 	if err := acls.ValidateDelete(); err != nil {
 		return fmt.Errorf("failed to validate delete acl request: %w", err)
@@ -48,18 +47,7 @@ func (s *APISuite) DeleteAllACLs_v1(ctx context.Context) error {
 	return err
 }
 
-func (s *APISuite) DeleteALLSRACLs_v1(ctx context.Context) error {
-	allACLs, err := s.schemaRegistryClient.ListACLs(ctx, &rpsr.ACL{})
-	if err != nil {
-		return err
-	}
-	if allACLs == nil {
-		return nil
-	}
-	return s.schemaRegistryClient.DeleteACLs(ctx, allACLs)
-}
-
-//nolint:unparam // Principal always receives "User:test-connect-list" as of now, but good to keep for clarity
+//nolint:unparam // Principal always receives "User:test" as of now, but good to keep for clarity
 func (*APISuite) newStdACLResource_v1(resourceType v1.ACL_ResourceType, resourceName string, principal string) *v1.ListACLsResponse_Resource {
 	return &v1.ListACLsResponse_Resource{
 		ResourceType:        resourceType,
@@ -83,21 +71,16 @@ func (s *APISuite) TestCreateACL_v1() {
 		require := require.New(t)
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		// 1. Create ACL via Connect API call
 		client := v1connect.NewACLServiceClient(http.DefaultClient, s.httpAddress())
-
-		// Use unique names to avoid conflicts with other tests
-		resourceName := "*"
-		principal := "User:console-create-acl-test-connect-go"
-
 		createReq := &v1.CreateACLRequest{
 			ResourceType:        v1.ACL_RESOURCE_TYPE_TOPIC,
-			ResourceName:        resourceName,
+			ResourceName:        "*",
 			ResourcePatternType: v1.ACL_RESOURCE_PATTERN_TYPE_LITERAL,
-			Principal:           principal,
+			Principal:           "User:console-create-acl-test-connect-go",
 			Host:                "*",
 			Operation:           v1.ACL_OPERATION_ALL,
 			PermissionType:      v1.ACL_PERMISSION_TYPE_ALLOW,
@@ -105,29 +88,28 @@ func (s *APISuite) TestCreateACL_v1() {
 		_, err := client.CreateACL(ctx, connect.NewRequest(createReq))
 		require.NoError(err)
 
-		t.Cleanup(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
-			if err := s.DeleteAllACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Kafka ACLs: %v", err)
-			}
-		})
+			err := s.DeleteAllACLs_v1(ctx)
+			assert.NoError(err, "failed to delete all ACLs")
+		}()
 
 		// 2. List ACLs via Kafka API
 		describeReq := kadm.NewACLs().
-			Allow(principal).
+			Allow("User:console-create-acl-test-connect-go").
 			AllowHosts("*").
 			ResourcePatternType(kadm.ACLPatternLiteral).
 			Operations(kadm.OpAll).
-			Topics(resourceName)
+			Topics("*")
 		describeResults, err := s.kafkaAdminClient.DescribeACLs(ctx, describeReq)
 		require.NoError(err)
 		require.Len(describeResults, 1)
 		describeResult := describeResults[0]
 		assert.NoError(describeResult.Err)
-		assert.Equal(describeResult.Name, kadm.StringPtr(resourceName))
+		assert.Equal(describeResult.Name, kadm.StringPtr("*"))
 		assert.Equal(describeResult.Operation, kadm.OpAll)
-		assert.Equal(*describeResult.Principal, principal)
+		assert.Equal(*describeResult.Principal, "User:console-create-acl-test-connect-go")
 		assert.Equal(*describeResult.Host, "*")
 		assert.Equal(describeResult.Type, kmsg.ACLResourceTypeTopic)
 		assert.Equal(describeResult.Pattern, kmsg.ACLResourcePatternTypeLiteral)
@@ -138,7 +120,7 @@ func (s *APISuite) TestCreateACL_v1() {
 		require := require.New(t)
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		// 1. Create one ACL via HTTP API
@@ -152,15 +134,12 @@ func (s *APISuite) TestCreateACL_v1() {
 			ResourceType        string `json:"resource_type"`
 		}
 
-		resourceName := "*"
-		principal := "User:console-create-acl-test-http"
-
 		httpReq := createACLRequest{
 			Host:                "*",
 			Operation:           "OPERATION_ALL",
 			PermissionType:      "PERMISSION_TYPE_ALLOW",
-			Principal:           principal,
-			ResourceName:        resourceName,
+			Principal:           "User:console-create-acl-test-http",
+			ResourceName:        "*",
 			ResourcePatternType: "RESOURCE_PATTERN_TYPE_LITERAL",
 			ResourceType:        "RESOURCE_TYPE_TOPIC",
 		}
@@ -177,30 +156,28 @@ func (s *APISuite) TestCreateACL_v1() {
 		assert.Empty(errResponse)
 		require.NoError(err)
 
-		// Targeted cleanup - only deletes this specific ACL
-		t.Cleanup(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
-			if err := s.DeleteAllACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Kafka ACLs: %v", err)
-			}
-		})
+			err := s.DeleteAllACLs_v1(ctx)
+			assert.NoError(err, "failed to delete all ACLs")
+		}()
 
 		// 2. List ACLs via Kafka API
 		describeReq := kadm.NewACLs().
-			Allow(principal).
+			Allow("User:console-create-acl-test-http").
 			AllowHosts("*").
 			ResourcePatternType(kadm.ACLPatternLiteral).
 			Operations(kadm.OpAll).
-			Topics(resourceName)
+			Topics("*")
 		describeResults, err := s.kafkaAdminClient.DescribeACLs(ctx, describeReq)
 		require.NoError(err)
 		require.Len(describeResults, 1)
 		describeResult := describeResults[0]
 		assert.NoError(describeResult.Err)
-		assert.Equal(*describeResult.Name, resourceName)
+		assert.Equal(*describeResult.Name, "*")
 		assert.Equal(describeResult.Operation, kadm.OpAll)
-		assert.Equal(*describeResult.Principal, principal)
+		assert.Equal(*describeResult.Principal, "User:console-create-acl-test-http")
 		assert.Equal(*describeResult.Host, "*")
 		assert.Equal(describeResult.Type, kmsg.ACLResourceTypeTopic)
 		assert.Equal(describeResult.Pattern, kmsg.ACLResourcePatternTypeLiteral)
@@ -210,7 +187,7 @@ func (s *APISuite) TestCreateACL_v1() {
 	t.Run("create bad ACL create request (http)", func(t *testing.T) {
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		// Send incomplete ACL create request via HTTP API
@@ -254,6 +231,13 @@ func (s *APISuite) TestCreateACL_v1() {
 		assert.NotEmpty(errResponse)
 		// Field name indicator is the most important information
 		assert.Contains(errResponse, "resource_type")
+
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+			err := s.DeleteAllACLs_v1(ctx)
+			assert.NoError(err, "failed to delete all ACLs")
+		}()
 	})
 }
 
@@ -264,12 +248,12 @@ func (s *APISuite) TestListACLs_v1() {
 		require := require.New(t)
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		// 1. Seed some ACLs
-		principal := "User:test-connect-list"
-		resourceNamePrefix := "console-test-list-"
+		principal := "User:test"
+		resourceNamePrefix := "console-test-"
 
 		resourceNames := map[v1.ACL_ResourceType]string{
 			v1.ACL_RESOURCE_TYPE_GROUP:            fmt.Sprintf("%vgroup", resourceNamePrefix),
@@ -293,13 +277,12 @@ func (s *APISuite) TestListACLs_v1() {
 		_, err = s.kafkaAdminClient.CreateACLs(ctx, acls)
 		require.NoError(err)
 
-		t.Cleanup(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
-			if err := s.DeleteAllACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Kafka ACLs: %v", err)
-			}
-		})
+			err := s.DeleteAllACLs_v1(ctx)
+			assert.NoError(err, "failed to delete all ACLs")
+		}()
 
 		// 2. List ACLs
 		client := v1connect.NewACLServiceClient(http.DefaultClient, s.httpAddress())
@@ -310,7 +293,7 @@ func (s *APISuite) TestListACLs_v1() {
 
 		// 3. From all ACLs returned by the Kafka API, filter only those that match
 		// the patterns of the seeded ACLs. There may be existing system-internal ACLs,
-		// see: https://github.com/redpanda-data/redpanda/issues/14373 .
+		// see: https://github.com/xxxcrel/redpanda/issues/14373 .
 		filteredResources := make([]*v1.ListACLsResponse_Resource, 0)
 		for _, res := range res.Msg.Resources {
 			// Check if resource name matches a seeded ACL resource name
@@ -350,7 +333,7 @@ func (s *APISuite) TestListACLs_v1() {
 	t.Run("list ACLs with invalid filter (connect-go)", func(t *testing.T) {
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		client := v1connect.NewACLServiceClient(http.DefaultClient, s.httpAddress())
@@ -368,12 +351,12 @@ func (s *APISuite) TestListACLs_v1() {
 		require := require.New(t)
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		// 1. Seed some ACLs
-		principal := "User:test-http-list"
-		resourceNamePrefix := "console-test-http-list-"
+		principal := "User:test"
+		resourceNamePrefix := "console-test-"
 
 		resourceNames := map[v1.ACL_ResourceType]string{
 			v1.ACL_RESOURCE_TYPE_GROUP:            fmt.Sprintf("%vgroup", resourceNamePrefix),
@@ -397,13 +380,12 @@ func (s *APISuite) TestListACLs_v1() {
 		_, err = s.kafkaAdminClient.CreateACLs(ctx, acls)
 		require.NoError(err)
 
-		t.Cleanup(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
-			if err := s.DeleteAllACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Kafka ACLs: %v", err)
-			}
-		})
+			err := s.DeleteAllACLs_v1(ctx)
+			assert.NoError(err, "failed to delete all ACLs")
+		}()
 
 		// 2. List ACLs via HTTP API
 		type listAclsResponse struct {
@@ -443,11 +425,11 @@ func (s *APISuite) TestDeleteACLs_v1() {
 		require := require.New(t)
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		// 1. Seed some ACLs
-		principal := fmt.Sprintf("User:test-delete-list-%d", time.Now().UnixNano())
+		principal := "User:test"
 		resourceNamePrefix := "console-deletion-test-"
 
 		resourceNames := map[v1.ACL_ResourceType]string{
@@ -470,13 +452,12 @@ func (s *APISuite) TestDeleteACLs_v1() {
 		_, err = s.kafkaAdminClient.CreateACLs(ctx, acls)
 		require.NoError(err)
 
-		t.Cleanup(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
-			if err := s.DeleteAllACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Kafka ACLs: %v", err)
-			}
-		})
+			err := s.DeleteAllACLs_v1(ctx)
+			assert.NoError(err, "failed to delete all ACLs")
+		}()
 
 		// 2. Delete ACLs
 		client := v1connect.NewACLServiceClient(http.DefaultClient, s.httpAddress())
@@ -500,7 +481,7 @@ func (s *APISuite) TestDeleteACLs_v1() {
 	t.Run("delete ACLs with invalid filter (connect-go)", func(t *testing.T) {
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		// The ACL filter for deletions must be complete (all fields must be set)
@@ -520,11 +501,11 @@ func (s *APISuite) TestDeleteACLs_v1() {
 		require := require.New(t)
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		// 1. Seed some ACLs
-		principal := fmt.Sprintf("User:test-delete-filter-%d", time.Now().UnixNano())
+		principal := "User:test"
 		resourceNamePrefix := "console-deletion-test-"
 
 		resourceNames := map[v1.ACL_ResourceType]string{
@@ -547,13 +528,12 @@ func (s *APISuite) TestDeleteACLs_v1() {
 		_, err = s.kafkaAdminClient.CreateACLs(ctx, acls)
 		require.NoError(err)
 
-		t.Cleanup(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
-			if err := s.DeleteAllACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Kafka ACLs: %v", err)
-			}
-		})
+			err := s.DeleteAllACLs_v1(ctx)
+			assert.NoError(err, "failed to delete all ACLs")
+		}()
 
 		// 2. Delete ACLs via HTTP API
 		type deleteAclsResponse struct {
@@ -583,7 +563,7 @@ func (s *APISuite) TestDeleteACLs_v1() {
 	t.Run("delete ACLs with missing filter (http)", func(t *testing.T) {
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		// 1. Try to delete ACLs via HTTP API by not setting any filter at all
@@ -614,7 +594,7 @@ func (s *APISuite) TestDeleteACLs_v1() {
 	t.Run("delete ACLs with an invalid filter (http)", func(t *testing.T) {
 		assert := assert.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		var plainResponse string
@@ -651,359 +631,5 @@ func (s *APISuite) TestDeleteACLs_v1() {
 			Fetch(ctx)
 		assert.Contains(plainResponse, "INVALID_ARGUMENT")
 		assert.NoError(err) // Status BadRequest is the expected status, hence no error
-	})
-}
-
-// TestSchemaRegistryACLs_v1 tests Schema Registry ACL operations
-func (s *APISuite) TestSchemaRegistryACLs_v1() {
-	t := s.T()
-
-	t.Run("create, list, and delete Schema Registry SUBJECT ACLs (connect-go)", func(t *testing.T) {
-		require := require.New(t)
-		assert := assert.New(t)
-
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
-		defer cancel()
-
-		client := v1connect.NewACLServiceClient(http.DefaultClient, s.httpAddress())
-
-		principal := "User:sr-acl-test-subject"
-		subjectName := "sr-test-subject-*"
-
-		// 1. Create Schema Registry ACL for SUBJECT resource
-		createReq := &v1.CreateACLRequest{
-			ResourceType:        v1.ACL_RESOURCE_TYPE_SUBJECT,
-			ResourceName:        subjectName,
-			ResourcePatternType: v1.ACL_RESOURCE_PATTERN_TYPE_LITERAL,
-			Principal:           principal,
-			Host:                "*",
-			Operation:           v1.ACL_OPERATION_ALL,
-			PermissionType:      v1.ACL_PERMISSION_TYPE_ALLOW,
-		}
-
-		_, err := client.CreateACL(ctx, connect.NewRequest(createReq))
-		require.NoError(err, "Failed to create Schema Registry SUBJECT ACL")
-
-		t.Cleanup(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-			if err := s.DeleteALLSRACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Schema Registry ACLs: %v", err)
-			}
-		})
-
-		// 2. List Schema Registry ACLs and verify the created ACL exists
-		listReq := &v1.ListACLsRequest{
-			Filter: &v1.ListACLsRequest_Filter{
-				ResourceType: v1.ACL_RESOURCE_TYPE_SUBJECT,
-				Principal:    &principal,
-			},
-		}
-
-		listRes, err := client.ListACLs(ctx, connect.NewRequest(listReq))
-		require.NoError(err, "Failed to list Schema Registry ACLs")
-		require.Len(listRes.Msg.Resources, 1, "Expected exactly one Schema Registry ACL resource")
-
-		// Verify the ACL we created - focus on key identifiers.
-		resource := listRes.Msg.Resources[0]
-		assert.Equal(v1.ACL_RESOURCE_TYPE_SUBJECT, resource.ResourceType)
-		assert.Equal(subjectName, resource.ResourceName)
-		require.Len(resource.Acls, 1, "Expected exactly one ACL policy")
-
-		acl := resource.Acls[0]
-		assert.Equal(principal, acl.Principal)
-
-		// 3. Delete the Schema Registry ACL
-		deleteReq := &v1.DeleteACLsRequest{
-			Filter: &v1.DeleteACLsRequest_Filter{
-				ResourceType:        v1.ACL_RESOURCE_TYPE_SUBJECT,
-				ResourceName:        &subjectName,
-				ResourcePatternType: v1.ACL_RESOURCE_PATTERN_TYPE_LITERAL,
-				Principal:           &principal,
-				Host:                kmsg.StringPtr("*"),
-				Operation:           v1.ACL_OPERATION_ALL,
-				PermissionType:      v1.ACL_PERMISSION_TYPE_ALLOW,
-			},
-		}
-
-		deleteRes, err := client.DeleteACLs(ctx, connect.NewRequest(deleteReq))
-		require.NoError(err, "Failed to delete Schema Registry ACL")
-		require.Len(deleteRes.Msg.MatchingAcls, 1, "Expected exactly one matching ACL to be deleted")
-
-		deletedACL := deleteRes.Msg.MatchingAcls[0]
-		assert.Equal(v1.ACL_RESOURCE_TYPE_SUBJECT, deletedACL.ResourceType)
-		assert.Equal(subjectName, deletedACL.ResourceName)
-		assert.Equal(principal, deletedACL.Principal)
-		assert.Nil(deletedACL.Error, "Expected no error in deleted ACL")
-
-		// 4. If we list ACLs again, it should be empty.
-		listRes, err = client.ListACLs(ctx, connect.NewRequest(&v1.ListACLsRequest{}))
-		require.NoError(err, "Failed to list Schema Registry ACLs")
-		require.Len(listRes.Msg.Resources, 0, "Expected no Schema Registry ACLs to be listed")
-	})
-
-	t.Run("create, list, and delete Schema Registry REGISTRY ACLs (connect-go)", func(t *testing.T) {
-		require := require.New(t)
-		assert := assert.New(t)
-
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
-		defer cancel()
-
-		client := v1connect.NewACLServiceClient(http.DefaultClient, s.httpAddress())
-
-		principal := "User:sr-acl-test-registry"
-
-		// 1. Create Schema Registry ACL for REGISTRY resource
-		createReq := &v1.CreateACLRequest{
-			ResourceType:        v1.ACL_RESOURCE_TYPE_REGISTRY,
-			ResourceName:        "", // REGISTRY resource does not have a specific name, we want to specifically test for this.
-			ResourcePatternType: v1.ACL_RESOURCE_PATTERN_TYPE_LITERAL,
-			Principal:           principal,
-			Host:                "*",
-			Operation:           v1.ACL_OPERATION_READ,
-			PermissionType:      v1.ACL_PERMISSION_TYPE_ALLOW,
-		}
-
-		_, err := client.CreateACL(ctx, connect.NewRequest(createReq))
-		require.NoError(err, "Failed to create Schema Registry REGISTRY ACL")
-
-		t.Cleanup(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-			if err := s.DeleteALLSRACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Schema Registry ACLs: %v", err)
-			}
-		})
-
-		// 2. List Schema Registry ACLs and verify the created ACL exists
-		listReq := &v1.ListACLsRequest{
-			Filter: &v1.ListACLsRequest_Filter{
-				ResourceType: v1.ACL_RESOURCE_TYPE_REGISTRY,
-				Principal:    &principal,
-			},
-		}
-
-		listRes, err := client.ListACLs(ctx, connect.NewRequest(listReq))
-		require.NoError(err, "Failed to list Schema Registry REGISTRY ACLs")
-		require.Len(listRes.Msg.Resources, 1, "Expected exactly one Schema Registry ACL resource")
-
-		// Verify the ACL we created.
-		resource := listRes.Msg.Resources[0]
-		assert.Equal(v1.ACL_RESOURCE_TYPE_REGISTRY, resource.ResourceType)
-		assert.Empty(resource.ResourceName)
-		require.Len(resource.Acls, 1, "Expected exactly one ACL policy")
-
-		acl := resource.Acls[0]
-		assert.Equal(principal, acl.Principal)
-	})
-
-	t.Run("create Schema Registry ACL via HTTP API", func(t *testing.T) {
-		require := require.New(t)
-		assert := assert.New(t)
-
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
-		defer cancel()
-
-		// 1. Create Schema Registry SUBJECT ACL via HTTP API
-		type createACLRequest struct {
-			Host                string `json:"host"`
-			Operation           string `json:"operation"`
-			PermissionType      string `json:"permission_type"`
-			Principal           string `json:"principal"`
-			ResourceName        string `json:"resource_name"`
-			ResourcePatternType string `json:"resource_pattern_type"`
-			ResourceType        string `json:"resource_type"`
-		}
-
-		principal := "User:sr-acl-http-test"
-		subjectName := "http-test-subject"
-
-		httpReq := createACLRequest{
-			Host:                "*",
-			Operation:           "OPERATION_WRITE",
-			PermissionType:      "PERMISSION_TYPE_ALLOW",
-			Principal:           principal,
-			ResourceName:        subjectName,
-			ResourcePatternType: "RESOURCE_PATTERN_TYPE_LITERAL",
-			ResourceType:        "RESOURCE_TYPE_SUBJECT",
-		}
-
-		var errResponse string
-		err := requests.
-			URL(s.httpAddress() + "/v1/acls").
-			BodyJSON(&httpReq).
-			Post().
-			AddValidator(requests.ValidatorHandler(
-				func(res *http.Response) error {
-					if res.StatusCode == http.StatusCreated {
-						return nil
-					}
-					return fmt.Errorf("unexpected status code: %d", res.StatusCode)
-				},
-				requests.ToString(&errResponse),
-			)).
-			Fetch(ctx)
-
-		assert.Empty(errResponse, "Expected no error response")
-		require.NoError(err, "Failed to create Schema Registry ACL via HTTP")
-
-		t.Cleanup(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-			if err := s.DeleteALLSRACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Schema Registry ACLs: %v", err)
-			}
-		})
-
-		// 2. Verify the ACL was created by listing via Connect API
-		client := v1connect.NewACLServiceClient(http.DefaultClient, s.httpAddress())
-		listReq := &v1.ListACLsRequest{
-			Filter: &v1.ListACLsRequest_Filter{
-				ResourceType: v1.ACL_RESOURCE_TYPE_SUBJECT,
-				Principal:    &principal,
-			},
-		}
-
-		listRes, err := client.ListACLs(ctx, connect.NewRequest(listReq))
-		require.NoError(err, "Failed to list Schema Registry ACLs")
-		require.Len(listRes.Msg.Resources, 1, "Expected exactly one Schema Registry ACL resource")
-
-		// Verify the ACL we created via HTTP.
-		resource := listRes.Msg.Resources[0]
-		assert.Equal(v1.ACL_RESOURCE_TYPE_SUBJECT, resource.ResourceType)
-		assert.Equal(subjectName, resource.ResourceName)
-		require.Len(resource.Acls, 1, "Expected exactly one ACL policy")
-
-		acl := resource.Acls[0]
-		assert.Equal(principal, acl.Principal)
-	})
-
-	t.Run("create and list both Kafka and Schema Registry ACLs", func(t *testing.T) {
-		require := require.New(t)
-		assert := assert.New(t)
-
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
-		defer cancel()
-
-		client := v1connect.NewACLServiceClient(http.DefaultClient, s.httpAddress())
-
-		kafkaPrincipal := "User:mixed-acl-test-kafka"
-		srPrincipal := "User:mixed-acl-test-sr"
-		topicName := "mixed-test-topic"
-		subjectName := "mixed-test-subject"
-
-		// 1. Create a Kafka ACL (TOPIC).
-		kafkaCreateReq := &v1.CreateACLRequest{
-			ResourceType:        v1.ACL_RESOURCE_TYPE_TOPIC,
-			ResourceName:        topicName,
-			ResourcePatternType: v1.ACL_RESOURCE_PATTERN_TYPE_LITERAL,
-			Principal:           kafkaPrincipal,
-			Host:                "*",
-			Operation:           v1.ACL_OPERATION_READ,
-			PermissionType:      v1.ACL_PERMISSION_TYPE_ALLOW,
-		}
-
-		_, err := client.CreateACL(ctx, connect.NewRequest(kafkaCreateReq))
-		require.NoError(err, "Failed to create Kafka ACL")
-
-		// 2. Create a Schema Registry ACL (SUBJECT).
-		srCreateReq := &v1.CreateACLRequest{
-			ResourceType:        v1.ACL_RESOURCE_TYPE_SUBJECT,
-			ResourceName:        subjectName,
-			ResourcePatternType: v1.ACL_RESOURCE_PATTERN_TYPE_LITERAL,
-			Principal:           srPrincipal,
-			Host:                "*",
-			Operation:           v1.ACL_OPERATION_WRITE,
-			PermissionType:      v1.ACL_PERMISSION_TYPE_ALLOW,
-		}
-
-		_, err = client.CreateACL(ctx, connect.NewRequest(srCreateReq))
-		require.NoError(err, "Failed to create Schema Registry ACL")
-
-		t.Cleanup(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-			if err := s.DeleteALLSRACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Schema Registry ACLs: %v", err)
-			}
-			if err := s.DeleteAllACLs_v1(ctx); err != nil {
-				t.Logf("Warning: failed to clean up Kafka ACLs: %v", err)
-			}
-		})
-
-		// 3. List with ANY filter - should get both Kafka and Schema Registry ACLs.
-		anyListReq := &v1.ListACLsRequest{
-			Filter: &v1.ListACLsRequest_Filter{
-				ResourceType: v1.ACL_RESOURCE_TYPE_ANY,
-			},
-		}
-
-		anyListRes, err := client.ListACLs(ctx, connect.NewRequest(anyListReq))
-		require.NoError(err, "Failed to list ACLs with ANY filter")
-		require.Len(anyListRes.Msg.Resources, 2, "Expected exactly two ACL resources (Kafka + Schema Registry)")
-
-		// Verify both ACLs are present.
-		resourceByType := make(map[v1.ACL_ResourceType]*v1.ListACLsResponse_Resource)
-		for _, resource := range anyListRes.Msg.Resources {
-			resourceByType[resource.ResourceType] = resource
-		}
-
-		// Verify Kafka ACL.
-		kafkaResource, exists := resourceByType[v1.ACL_RESOURCE_TYPE_TOPIC]
-		require.True(exists, "Kafka TOPIC ACL should be present in ANY filter results")
-		assert.Equal(topicName, kafkaResource.ResourceName)
-		require.Len(kafkaResource.Acls, 1, "Expected exactly one Kafka ACL policy")
-		assert.Equal(kafkaPrincipal, kafkaResource.Acls[0].Principal)
-		assert.Equal(v1.ACL_OPERATION_READ, kafkaResource.Acls[0].Operation)
-
-		// Verify Schema Registry ACL.
-		srResource, exists := resourceByType[v1.ACL_RESOURCE_TYPE_SUBJECT]
-		require.True(exists, "Schema Registry SUBJECT ACL should be present in ANY filter results")
-		assert.Equal(subjectName, srResource.ResourceName)
-		require.Len(srResource.Acls, 1, "Expected exactly one Schema Registry ACL policy")
-		assert.Equal(srPrincipal, srResource.Acls[0].Principal)
-		assert.Equal(v1.ACL_OPERATION_WRITE, srResource.Acls[0].Operation)
-
-		// 4. List with Kafka-specific filter - should get only Kafka ACL
-		kafkaListReq := &v1.ListACLsRequest{
-			Filter: &v1.ListACLsRequest_Filter{
-				ResourceType: v1.ACL_RESOURCE_TYPE_TOPIC,
-				Principal:    &kafkaPrincipal,
-			},
-		}
-
-		kafkaListRes, err := client.ListACLs(ctx, connect.NewRequest(kafkaListReq))
-		require.NoError(err, "Failed to list Kafka ACLs")
-		require.Len(kafkaListRes.Msg.Resources, 1, "Expected exactly one Kafka ACL resource")
-
-		kafkaFilteredResource := kafkaListRes.Msg.Resources[0]
-		assert.Equal(v1.ACL_RESOURCE_TYPE_TOPIC, kafkaFilteredResource.ResourceType)
-		assert.Equal(topicName, kafkaFilteredResource.ResourceName)
-		require.Len(kafkaFilteredResource.Acls, 1, "Expected exactly one Kafka ACL policy")
-
-		kafkaACL := kafkaFilteredResource.Acls[0]
-		assert.Equal(kafkaPrincipal, kafkaACL.Principal)
-		assert.Equal(v1.ACL_OPERATION_READ, kafkaACL.Operation)
-
-		// 5. List with Schema Registry-specific filter - should get only SR ACL
-		srListReq := &v1.ListACLsRequest{
-			Filter: &v1.ListACLsRequest_Filter{
-				ResourceType: v1.ACL_RESOURCE_TYPE_SUBJECT,
-				Principal:    &srPrincipal,
-			},
-		}
-
-		srListRes, err := client.ListACLs(ctx, connect.NewRequest(srListReq))
-		require.NoError(err, "Failed to list Schema Registry ACLs")
-		require.Len(srListRes.Msg.Resources, 1, "Expected exactly one Schema Registry ACL resource")
-
-		srFilteredResource := srListRes.Msg.Resources[0]
-		assert.Equal(v1.ACL_RESOURCE_TYPE_SUBJECT, srFilteredResource.ResourceType)
-		assert.Equal(subjectName, srFilteredResource.ResourceName)
-		require.Len(srFilteredResource.Acls, 1, "Expected exactly one Schema Registry ACL policy")
-
-		srACL := srFilteredResource.Acls[0]
-		assert.Equal(srPrincipal, srACL.Principal)
-		assert.Equal(v1.ACL_OPERATION_WRITE, srACL.Operation)
 	})
 }

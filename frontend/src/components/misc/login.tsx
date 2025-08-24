@@ -70,11 +70,7 @@ const authenticationApi = observable({
     username,
     password,
     mechanism,
-  }: {
-    username: string;
-    password: string;
-    mechanism: SASLMechanism;
-  }): Promise<void> {
+  }: { username: string; password: string; mechanism: SASLMechanism }): Promise<void> {
     const client = appConfig.authenticationClient;
 
     if (!client) throw new Error('security client is not initialized');
@@ -86,7 +82,7 @@ const authenticationApi = observable({
         mechanism,
       } as LoginSaslScramRequest)
       .then(() => {
-        appGlobal.historyPush('/overview');
+        appGlobal.history.push('/overview');
       });
 
     console.log({ response });
@@ -96,7 +92,7 @@ const authenticationApi = observable({
 const AUTH_ELEMENTS: Partial<Record<AuthenticationMethod, React.FC>> = {
   [AuthenticationMethod.NONE]: observer(() => {
     useEffect(() => {
-      appGlobal.historyPush('/overview');
+      appGlobal.history.push('/overview');
     }, []);
     return null;
   }),

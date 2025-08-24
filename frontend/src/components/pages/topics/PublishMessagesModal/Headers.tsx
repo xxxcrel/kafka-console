@@ -83,7 +83,7 @@ const HeaderComp = observer((p: { list: Header[]; header: Header; index: number 
         <Button
           variant="ghost"
           className="iconButton"
-          onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+          onClick={(event) => {
             event.stopPropagation();
             p.list.remove(p.header);
           }}

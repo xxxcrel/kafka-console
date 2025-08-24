@@ -13,7 +13,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -37,12 +36,12 @@ func (XMLSerde) DeserializePayload(_ context.Context, record *kgo.Record, payloa
 	trimmed := bytes.TrimLeft(payload, " \t\r\n")
 
 	if len(trimmed) == 0 {
-		return &RecordPayload{}, errors.New("after trimming whitespaces there were no characters left")
+		return &RecordPayload{}, fmt.Errorf("after trimming whitespaces there were no characters left")
 	}
 
 	startsWithXML := trimmed[0] == '<'
 	if !startsWithXML {
-		return &RecordPayload{}, errors.New("first byte indicates this it not valid XML")
+		return &RecordPayload{}, fmt.Errorf("first byte indicates this it not valid XML")
 	}
 
 	r := strings.NewReader(string(trimmed))
@@ -84,12 +83,12 @@ func (XMLSerde) SerializeObject(_ context.Context, obj any, _ PayloadType, opts 
 	trimmed := bytes.TrimLeft(byteData, " \t\r\n")
 
 	if len(trimmed) == 0 {
-		return nil, errors.New("after trimming whitespaces there were no characters left")
+		return nil, fmt.Errorf("after trimming whitespaces there were no characters left")
 	}
 
 	startsWithXML := trimmed[0] == '<'
 	if !startsWithXML {
-		return nil, errors.New("first byte indicates this it not valid XML")
+		return nil, fmt.Errorf("first byte indicates this it not valid XML")
 	}
 
 	return trimmed, nil

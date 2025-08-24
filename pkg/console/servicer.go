@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/cloudhut/common/rest"
-	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -82,10 +81,6 @@ type Servicer interface {
 	AddPartitionsToTopics(ctx context.Context, add int, topicNames []string, validateOnly bool) (kadm.CreatePartitionsResponses, error)
 	// Sets partition counts to existing topics.
 	SetPartitionsToTopics(ctx context.Context, add int, topicNames []string, validateOnly bool) (kadm.CreatePartitionsResponses, error)
-	// DescribeClientQuotas proxies the request/response for describing client quotas via the Kafka API.
-	DescribeClientQuotas(ctx context.Context, req *kmsg.DescribeClientQuotasRequest) (*kmsg.DescribeClientQuotasResponse, error)
-	// AlterClientQuotas proxies the request/response for altering client quotas via the Kafka API.
-	AlterClientQuotas(ctx context.Context, req *kmsg.AlterClientQuotasRequest) (*kmsg.AlterClientQuotasResponse, error)
 }
 
 // SchemaRegistryServicer is the interface for schema registry servicer
@@ -103,11 +98,4 @@ type SchemaRegistryServicer interface {
 	CreateSchemaRegistrySchema(ctx context.Context, subjectName string, schema sr.Schema) (*CreateSchemaResponse, error)
 	ValidateSchemaRegistrySchema(ctx context.Context, subjectName string, version int, schema sr.Schema) (*SchemaRegistrySchemaValidation, error)
 	GetSchemaUsagesByID(ctx context.Context, schemaID int) ([]SchemaVersion, error)
-
-	// Custom Redpanda-only methods for managing ACLs within the schema registry.
-
-	CheckSchemaRegistryACLSupport(ctx context.Context) bool
-	ListSRACLs(ctx context.Context, filters []rpsr.ACL) ([]rpsr.ACL, error)
-	CreateSRACLs(ctx context.Context, acls []rpsr.ACL) error
-	DeleteSRACLs(ctx context.Context, acls []rpsr.ACL) error
 }

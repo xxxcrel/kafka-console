@@ -9,7 +9,8 @@
  * by the Apache License, Version 2.0
  */
 
-import { Box, Link as ChakraLink, Flex, Tag, Text } from '@redpanda-data/ui';
+import { Link as ChakraLink, Tag } from '@redpanda-data/ui';
+import { Box, Flex, Text } from '@redpanda-data/ui';
 import { observer } from 'mobx-react';
 import React from 'react';
 import { Link as ReactRouterLink } from 'react-router-dom';
@@ -17,7 +18,13 @@ import { api, rolesApi } from '../../../state/backendApi';
 import { Features } from '../../../state/supportedFeatures';
 
 export const UserRoleTags = observer(
-  ({ userName, showMaxItems = Number.POSITIVE_INFINITY }: { userName: string; showMaxItems?: number }) => {
+  ({
+    userName,
+    showMaxItems = Number.POSITIVE_INFINITY,
+  }: {
+    userName: string;
+    showMaxItems?: number;
+  }) => {
     const elements: JSX.Element[] = [];
     let numberOfVisibleElements = 0;
     let numberOfHiddenElements = 0;

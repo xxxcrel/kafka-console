@@ -58,7 +58,7 @@ export const AppFooter = () => {
       <div className="links">
         {isEmbedded()
           ? gitHub('https://github.com/redpanda-data/redpanda', "Visit Redpanda's GitHub repository")
-          : gitHub('https://github.com/redpanda-data/console', "Visit Redpanda Console's GitHub repository")}
+          : gitHub('https://github.com/xxxcrel/kafka-console', "Visit Redpanda Console's GitHub repository")}
         <a href="https://redpanda.com/slack" title="Slack" target="_blank" rel="noopener noreferrer">
           <FaSlack />
         </a>

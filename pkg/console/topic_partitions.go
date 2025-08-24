@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -11,9 +11,7 @@ package console
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"sync"
 	"time"
@@ -23,6 +21,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
+	"go.uber.org/zap"
 )
 
 // TopicDetails contains all a topic's partition metadata (low/high watermark, metadata, log dirs etc).
@@ -37,28 +36,54 @@ type TopicDetails struct {
 	Partitions []TopicPartitionDetails `json:"partitions"`
 }
 
-// TopicPartitionDetails consists of all information about a single partition of a topic.
+// TopicPartitionDetails consists of some (not all) information about a single partition of a topic.
 // Only data relevant to the 'partition table' in the frontend is included.
-// This struct consolidates metadata, watermark, and log directory information in one place
-// to prevent bugs from inconsistent partition ID handling.
 type TopicPartitionDetails struct {
-	// Partition identification
+	// Metadata about the topic and partitions as fetched via the Kafka metadata request.
+	*TopicPartitionMetadata
+
+	// Marks returns the low and high water mark for each partition. It's a separate entity as this is a set of
+	// separate requests towards Kafka. These request can also fail.
+	*TopicPartitionMarks
+
+	// PartitionLogDirs return the size per partition for each replica. If a partition replica fails to respond the
+	// log dirs an entry for it should still exist along with a descriptive error.
+	PartitionLogDirs []TopicPartitionLogDirs `json:"partitionLogDirs"`
+}
+
+// TopicPartitionMetadata represents the available metadata for a partition.
+type TopicPartitionMetadata struct {
 	ID int32 `json:"id"`
 
-	// Partition metadata fields
-	PartitionError  string  `json:"partitionError,omitempty"`
-	Replicas        []int32 `json:"replicas"`
+	// Err should only be set if the metadata request for this partition has failed
+	PartitionError string `json:"partitionError,omitempty"`
+
+	// Replicas returns all broker IDs containing replicas of this partition.
+	Replicas []int32 `json:"replicas"`
+
+	// OfflineReplicas, proposed in KIP-112 and introduced in Kafka 1.0,
+	// returns all offline broker IDs that should be replicating this partition.
 	OfflineReplicas []int32 `json:"offlineReplicas"`
-	InSyncReplicas  []int32 `json:"inSyncReplicas"`
-	Leader          int32   `json:"leader"`
 
-	// Watermark fields
+	// InSyncReplicas returns all broker IDs of in-sync replicas of this partition.
+	InSyncReplicas []int32 `json:"inSyncReplicas"`
+
+	// Leader is the broker leader for this partition. This will be -1 on leader / listener error.
+	Leader int32 `json:"leader"`
+}
+
+// TopicPartitionMarks contains information about the offsets for a partition.
+type TopicPartitionMarks struct {
+	PartitionID int32 `json:"-"`
+
+	// Err indicates whether there was an issue fetching the watermarks for this partition.
 	WaterMarksError string `json:"waterMarksError,omitempty"`
-	WaterMarkLow    int64  `json:"waterMarkLow"`
-	WaterMarkHigh   int64  `json:"waterMarkHigh"`
 
-	// Log directory information
-	PartitionLogDirs []TopicPartitionLogDirs `json:"partitionLogDirs"`
+	// Low water mark for this partition
+	Low int64 `json:"waterMarkLow"`
+
+	// High water mark for this partition
+	High int64 `json:"waterMarkHigh"`
 }
 
 // TopicPartitionLogDirs contains the reported log dir size for a single partition as reported by one
@@ -129,7 +154,7 @@ func (s *Service) GetTopicDetails(ctx context.Context, topicNames []string) ([]T
 		return nil, &rest.Error{
 			Err:          err,
 			Status:       http.StatusInternalServerError,
-			Message:      fmt.Sprintf("Failed to list topic end offsets: %v", err.Error()),
+			Message:      fmt.Sprintf("Failed to list topic start offsets: %v", err.Error()),
 			InternalLogs: nil,
 		}
 	}
@@ -154,11 +179,11 @@ func (s *Service) GetTopicDetails(ctx context.Context, topicNames []string) ([]T
 		// Construct partition details
 		partitionsDetails := make([]TopicPartitionDetails, len(topic.Partitions))
 		for i, partition := range topic.Partitions {
-			startOffset, _ := startOffsets.Lookup(topic.TopicName, partition.ID)
-			endOffset, _ := endOffsets.Lookup(topic.TopicName, partition.ID)
+			startOffset, _ := startOffsets.Lookup(topic.TopicName, partition.PartitionID)
+			endOffset, _ := endOffsets.Lookup(topic.TopicName, partition.PartitionID)
 			offsetErr := errorToString(startOffset.Err)
 			if offsetErr == "" {
-				offsetErr = errorToString(endOffset.Err)
+				errorToString(endOffset.Err)
 			}
 
 			// Get log dirs for the current partitions. We can rest assured that the map is fully initialized and we
@@ -167,15 +192,20 @@ func (s *Service) GetTopicDetails(ctx context.Context, topicNames []string) ([]T
 			logDirs := logDirsByTopicPartition[topic.TopicName][partition.ID]
 
 			d := TopicPartitionDetails{
-				ID:               partition.ID,
-				PartitionError:   partition.PartitionError,
-				Replicas:         partition.Replicas,
-				OfflineReplicas:  partition.OfflineReplicas,
-				InSyncReplicas:   partition.InSyncReplicas,
-				Leader:           partition.Leader,
-				WaterMarksError:  offsetErr,
-				WaterMarkLow:     startOffset.Offset,
-				WaterMarkHigh:    endOffset.Offset,
+				TopicPartitionMetadata: &TopicPartitionMetadata{
+					ID:              partition.ID,
+					PartitionError:  partition.PartitionError,
+					Replicas:        partition.Replicas,
+					OfflineReplicas: partition.OfflineReplicas,
+					InSyncReplicas:  partition.InSyncReplicas,
+					Leader:          partition.Leader,
+				},
+				TopicPartitionMarks: &TopicPartitionMarks{
+					PartitionID:     partition.ID,
+					WaterMarksError: offsetErr,
+					Low:             startOffset.Offset,
+					High:            endOffset.Offset,
+				},
 				PartitionLogDirs: logDirs,
 			}
 			partitionsDetails[i] = d
@@ -205,7 +235,7 @@ func (s *Service) getTopicPartitionMetadata(ctx context.Context, adminCl *kadm.C
 			TopicName: topic.Topic,
 		}
 		if topic.Err != nil {
-			s.logger.WarnContext(ctx, "failed to get metadata for topic", slog.String("topic", topic.Topic), slog.Any("error", topic.Err))
+			s.logger.Warn("failed to get metadata for topic", zap.String("topic", topic.Topic), zap.Error(topic.Err))
 
 			// Propagate the failed response and do not even try any further requests for that topic.
 			topicOverview.Error = fmt.Sprintf("Failed to get metadata for topic: %v", topic.Err.Error())
@@ -214,9 +244,9 @@ func (s *Service) getTopicPartitionMetadata(ctx context.Context, adminCl *kadm.C
 		}
 
 		// Iterate all partitions
-		partitionMetadata := make([]TopicPartitionDetails, len(topic.Partitions))
+		partitionInfo := make([]TopicPartitionDetails, len(topic.Partitions))
 		for i, partition := range topic.Partitions {
-			details := TopicPartitionDetails{
+			partitionMetadata := TopicPartitionMetadata{
 				ID: partition.Partition,
 			}
 			if partition.Err != nil {
@@ -224,18 +254,26 @@ func (s *Service) getTopicPartitionMetadata(ctx context.Context, adminCl *kadm.C
 				// still contain all the necessary partition information.
 
 				// Propagate the failed response and do not even try any further requests for that partition.
-				details.PartitionError = fmt.Sprintf("Failed to get partitionMetadata for partition: %v", partition.Err.Error())
-				partitionMetadata[i] = details
+				partitionMetadata.PartitionError = fmt.Sprintf("Failed to get partitionMetadata for partition: %v", partition.Err.Error())
+				partitionInfo[i] = TopicPartitionDetails{
+					&partitionMetadata,
+					&TopicPartitionMarks{},
+					nil,
+				}
 				continue
 			}
-			details.Replicas = partition.Replicas
-			details.InSyncReplicas = partition.ISR
-			details.Leader = partition.Leader
-			details.OfflineReplicas = partition.OfflineReplicas
-			details.PartitionLogDirs = []TopicPartitionLogDirs{}
-			partitionMetadata[i] = details
+			partitionMetadata.Replicas = partition.Replicas
+			partitionMetadata.InSyncReplicas = partition.ISR
+			partitionMetadata.Replicas = partition.Replicas
+			partitionMetadata.Leader = partition.Leader
+			partitionMetadata.OfflineReplicas = partition.OfflineReplicas
+			partitionInfo[i] = TopicPartitionDetails{
+				&partitionMetadata,
+				&TopicPartitionMarks{},
+				[]TopicPartitionLogDirs{},
+			}
 		}
-		topicOverview.Partitions = partitionMetadata
+		topicOverview.Partitions = partitionInfo
 		overviewByTopic[topic.Topic] = topicOverview
 	}
 
@@ -334,7 +372,7 @@ func (s *Service) describePartitionLogDirs(ctx context.Context, cl *kgo.Client, 
 					err, exists := errorByBrokerID[replicaID]
 					if !exists {
 						// This err should never happen. We should always have a proper err for missing responses!
-						err = errors.New("haven't got a log dir response for this replica even though it had been requested")
+						err = fmt.Errorf("haven't got a log dir response for this replica even though it had been requested")
 					}
 					topicLogDirsPatched[partitionID] = append(topicLogDirsPatched[partitionID], TopicPartitionLogDirs{
 						BrokerID:    replicaID,

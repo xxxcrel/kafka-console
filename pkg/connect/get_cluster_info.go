@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -12,11 +12,12 @@ package connect
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/cloudhut/common/rest"
 	"github.com/cloudhut/connect-client"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // ClusterInfo provides information about the Kafka connect cluster we are talking to.
@@ -43,7 +44,7 @@ func (s *Service) GetClusterInfo(ctx context.Context, clusterName string) (Clust
 			Err:          err,
 			Status:       http.StatusServiceUnavailable,
 			Message:      fmt.Sprintf("Failed to get cluster info: %v", err.Error()),
-			InternalLogs: []slog.Attr{slog.String("cluster_name", clusterName)},
+			InternalLogs: []zapcore.Field{zap.String("cluster_name", clusterName)},
 			IsSilent:     false,
 		}
 	}
@@ -54,7 +55,7 @@ func (s *Service) GetClusterInfo(ctx context.Context, clusterName string) (Clust
 			Err:          err,
 			Status:       http.StatusServiceUnavailable,
 			Message:      fmt.Sprintf("Failed to get cluster plugins: %v", err.Error()),
-			InternalLogs: []slog.Attr{slog.String("cluster_name", clusterName)},
+			InternalLogs: []zapcore.Field{zap.String("cluster_name", clusterName)},
 			IsSilent:     false,
 		}
 	}

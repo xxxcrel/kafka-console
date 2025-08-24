@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -10,15 +10,15 @@
 package api
 
 import (
-	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kmsg"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/xxxcrel/kafka-console/pkg/console"
 )
@@ -57,7 +57,7 @@ func (api *API) handleGetPartitions() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		topicName := rest.GetURLParam(r, "topicName")
-		logger := api.Logger.With(slog.String("topic_name", topicName))
+		logger := api.Logger.With(zap.String("topic_name", topicName))
 
 		topicDetails, restErr := api.ConsoleSvc.GetTopicDetails(r.Context(), []string{topicName})
 		if restErr != nil {
@@ -92,7 +92,7 @@ func (api *API) handleGetTopicConfig() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		topicName := rest.GetURLParam(r, "topicName")
-		logger := api.Logger.With(slog.String("topic_name", topicName))
+		logger := api.Logger.With(zap.String("topic_name", topicName))
 
 		description, restErr := api.ConsoleSvc.GetTopicConfigs(r.Context(), topicName, nil)
 		if restErr != nil {
@@ -143,12 +143,12 @@ type deleteTopicRecordsRequest struct {
 
 func (d *deleteTopicRecordsRequest) OK() error {
 	if len(d.Partitions) == 0 {
-		return errors.New("at least one partition must be specified")
+		return fmt.Errorf("at least one partition must be specified")
 	}
 
 	for _, partition := range d.Partitions {
 		if partition.Offset < -1 {
-			return errors.New("partition offset must be greater than -1")
+			return fmt.Errorf("partition offset must be greater than -1")
 		}
 	}
 
@@ -216,11 +216,11 @@ type editTopicConfigRequest struct {
 
 func (e *editTopicConfigRequest) OK() error {
 	if len(e.Configs) == 0 {
-		return errors.New("you must set at least one config entry that shall be modified")
+		return fmt.Errorf("you must set at least one config entry that shall be modified")
 	}
 	for _, cfg := range e.Configs {
 		if cfg.Key == "" {
-			return errors.New("at least one config key was not set. config keys must always be set")
+			return fmt.Errorf("at least one config key was not set. config keys must always be set")
 		}
 	}
 
@@ -233,7 +233,7 @@ func (api *API) handleEditTopicConfig() http.HandlerFunc {
 		topicName := rest.GetURLParam(r, "topicName")
 		if topicName == "" {
 			rest.SendRESTError(w, r, api.Logger, &rest.Error{
-				Err:      errors.New("topic name must be set"),
+				Err:      fmt.Errorf("topic name must be set"),
 				Status:   http.StatusBadRequest,
 				Message:  "Topic name must be set",
 				IsSilent: false,
@@ -264,7 +264,7 @@ func (api *API) handleEditTopicConfig() http.HandlerFunc {
 				Err:          fmt.Errorf("failed to edit topic config: %w", err),
 				Status:       http.StatusServiceUnavailable,
 				Message:      fmt.Sprintf("Failed to edit topic config: %v", err.Error()),
-				InternalLogs: []slog.Attr{slog.String("topic_name", topicName)},
+				InternalLogs: []zapcore.Field{zap.String("topic_name", topicName)},
 				IsSilent:     false,
 			})
 			return
@@ -294,7 +294,7 @@ func (api *API) handleGetTopicsConfigs() http.HandlerFunc {
 			configKeys = strings.Split(requestedConfigKeys, ",")
 		}
 
-		logger := api.Logger.With(slog.Int("topics_length", len(topicNames)), slog.Int("config_keys_length", len(configKeys)))
+		logger := api.Logger.With(zap.Int("topics_length", len(topicNames)), zap.Int("config_keys_length", len(configKeys)))
 
 		// 2. Fetch all topic names from metadata as no topic filter has been specified
 		if len(topicNames) == 0 {
@@ -345,7 +345,7 @@ func (api *API) handleGetTopicConsumers() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		topicName := rest.GetURLParam(r, "topicName")
-		logger := api.Logger.With(slog.String("topic_name", topicName))
+		logger := api.Logger.With(zap.String("topic_name", topicName))
 
 		consumers, err := api.ConsoleSvc.ListTopicConsumers(r.Context(), topicName)
 		if err != nil {
@@ -377,7 +377,7 @@ func (api *API) handleGetTopicsOffsets() http.HandlerFunc {
 		requestedTopicNames := rest.GetQueryParam(r, "topicNames")
 		if requestedTopicNames == "" {
 			restErr := &rest.Error{
-				Err:      errors.New("required parameter topicNames is missing"),
+				Err:      fmt.Errorf("required parameter topicNames is missing"),
 				Status:   http.StatusBadRequest,
 				Message:  "Required parameter topicNames is missing",
 				IsSilent: false,
@@ -390,7 +390,7 @@ func (api *API) handleGetTopicsOffsets() http.HandlerFunc {
 		timestampStr := rest.GetQueryParam(r, "timestamp")
 		if timestampStr == "" {
 			restErr := &rest.Error{
-				Err:      errors.New("required parameter timestamp is missing"),
+				Err:      fmt.Errorf("required parameter timestamp is missing"),
 				Status:   http.StatusBadRequest,
 				Message:  "Required parameter timestamp is missing",
 				IsSilent: false,
@@ -401,7 +401,7 @@ func (api *API) handleGetTopicsOffsets() http.HandlerFunc {
 		timestamp, err := strconv.Atoi(timestampStr)
 		if err != nil {
 			restErr := &rest.Error{
-				Err:      errors.New("timestamp parameter must be a valid int"),
+				Err:      fmt.Errorf("timestamp parameter must be a valid int"),
 				Status:   http.StatusBadRequest,
 				Message:  "Timestamp parameter must be a valid int",
 				IsSilent: false,

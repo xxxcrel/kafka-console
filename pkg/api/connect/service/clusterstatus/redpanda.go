@@ -23,7 +23,8 @@ type redpandaStatusChecker struct{}
 // reports the version individually, we iterate through the list of brokers and
 // return the first reported version that contains a semVer.
 func (*redpandaStatusChecker) clusterVersionFromBrokerList(brokers []rpadmin.Broker) string {
-	version := unknownVersion
+	//nolint:goconst // Other occurrences are unrelated
+	version := "unknown"
 	for _, broker := range brokers {
 		if broker.Version != "" {
 			// Broker version may look like this: "v22.1.4 - 491e56900d2316fcbb22aa1d37e7195897878309"

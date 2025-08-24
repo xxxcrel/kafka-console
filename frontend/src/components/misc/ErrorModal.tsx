@@ -23,7 +23,8 @@ import {
   Text,
 } from '@redpanda-data/ui';
 import { action, observable } from 'mobx';
-import React, { Component } from 'react';
+import React from 'react';
+import { Component } from 'react';
 
 class ErrorModal extends Component<ErrorModalProps> {
   title: string;

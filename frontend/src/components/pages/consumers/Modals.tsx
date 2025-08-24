@@ -15,7 +15,6 @@ import {
   Box,
   Button,
   ConfirmItemDeleteModal,
-  createStandaloneToast,
   DataTable,
   Flex,
   FormLabel,
@@ -30,13 +29,14 @@ import {
   ModalOverlay,
   NumberInput,
   Radio,
-  redpandaTheme,
-  redpandaToastOptions,
   Text,
   Tooltip,
   UnorderedList,
+  createStandaloneToast,
+  redpandaTheme,
+  redpandaToastOptions,
 } from '@redpanda-data/ui';
-import { action, autorun, type IReactionDisposer, makeObservable, observable, transaction } from 'mobx';
+import { type IReactionDisposer, action, autorun, makeObservable, observable, transaction } from 'mobx';
 import { observer } from 'mobx-react';
 import { Component } from 'react';
 import { MdOutlineWarningAmber } from 'react-icons/md';
@@ -50,7 +50,7 @@ import type {
   TopicOffset,
 } from '../../../state/restInterfaces';
 import { toJson } from '../../../utils/jsonUtils';
-import { InfoText, numberToThousandsString, Button as RPButton } from '../../../utils/tsxUtils';
+import { InfoText, Button as RPButton, numberToThousandsString } from '../../../utils/tsxUtils';
 import { showErrorModal } from '../../misc/ErrorModal';
 import { KowlTimePicker } from '../../misc/KowlTimePicker';
 import { SingleSelect } from '../../misc/Select';
@@ -108,9 +108,10 @@ export class EditOffsetsModal extends Component<{
   @observable selectedOption: EditOptions = 'startOffset';
   @observable selectedTopic: string | null = null;
   @observable selectedPartition: number | null = null;
-  @observable timestampUtcMs: number = Date.now();
+  @observable timestampUtcMs: number = new Date().valueOf();
   @observable offsetShiftByValue = 0;
   @observable offsetShiftByValueAsString = '0';
+
 
   @observable otherConsumerGroups: GroupDescription[] = [];
   @observable selectedGroup: string | undefined = undefined;
@@ -193,30 +194,29 @@ export class EditOffsetsModal extends Component<{
               ]}
             />
           </Box>
-          {this.selectedTopic !== null && (
-            <Box>
-              <FormLabel>Partition</FormLabel>
-              <SingleSelect
-                options={[
-                  {
-                    value: null,
-                    label: 'All Partitions',
-                  },
-                  ...(this.props.offsets
-                    ?.filter((x) => x.topicName === this.selectedTopic)
+          {
+            this.selectedTopic !== null && (
+              <Box>
+                <FormLabel>Partition</FormLabel>
+                <SingleSelect
+                  options={[
+                    {
+                      value: null,
+                      label: 'All Partitions',
+                    },
+                    ...this.props.offsets?.filter((x) => x.topicName === this.selectedTopic)
                     ?.sort((a, b) => a.partitionId - b.partitionId)
                     ?.map((x: GroupOffset) => ({
                       value: x.partitionId,
                       label: x.partitionId.toString(),
-                    })) ?? []),
-                ]}
-                value={this.selectedPartition}
-                onChange={action((v: number | null) => {
-                  this.selectedPartition = v;
-                })}
-              />
-            </Box>
-          )}
+                    })) ?? [],
+                  ]}
+                  value={this.selectedPartition}
+                  onChange={action((v: number | null) => { this.selectedPartition = v })}
+                />
+              </Box>
+            )
+          }
           <Box>
             <FormLabel>Strategy</FormLabel>
             <SingleSelect
@@ -431,15 +431,14 @@ export class EditOffsetsModal extends Component<{
       if (this.props.offsets == null) return;
       const op = this.selectedOption;
 
+
       // reset all newOffset
       for (const x of this.props.offsets) {
         x.newOffset = undefined;
       }
 
       // filter selected offsets to be edited
-      const selectedOffsets = this.props.offsets.filter(
-        (x) => this.selectedPartition === null || x.partitionId === this.selectedPartition,
-      );
+      const selectedOffsets = this.props.offsets.filter((x) => this.selectedPartition === null || x.partitionId === this.selectedPartition);
 
       if (op === 'startOffset') {
         // Earliest
@@ -652,8 +651,8 @@ export class EditOffsetsModal extends Component<{
     // biome-ignore lint/style/noNonNullAssertion: not touching MobX observables
     const offsets = this.props.offsets!.filter(
       ({ topicName, partitionId }) =>
-        (this.selectedTopic === null || topicName === this.selectedTopic) &&
-        (this.selectedPartition === null || partitionId === this.selectedPartition),
+        (this.selectedTopic === null || topicName === this.selectedTopic)
+        && (this.selectedPartition === null || partitionId === this.selectedPartition),
     );
 
     this.isApplyingEdit = true;
@@ -881,7 +880,7 @@ export class DeleteOffsetsModal extends Component<{
             if (remainingOffsets === 0) {
               // Group is fully deleted, go back to list
               this.props.onClose();
-              appGlobal.historyReplace('/groups');
+              appGlobal.history.replace('/groups');
             } else {
               this.props.onClose();
               dismiss();

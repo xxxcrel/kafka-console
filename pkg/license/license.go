@@ -27,17 +27,14 @@ type License struct {
 	Type Type `json:"type"`
 	// UnixEpochSeconds when the license expires
 	ExpiresAt int64 `json:"expiresAt"`
-	// Organization is the name of the organization that the license is associated with
-	Organization string `json:"organization"`
 }
 
 // NewOpenSourceCoreLicense creates a new default open source License.
 func NewOpenSourceCoreLicense() License {
 	return License{
-		Source:       SourceRedpanda,
-		Type:         TypeOpenSource,
-		ExpiresAt:    math.MaxInt32,
-		Organization: "",
+		Source:    SourceRedpanda,
+		Type:      TypeOpenSource,
+		ExpiresAt: math.MaxInt32,
 	}
 }
 

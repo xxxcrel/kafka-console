@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -15,8 +15,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -31,6 +29,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kmsg"
 	"github.com/twmb/franz-go/pkg/sr"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/config"
 	kafkafactory "github.com/xxxcrel/kafka-console/pkg/factory/kafka"
@@ -44,7 +43,10 @@ func (s *ConsoleIntegrationTestSuite) TestListMessages() {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logCfg := zap.NewDevelopmentConfig()
+	logCfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	log, err := logCfg.Build()
+	require.NoError(err)
 
 	testTopicName := testutil.TopicNameForTest("list_messages")
 
@@ -52,7 +54,7 @@ func (s *ConsoleIntegrationTestSuite) TestListMessages() {
 
 	testutil.CreateTestData(t, ctx, s.kafkaClient, s.kafkaAdminClient, testTopicName)
 
-	_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, testTopicNameProto)
+	_, err = s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, testTopicNameProto)
 	require.NoError(err)
 
 	ssIDs := testutil.ProduceOrdersWithSchemas(t, ctx, s.kafkaClient, s.kafkaSRClient, testTopicNameProto)
@@ -770,7 +772,7 @@ func (s *ConsoleIntegrationTestSuite) TestListMessages() {
 	})
 }
 
-func createNewTestService(t *testing.T, log *slog.Logger,
+func createNewTestService(t *testing.T, log *zap.Logger,
 	testName string, seedBrokers string, registryAddr string,
 ) Servicer {
 	metricName := testutil.MetricNameForTest(strings.ReplaceAll(testName, " ", ""))
@@ -793,7 +795,7 @@ func createNewTestService(t *testing.T, log *slog.Logger,
 	svc, err := NewService(&cfg, log, kafkaFactory, schemaFactory, nil, cacheFn, nil)
 	require.NoError(t, err)
 
-	err = svc.Start(t.Context())
+	err = svc.Start(context.Background())
 	require.NoError(t, err)
 
 	return svc
@@ -914,7 +916,7 @@ func (o *GenericMatcher) String() string {
 	return ""
 }
 
-// MatchesJSON creates the Matcher
+// MatchesOrder creates the Matcher
 func MatchesJSON(expected map[string]map[string]any) gomock.Matcher {
 	return &GenericMatcher{expected: expected}
 }

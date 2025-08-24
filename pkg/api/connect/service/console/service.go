@@ -14,7 +14,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"sync/atomic"
 	"time"
 
@@ -22,6 +21,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/dop251/goja"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"go.uber.org/zap"
 
 	apierrors "github.com/xxxcrel/kafka-console/pkg/api/connect/errors"
 	"github.com/xxxcrel/kafka-console/pkg/api/httptypes"
@@ -32,13 +32,13 @@ import (
 
 // Service that implements the ConsoleServiceHandler interface.
 type Service struct {
-	logger     *slog.Logger
+	logger     *zap.Logger
 	consoleSvc console.Servicer
 }
 
 // NewService creates a new Console service handler.
 func NewService(
-	logger *slog.Logger,
+	logger *zap.Logger,
 	consoleSvc console.Servicer,
 ) *Service {
 	return &Service{

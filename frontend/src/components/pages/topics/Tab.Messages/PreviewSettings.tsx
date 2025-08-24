@@ -34,8 +34,8 @@ import {
   DragDropContext,
   Draggable,
   type DraggableProvided,
-  Droppable,
   type DropResult,
+  Droppable,
   type ResponderProvided,
 } from 'react-beautiful-dnd';
 import globExampleImg from '../../../../assets/globExample.png';
@@ -190,7 +190,7 @@ export class PreviewSettings extends Component<{
 }> {
   @computed.struct get allCurrentKeys() {
     // @ts-ignore perhaps we still need this due to MobX behavior?
-    const _unused = this.props.messageSearch.messages.length;
+    const unused = this.props.messageSearch.messages.length;
     return getAllMessageKeys(this.props.messageSearch.messages)
       .map((p) => p.propertyName)
       .distinct();
@@ -393,7 +393,6 @@ class PreviewTagSettings extends Component<{
         </Box>
 
         {/* Remove */}
-        {/** biome-ignore lint/a11y/noStaticElementInteractions: part of PreviewTagSettings implementation */}
         <span className="inlineButton" onClick={onRemove}>
           <XIcon />
         </span>

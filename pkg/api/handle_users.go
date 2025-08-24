@@ -10,7 +10,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -73,16 +72,16 @@ type CreateUserRequest struct {
 // OK validates the create user request.
 func (c *CreateUserRequest) OK() error {
 	if c.Username == "" {
-		return errors.New("username must be set")
+		return fmt.Errorf("username must be set")
 	}
 	if c.Password == "" {
-		return errors.New("password must be set")
+		return fmt.Errorf("password must be set")
 	}
 
 	switch c.Mechanism {
 	case adminapi.ScramSha256, adminapi.ScramSha512:
 	default:
-		return errors.New("mechanism must be either SCRAM-SHA-256 or SCRAM-SHA-512")
+		return fmt.Errorf("mechanism must be either SCRAM-SHA-256 or SCRAM-SHA-512")
 	}
 
 	return nil
@@ -124,7 +123,7 @@ func (api *API) handleCreateUser() http.HandlerFunc {
 
 		// 5. Return an error if we can't create any users
 		rest.SendRESTError(w, r, api.Logger, &rest.Error{
-			Err:     errors.New("redpanda Admin API is not enabled"),
+			Err:     fmt.Errorf("redpanda Admin API is not enabled"),
 			Status:  http.StatusServiceUnavailable,
 			Message: "Redpanda Admin API is not enabled",
 		})
@@ -136,7 +135,7 @@ func (api *API) handleDeleteUser() http.HandlerFunc {
 		principalID := rest.GetURLParam(r, "principalID")
 		if principalID == "" {
 			rest.SendRESTError(w, r, api.Logger, &rest.Error{
-				Err:     errors.New("user must be set"),
+				Err:     fmt.Errorf("user must be set"),
 				Status:  http.StatusBadRequest,
 				Message: "User must be set",
 			})
@@ -170,7 +169,7 @@ func (api *API) handleDeleteUser() http.HandlerFunc {
 
 		// 5. Return an error if we can't delete any users
 		rest.SendRESTError(w, r, api.Logger, &rest.Error{
-			Err:     errors.New("redpanda Admin API is not enabled"),
+			Err:     fmt.Errorf("redpanda Admin API is not enabled"),
 			Status:  http.StatusServiceUnavailable,
 			Message: "Redpanda Admin API is not enabled",
 		})

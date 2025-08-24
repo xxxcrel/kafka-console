@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -12,13 +12,12 @@ package console
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/twmb/franz-go/pkg/kmsg"
 	"github.com/twmb/franz-go/pkg/kversion"
+	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1/consolev1alpha1connect"
-	"github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/dataplane/v1/dataplanev1connect"
 	"github.com/xxxcrel/kafka-console/pkg/version"
 )
 
@@ -142,11 +141,6 @@ func (s *Service) GetEndpointCompatibility(ctx context.Context) (EndpointCompati
 			HasRedpandaAPI:  true,
 			RedpandaFeature: redpandaFeatureDebugBundle,
 		},
-		{
-			URL:             dataplanev1connect.ACLServiceName,
-			Method:          "POST",
-			RedpandaFeature: redpandaFeatureSchemaRegistryACL,
-		},
 	}
 
 	endpoints := make([]EndpointCompatibilityEndpoint, 0, len(endpointRequirements))
@@ -182,15 +176,9 @@ func (s *Service) GetEndpointCompatibility(ctx context.Context) (EndpointCompati
 					endpointSupported = s.checkRedpandaFeature(ctx, adminAPICl, endpointReq.RedpandaFeature)
 				} else {
 					endpointSupported = false
-					s.logger.WarnContext(ctx, "failed to retrieve a redpanda api client to check endpoint compatibility", slog.Any("error", err))
+					s.logger.Warn("failed to retrieve a redpanda api client to check endpoint compatibility", zap.Error(err))
 				}
 			}
-		}
-
-		// Special case for Schema Registry ACL feature - requires Schema
-		// Registry API support
-		if endpointReq.RedpandaFeature == redpandaFeatureSchemaRegistryACL {
-			endpointSupported = s.CheckSchemaRegistryACLSupport(ctx)
 		}
 
 		endpoints = append(endpoints, EndpointCompatibilityEndpoint{

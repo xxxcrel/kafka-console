@@ -83,4 +83,4 @@ while sensitive information can be mounted during the deployment process.
 
 All available settings which can be configured in your YAML configs can be found here and should document themselves:
 
-[/docs/config/console.yaml](https://github.com/redpanda-data/console/blob/master/docs/config/console.yaml)
+[/docs/config/console.yaml](https://github.com/xxxcrel/kafka-console/blob/master/docs/config/console.yaml)

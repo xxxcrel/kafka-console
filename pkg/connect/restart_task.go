@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -12,10 +12,11 @@ package connect
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/cloudhut/common/rest"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // RestartConnectorTask restart an individual task.
@@ -31,10 +32,10 @@ func (s *Service) RestartConnectorTask(ctx context.Context, clusterName string, 
 			Err:     err,
 			Status:  http.StatusServiceUnavailable,
 			Message: fmt.Sprintf("Failed to restart connector task: %v", err.Error()),
-			InternalLogs: []slog.Attr{
-				slog.String("cluster_name", clusterName),
-				slog.String("connector", connector),
-				slog.Int("task_id", taskID),
+			InternalLogs: []zapcore.Field{
+				zap.String("cluster_name", clusterName),
+				zap.String("connector", connector),
+				zap.Int("task_id", taskID),
 			},
 			IsSilent: false,
 		}

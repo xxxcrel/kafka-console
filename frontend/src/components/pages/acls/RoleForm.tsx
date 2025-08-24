@@ -14,33 +14,33 @@ import {
   Button,
   Flex,
   FormField,
-  Heading,
   HStack,
+  Heading,
   Input,
-  isSingleValue,
   Select,
   Tag,
   TagCloseButton,
   TagLabel,
+  isSingleValue,
   useToast,
 } from '@redpanda-data/ui';
 import { observer, useLocalObservable } from 'mobx-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { appGlobal } from '../../../state/appGlobal';
-import { api, type RolePrincipal, rolesApi } from '../../../state/backendApi';
+import { type RolePrincipal, api, rolesApi } from '../../../state/backendApi';
 import type { AclStrOperation, AclStrResourceType } from '../../../state/restInterfaces';
 import {
   type AclPrincipalGroup,
   type ClusterACLs,
   type ConsumerGroupACLs,
+  type TopicACLs,
+  type TransactionalIdACLs,
   createEmptyClusterAcl,
   createEmptyConsumerGroupAcl,
   createEmptyTopicAcl,
   createEmptyTransactionalIdAcl,
   principalGroupsView,
-  type TopicACLs,
-  type TransactionalIdACLs,
   unpackPrincipalGroup,
 } from './Models';
 import { ResourceACLsEditor } from './PrincipalGroupEditor';
@@ -61,7 +61,7 @@ type RoleFormProps = {
 };
 
 export const RoleForm = observer(({ initialData }: RoleFormProps) => {
-  const navigate = useNavigate();
+  const history = useHistory();
   const formState = useLocalObservable<CreateRoleFormState>(() => ({
     roleName: '',
     allowAllOperations: false,
@@ -131,29 +131,27 @@ export const RoleForm = observer(({ initialData }: RoleFormProps) => {
               true,
             );
 
-            if (newRole.response) {
-              const unpackedPrincipalGroup = unpackPrincipalGroup(aclPrincipalGroup);
+            const unpackedPrincipalGroup = unpackPrincipalGroup(aclPrincipalGroup);
 
-              for (const aclFlat of unpackedPrincipalGroup) {
-                await api.createACL({
-                  host: aclFlat.host,
-                  principal: aclFlat.principal,
-                  resourceType: aclFlat.resourceType,
-                  resourceName: aclFlat.resourceName,
-                  resourcePatternType: aclFlat.resourcePatternType as unknown as 'Literal' | 'Prefixed',
-                  operation: aclFlat.operation as unknown as Exclude<AclStrOperation, 'Unknown' | 'Any'>,
-                  permissionType: aclFlat.permissionType as unknown as 'Allow' | 'Deny',
-                });
-              }
-
-              setIsLoading(false);
-              toast({
-                status: 'success',
-                title: `Role ${newRole.response.roleName} successfully ${editMode ? 'updated' : 'created'}`,
+            for (const aclFlat of unpackedPrincipalGroup) {
+              await api.createACL({
+                host: aclFlat.host,
+                principal: aclFlat.principal,
+                resourceType: aclFlat.resourceType,
+                resourceName: aclFlat.resourceName,
+                resourcePatternType: aclFlat.resourcePatternType as unknown as 'Literal' | 'Prefixed',
+                operation: aclFlat.operation as unknown as Exclude<AclStrOperation, 'Unknown' | 'Any'>,
+                permissionType: aclFlat.permissionType as unknown as 'Allow' | 'Deny',
               });
-
-              navigate(`/security/roles/${encodeURIComponent(newRole.response.roleName)}/details`);
             }
+
+            setIsLoading(false);
+            toast({
+              status: 'success',
+              title: `Role ${newRole.roleName} successfully ${editMode ? 'updated' : 'created'}`,
+            });
+
+            history.push(`/security/roles/${encodeURIComponent(newRole.roleName)}/details`);
           } catch (err) {
             toast({
               status: 'error',
@@ -342,7 +340,9 @@ export const RoleForm = observer(({ initialData }: RoleFormProps) => {
             <Button
               variant="link"
               onClick={() => {
-                appGlobal.historyPush(`/security/roles/${encodeURIComponent(initialData?.roleName as string)}/details`);
+                appGlobal.history.push(
+                  `/security/roles/${encodeURIComponent(initialData?.roleName as string)}/details`,
+                );
               }}
             >
               Go back
@@ -351,7 +351,7 @@ export const RoleForm = observer(({ initialData }: RoleFormProps) => {
             <Button
               variant="link"
               onClick={() => {
-                appGlobal.historyPush('/security/roles/');
+                appGlobal.history.push('/security/roles/');
               }}
             >
               Go back

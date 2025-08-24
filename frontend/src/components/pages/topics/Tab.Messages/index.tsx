@@ -11,10 +11,10 @@
 
 import { DownloadIcon, KebabHorizontalIcon, SkipIcon, SyncIcon, XCircleIcon } from '@primer/octicons-react';
 import {
+  type IReactionDisposer,
   action,
   autorun,
   computed,
-  type IReactionDisposer,
   makeObservable,
   observable,
   transaction,
@@ -22,13 +22,14 @@ import {
 } from 'mobx';
 import { observer } from 'mobx-react';
 import React, { Component, type FC, type ReactNode, useState } from 'react';
-import { api, createMessageSearch, type MessageSearch, type MessageSearchRequest } from '../../../../state/backendApi';
-import type { Payload, Topic, TopicAction, TopicMessage } from '../../../../state/restInterfaces';
+import { type MessageSearch, type MessageSearchRequest, api, createMessageSearch } from '../../../../state/backendApi';
+import type { Payload, Topic, TopicAction } from '../../../../state/restInterfaces';
+import type { TopicMessage } from '../../../../state/restInterfaces';
 import { Feature, isSupported } from '../../../../state/supportedFeatures';
 import {
   type ColumnList,
-  type DataColumnKey,
   DEFAULT_SEARCH_PARAMS,
+  type DataColumnKey,
   FilterEntry,
   PartitionOffsetOrigin,
   type PreviewTagV2,
@@ -99,18 +100,18 @@ import usePaginationParams from '../../../../hooks/usePaginationParams';
 import { PayloadEncoding } from '../../../../protogen/redpanda/api/console/v1alpha1/common_pb';
 import { appGlobal } from '../../../../state/appGlobal';
 import { IsDev } from '../../../../utils/env';
-import { FilterableDataSource } from '../../../../utils/filterableDataSource';
 import { sanitizeString, wrapFilterFragment } from '../../../../utils/filterHelper';
+import { FilterableDataSource } from '../../../../utils/filterableDataSource';
 import { toJson } from '../../../../utils/jsonUtils';
 import { onPaginationChange } from '../../../../utils/pagination';
 import { editQuery } from '../../../../utils/queryHelper';
 import {
   Ellipsis,
   Label,
-  navigatorClipboardErrorHandler,
-  numberToThousandsString,
   StatusIndicator,
   TimestampDisplay,
+  navigatorClipboardErrorHandler,
+  numberToThousandsString,
   toSafeString,
 } from '../../../../utils/tsxUtils';
 import {
@@ -121,12 +122,12 @@ import {
   prettyMilliseconds,
   titleCase,
 } from '../../../../utils/utils';
-import { range } from '../../../misc/common';
 import { KowlJsonView } from '../../../misc/KowlJsonView';
 import RemovableFilter from '../../../misc/RemovableFilter';
 import { SingleSelect, type SingleSelectProps } from '../../../misc/Select';
+import { range } from '../../../misc/common';
 import JavascriptFilterModal from './JavascriptFilterModal';
-import { getPreviewTags, PreviewSettings } from './PreviewSettings';
+import { PreviewSettings, getPreviewTags } from './PreviewSettings';
 
 const payloadEncodingPairs = [
   { value: PayloadEncoding.UNSPECIFIED, label: 'Automatic' },
@@ -158,77 +159,6 @@ const PAYLOAD_ENCODING_LABELS = payloadEncodingPairs.reduce(
 interface TopicMessageViewProps {
   topic: Topic;
   refreshTopicData: (force: boolean) => void;
-}
-
-// Add these type definitions and helper functions at the top of the file
-type TopicMessageParams = {
-  partitionID: number;
-  maxResults: number;
-  startOffset: number;
-  quickSearch: string;
-};
-
-type ParamConfig = {
-  key: keyof TopicMessageParams;
-  transform: (value: string) => number | string;
-};
-
-const PARAM_MAPPING = {
-  p: { key: 'partitionID', transform: Number } as ParamConfig,
-  s: { key: 'maxResults', transform: Number } as ParamConfig,
-  o: { key: 'startOffset', transform: Number } as ParamConfig,
-  q: { key: 'quickSearch', transform: String } as ParamConfig,
-};
-
-// Define the column order as a constant
-const COLUMN_ORDER: DataColumnKey[] = ['timestamp', 'partitionID', 'offset', 'key', 'value', 'keySize', 'valueSize'];
-
-function parseUrlParams(): TopicMessageParams {
-  const query = new URLSearchParams(window.location.search);
-  const params = { ...DEFAULT_SEARCH_PARAMS };
-
-  // First apply defaults from local storage (last used params)
-  const lastUsedParams = uiState.topicSettings.searchParams;
-  params.partitionID = lastUsedParams.partitionID;
-  params.maxResults = lastUsedParams.maxResults;
-  params.startOffset = lastUsedParams.startOffset;
-  // Initialize quickSearch as empty string instead of loading from local storage
-  params.quickSearch = '';
-
-  // Then override with URL parameters if they exist
-  for (const [urlParam, { key, transform }] of Object.entries(PARAM_MAPPING)) {
-    const value = query.get(urlParam);
-    if (value !== null) {
-      const transformed = transform(value);
-      if (key === 'startOffset') {
-        const numValue = Number(transformed);
-        params[key] = Number.isNaN(numValue) ? lastUsedParams.startOffset : numValue;
-      } else if (key === 'quickSearch') {
-        params[key] = transformed as string;
-      } else {
-        params[key] = transformed as number;
-      }
-    }
-  }
-
-  return params;
-}
-
-function updateUrlParams(params: Partial<TopicMessageParams>) {
-  editQuery((query: Record<string, string | null | undefined>) => {
-    for (const [urlParam, { key }] of Object.entries(PARAM_MAPPING)) {
-      const value = params[key as keyof TopicMessageParams];
-      if (value !== undefined && value !== null) {
-        query[urlParam] = String(value);
-      }
-    }
-  });
-
-  // Update local storage with the new params
-  if (params.partitionID !== undefined) uiState.topicSettings.searchParams.partitionID = params.partitionID;
-  if (params.maxResults !== undefined) uiState.topicSettings.searchParams.maxResults = params.maxResults;
-  if (params.startOffset !== undefined) uiState.topicSettings.searchParams.startOffset = params.startOffset;
-  if (params.quickSearch !== undefined) uiState.topicSettings.quickSearch = params.quickSearch;
 }
 
 /*
@@ -300,7 +230,7 @@ const inlineSelectChakraStyles: SingleSelectProps<PayloadEncoding | number>['cha
 @observer
 export class TopicMessageView extends Component<TopicMessageViewProps> {
   @observable previewDisplay: string[] = [];
-  @observable currentParams: TopicMessageParams;
+  // @observable allCurrentKeys: string[];
 
   @observable showColumnSettingsModal = false;
   @observable showPreviewFieldsModal = false;
@@ -309,15 +239,10 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
   @observable fetchError = null as any | null;
 
   messageSearch = createMessageSearch();
-  messageSource = new FilterableDataSource<TopicMessage>(
-    () => this.messageSearch.messages,
-    (filterText, m) => this.isFilterMatch(filterText, m),
-    100, // Increased debounce time to match default
-  );
+  messageSource = new FilterableDataSource<TopicMessage>(() => this.messageSearch.messages, this.isFilterMatch, 16);
 
   autoSearchReaction: IReactionDisposer | null = null;
   quickSearchReaction: IReactionDisposer | null = null;
-  urlParamsReaction: IReactionDisposer | null = null;
 
   currentSearchRun: string | null = null;
 
@@ -326,30 +251,24 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
 
   constructor(props: TopicMessageViewProps) {
     super(props);
-    this.currentParams = parseUrlParams();
     this.executeMessageSearch = this.executeMessageSearch.bind(this); // needed because we must pass the function directly as 'submit' prop
-    this.isFilterMatch = this.isFilterMatch.bind(this);
 
     makeObservable(this);
   }
 
   componentDidMount() {
-    // Initialize params from URL and/or defaults
-    this.currentParams = parseUrlParams();
-
-    // Always update URL with current params to ensure consistency
-    updateUrlParams(this.currentParams);
-
-    // Watch for URL parameter changes
-    this.urlParamsReaction = autorun(
-      () => {
-        const urlParams = parseUrlParams();
-        transaction(() => {
-          this.currentParams = urlParams;
-        });
-      },
-      { name: 'sync url parameters' },
-    );
+    // unpack query parameters (if any)
+    const searchParams = uiState.topicSettings.searchParams;
+    const query = new URLSearchParams(window.location.search);
+    // console.debug("parsing query: " + toJson(query));
+    if (query.has('p')) searchParams.partitionID = Number(query.get('p'));
+    if (query.has('s')) searchParams.maxResults = Number(query.get('s'));
+    if (query.has('o')) {
+      searchParams.startOffset = Number(query.get('o'));
+      searchParams.offsetOrigin =
+        searchParams.startOffset >= 0 ? PartitionOffsetOrigin.Custom : searchParams.startOffset;
+    }
+    if (query.has('q')) uiState.topicSettings.quickSearch = String(query.get('q'));
 
     // Auto search when parameters change
     this.autoSearchReaction = autorun(() => this.searchFunc('auto'), {
@@ -360,21 +279,22 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
     // Quick search -> url
     this.quickSearchReaction = autorun(
       () => {
-        updateUrlParams({ quickSearch: this.currentParams.quickSearch });
-        // Also update the local storage value to keep it in sync
-        uiState.topicSettings.quickSearch = this.currentParams.quickSearch;
+        editQuery((query) => {
+          if (uiState.topicSettings.quickSearch) query.q = uiState.topicSettings.quickSearch;
+          else query.q = undefined;
+        });
       },
       { name: 'update query string' },
     );
 
+    this.messageSource.filterText = uiState.topicSettings.quickSearch;
+
     appGlobal.searchMessagesFunc = this.searchFunc;
   }
-
   componentWillUnmount() {
     this.messageSource.dispose();
     if (this.autoSearchReaction) this.autoSearchReaction();
     if (this.quickSearchReaction) this.quickSearchReaction();
-    if (this.urlParamsReaction) this.urlParamsReaction();
 
     this.messageSearch.stopSearch();
 
@@ -404,12 +324,15 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
             </Box>
           </Alert>
         ) : (
-          <this.MessageTable />
+          <>
+            <this.MessageTable />
+          </>
         )}
       </>
     );
   }
   SearchControlsBar = observer(() => {
+    const searchParams = uiState.topicSettings.searchParams;
     const topic = this.props.topic;
     const canUseFilters = (api.topicPermissions.get(topic.topicName)?.canUseSearchFilters ?? true) && !isServerless();
     const [customStartOffsetValue, setCustomStartOffsetValue] = useState(0 as number | string);
@@ -432,7 +355,7 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
         label: (
           <Flex gap={2} alignItems="center">
             <MdOutlineQuickreply />
-            <span data-testid="start-offset-newest">{`Newest - ${String(this.currentParams.maxResults)}`}</span>
+            <span data-testid="start-offset-newest">{`Newest - ${String(searchParams.maxResults)}`}</span>
           </Flex>
         ),
       },
@@ -465,10 +388,6 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
       },
     ];
 
-    // Determine the current offset origin based on startOffset
-    const currentOffsetOrigin =
-      this.currentParams.startOffset >= 0 ? PartitionOffsetOrigin.Custom : this.currentParams.startOffset;
-
     return (
       <React.Fragment>
         <Grid my={4} gap={3} gridTemplateColumns="auto 1fr" width="full">
@@ -476,47 +395,41 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
             <Label text="Start Offset">
               <Flex gap={3}>
                 <SingleSelect<PartitionOffsetOrigin>
-                  value={currentOffsetOrigin}
+                  value={searchParams.offsetOrigin}
                   data-testid="start-offset-dropdown"
                   onChange={(e) => {
-                    if (e === PartitionOffsetOrigin.Custom) {
-                      if (this.currentParams.startOffset < 0) this.currentParams.startOffset = 0;
+                    searchParams.offsetOrigin = e;
+                    if (searchParams.offsetOrigin === PartitionOffsetOrigin.Custom) {
+                      if (searchParams.startOffset < 0) searchParams.startOffset = 0;
                     } else {
-                      this.currentParams.startOffset = e;
+                      searchParams.startOffset = searchParams.offsetOrigin;
                     }
-                    updateUrlParams({ startOffset: this.currentParams.startOffset });
                   }}
                   options={startOffsetOptions}
                   chakraStyles={defaultSelectChakraStyles}
                 />
-                {currentOffsetOrigin === PartitionOffsetOrigin.Custom && (
+                {searchParams.offsetOrigin === PartitionOffsetOrigin.Custom && (
                   <Tooltip hasArrow placement="right" label="Offset must be a number" isOpen={!customStartOffsetValid}>
                     <Input
                       style={{ width: '7.5em' }}
                       maxLength={20}
-                      isDisabled={currentOffsetOrigin !== PartitionOffsetOrigin.Custom}
+                      isDisabled={searchParams.offsetOrigin !== PartitionOffsetOrigin.Custom}
                       value={customStartOffsetValue}
                       onChange={(e) => {
                         setCustomStartOffsetValue(e.target.value);
-                        if (!Number.isNaN(Number(e.target.value))) {
-                          this.currentParams.startOffset = Number(e.target.value);
-                          updateUrlParams({ startOffset: this.currentParams.startOffset });
-                        }
+                        if (!Number.isNaN(Number(e.target.value))) searchParams.startOffset = Number(e.target.value);
                       }}
                     />
                   </Tooltip>
                 )}
-                {currentOffsetOrigin === PartitionOffsetOrigin.Timestamp && <StartOffsetDateTimePicker />}
+                {searchParams.offsetOrigin === PartitionOffsetOrigin.Timestamp && <StartOffsetDateTimePicker />}
               </Flex>
             </Label>
 
             <Label text="Max Results">
               <SingleSelect<number>
-                value={this.currentParams.maxResults}
-                onChange={(c) => {
-                  this.currentParams.maxResults = c;
-                  updateUrlParams({ maxResults: c });
-                }}
+                value={searchParams.maxResults}
+                onChange={(c) => (searchParams.maxResults = c)}
                 options={[1, 3, 5, 10, 20, 50, 100, 200, 500].map((i) => ({ value: i }))}
               />
             </Label>
@@ -529,17 +442,13 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
                       <RemovableFilter
                         onRemove={() => {
                           uiState.topicSettings.dynamicFilters.remove('partition');
-                          this.currentParams.partitionID = DEFAULT_SEARCH_PARAMS.partitionID;
-                          updateUrlParams({ partitionID: this.currentParams.partitionID });
+                          searchParams.partitionID = DEFAULT_SEARCH_PARAMS.partitionID;
                         }}
                       >
                         <SingleSelect<number>
-                          value={this.currentParams.partitionID}
+                          value={searchParams.partitionID}
                           chakraStyles={inlineSelectChakraStyles}
-                          onChange={(c) => {
-                            this.currentParams.partitionID = c;
-                            updateUrlParams({ partitionID: c });
-                          }}
+                          onChange={(c) => (searchParams.partitionID = c)}
                           options={[
                             {
                               value: -1,
@@ -595,10 +504,10 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
             {Boolean(this.messageSearch.searchPhase && this.messageSearch.searchPhase.length > 0) && (
               <StatusIndicator
                 identityKey="messageSearch"
-                fillFactor={(this.messageSearch.messages?.length ?? 0) / this.currentParams.maxResults}
+                fillFactor={(this.messageSearch.messages?.length ?? 0) / searchParams.maxResults}
                 // biome-ignore lint/style/noNonNullAssertion: not touching MobX observables
                 statusText={this.messageSearch.searchPhase!}
-                progressText={`${this.messageSearch.messages?.length ?? 0} / ${this.currentParams.maxResults}`}
+                progressText={`${this.messageSearch.messages?.length ?? 0} / ${searchParams.maxResults}`}
                 bytesConsumed={prettyBytes(this.messageSearch.bytesConsumed)}
                 messagesConsumed={String(this.messageSearch.totalMessagesConsumed)}
               />
@@ -682,11 +591,8 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
             <Input
               px={4}
               placeholder="Filter table content ..."
-              value={this.currentParams.quickSearch}
-              onChange={(x) => {
-                this.currentParams.quickSearch = x.target.value;
-                updateUrlParams({ quickSearch: x.target.value });
-              }}
+              value={uiState.topicSettings.quickSearch}
+              onChange={(x) => (uiState.topicSettings.quickSearch = x.target.value)}
             />
             <Flex gap={2} fontSize="sm" whiteSpace="nowrap" alignItems="center">
               {this.messageSearch.searchPhase === null || this.messageSearch.searchPhase === 'Done' ? (
@@ -733,7 +639,8 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
 
   searchFunc = (source: 'auto' | 'manual') => {
     // need to do this first, so we trigger mobx
-    const searchParams = `${this.currentParams.startOffset} ${this.currentParams.maxResults} ${this.currentParams.partitionID} ${uiState.topicSettings.searchParams.startTimestamp} ${uiState.topicSettings.searchParams.keyDeserializer} ${uiState.topicSettings.searchParams.valueDeserializer}`;
+    const params = uiState.topicSettings.searchParams;
+    const searchParams = `${params.offsetOrigin} ${params.maxResults} ${params.partitionID} ${params.startOffset} ${params.startTimestamp} ${params.keyDeserializer} ${params.valueDeserializer}`;
 
     untracked(() => {
       const phase = this.messageSearch.searchPhase;
@@ -776,14 +683,11 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
 
   cancelSearch = () => this.messageSearch.stopSearch();
 
-  isFilterMatch(_str: string, m: TopicMessage) {
-    const searchStr = this.currentParams.quickSearch.toLowerCase();
-    // If search string is empty, show all messages
-    if (!searchStr) return true;
-
-    if (m.offset.toString().toLowerCase().includes(searchStr)) return true;
-    if (m.keyJson?.toLowerCase().includes(searchStr)) return true;
-    if (m.valueJson?.toLowerCase().includes(searchStr)) return true;
+  isFilterMatch(str: string, m: TopicMessage) {
+    str = uiState.topicSettings.quickSearch.toLowerCase();
+    if (m.offset.toString().toLowerCase().includes(str)) return true;
+    if (m.keyJson?.toLowerCase().includes(str)) return true;
+    if (m.valueJson?.toLowerCase().includes(str)) return true;
     return false;
   }
 
@@ -836,8 +740,8 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
     const toast = useToast();
     const breakpoint = useBreakpoint({ ssr: false });
     const paginationParams = usePaginationParams(
-      this.messageSource.data.length,
       uiState.topicSettings.searchParams.pageSize,
+      this.messageSource.data.length,
     );
 
     const tsFormat = uiState.topicSettings.previewTimestamps;
@@ -985,10 +889,20 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
     if (uiState.topicSettings.previewColumnFields.length > 0) {
       newColumns.splice(0, newColumns.length);
 
+      const columnOrder: DataColumnKey[] = [
+        'timestamp',
+        'partitionID',
+        'offset',
+        'key',
+        'value',
+        'keySize',
+        'valueSize',
+      ];
+
       // let's be defensive and remove any duplicates before showing in the table
       const selectedColumns = new Set(uiState.topicSettings.previewColumnFields.map((field) => field.dataIndex));
 
-      for (const column of COLUMN_ORDER) {
+      for (const column of columnOrder) {
         if (selectedColumns.has(column)) {
           newColumns.push(dataTableColumns[column]);
         }
@@ -1147,15 +1061,22 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
   }
 
   async executeMessageSearch(): Promise<TopicMessage[]> {
+    const searchParams = uiState.topicSettings.searchParams;
     const canUseFilters =
       (api.topicPermissions.get(this.props.topic.topicName)?.canUseSearchFilters ?? true) && !isServerless();
+
+    editQuery((query) => {
+      query.p = String(searchParams.partitionID); // p = partition
+      query.s = String(searchParams.maxResults); // s = size
+      query.o = String(searchParams.startOffset); // o = offset
+    });
 
     let filterCode = '';
     if (canUseFilters) {
       const functionNames: string[] = [];
       const functions: string[] = [];
 
-      const filteredSearchParams = uiState.topicSettings.searchParams.filters.filter(
+      const filteredSearchParams = searchParams.filters.filter(
         (searchParam) => searchParam.isActive && searchParam.code && searchParam.transpiledCode,
       );
 
@@ -1175,15 +1096,19 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
 
     const request = {
       topicName: this.props.topic.topicName,
-      partitionId: this.currentParams.partitionID,
-      startOffset: this.currentParams.startOffset,
-      startTimestamp: uiState.topicSettings.searchParams.startTimestamp,
-      maxResults: this.currentParams.maxResults,
+      partitionId: searchParams.partitionID,
+      startOffset: searchParams.startOffset,
+      startTimestamp: searchParams.startTimestamp,
+      maxResults: searchParams.maxResults,
       filterInterpreterCode: encodeBase64(sanitizeString(filterCode)),
       includeRawPayload: true,
-      keyDeserializer: uiState.topicSettings.searchParams.keyDeserializer,
-      valueDeserializer: uiState.topicSettings.searchParams.valueDeserializer,
+
+      keyDeserializer: searchParams.keyDeserializer,
+      valueDeserializer: searchParams.valueDeserializer,
     } as MessageSearchRequest;
+
+    // if (typeof searchParams.startTimestamp != 'number' || searchParams.startTimestamp == 0)
+    //     console.error("startTimestamp is not valid", { request: request, searchParams: searchParams });
 
     return transaction(async () => {
       try {
@@ -1249,6 +1174,7 @@ class SaveMessagesDialog extends Component<{
                   {
                     value: 'csv',
                     label: 'CSV',
+                    disabled: true,
                   },
                 ]}
               />
@@ -1282,84 +1208,16 @@ class SaveMessagesDialog extends Component<{
 
     console.log(`saving cleaned messages; messages: ${messages.length}`);
 
-    if (this.format === 'json') {
-      const json = toJson(cleanMessages, 4);
-      const link = document.createElement('a');
-      const file = new Blob([json], { type: 'application/json' });
-      link.href = URL.createObjectURL(file);
-      link.download = 'messages.json';
-      document.body.appendChild(link); // required in firefox
-      link.click();
-    } else if (this.format === 'csv') {
-      const csvContent = this.convertToCSV(cleanMessages);
-      const link = document.createElement('a');
-      const file = new Blob([csvContent], { type: 'text/csv' });
-      link.href = URL.createObjectURL(file);
-      link.download = 'messages.csv';
-      document.body.appendChild(link); // required in firefox
-      link.click();
-    }
+    const json = toJson(cleanMessages, 4);
+
+    const link = document.createElement('a');
+    const file = new Blob([json], { type: 'application/json' });
+    link.href = URL.createObjectURL(file);
+    link.download = 'messages.json';
+    document.body.appendChild(link); // required in firefox
+    link.click();
 
     this.props.onClose();
-  }
-
-  convertToCSV(messages: any[]): string {
-    if (messages.length === 0) return '';
-
-    const headers: string[] = [...COLUMN_ORDER];
-
-    // Add other common fields that might not be in COLUMN_ORDER
-    if (messages[0].compression && !headers.includes('compression')) headers.push('compression');
-    if (messages[0].isTransactional !== undefined && !headers.includes('isTransactional'))
-      headers.push('isTransactional');
-
-    const csvRows = [];
-
-    // Add the headers
-    csvRows.push(headers.join(','));
-
-    // Add the data
-    for (const message of messages) {
-      const values = [];
-
-      // Add fields in the same order as headers
-      for (const header of headers) {
-        if (header === 'key') {
-          if (message.key) {
-            const keyValue = message.key.payload || '';
-            values.push(
-              typeof keyValue === 'object'
-                ? JSON.stringify(keyValue).replace(/,/g, ';')
-                : String(keyValue).replace(/,/g, ';'),
-            );
-          } else {
-            values.push('');
-          }
-        } else if (header === 'value') {
-          if (message.value) {
-            const valuePayload = message.value.payload || '';
-            values.push(
-              typeof valuePayload === 'object'
-                ? JSON.stringify(valuePayload).replace(/,/g, ';')
-                : String(valuePayload).replace(/,/g, ';'),
-            );
-          } else {
-            values.push('');
-          }
-        } else if (header === 'keySize') {
-          values.push(message.key?.size || '');
-        } else if (header === 'valueSize') {
-          values.push(message.value?.size || '');
-        } else {
-          // For other simple fields like partitionID, offset, timestamp, compression, isTransactional
-          values.push(message[header] !== undefined ? message[header] : '');
-        }
-      }
-
-      csvRows.push(values.join(','));
-    }
-
-    return csvRows.join('\n');
   }
 
   cleanMessages(messages: TopicMessage[]): any[] {
@@ -1485,7 +1343,7 @@ class StartOffsetDateTimePicker extends Component {
     // console.log('time picker 1', { setByUser: searchParams.startTimestampWasSetByUser, startTimestamp: searchParams.startTimestamp, format: new Date(searchParams.startTimestamp).toLocaleDateString() })
     if (!searchParams.startTimestampWasSetByUser) {
       // so far, the user did not change the startTimestamp, so we set it to 'now'
-      searchParams.startTimestamp = Date.now();
+      searchParams.startTimestamp = new Date().getTime();
     }
     // console.log('time picker 2', { setByUser: searchParams.startTimestampWasSetByUser, startTimestamp: searchParams.startTimestamp, format: new Date(searchParams.startTimestamp).toLocaleDateString() })
   }
@@ -1681,103 +1539,108 @@ export const ExpandedMessage: FC<{
   );
 };
 
-const PayloadComponent = observer((p: { payload: Payload; loadLargeMessage: () => Promise<void> }) => {
-  const { payload, loadLargeMessage } = p;
-  const toast = useToast();
-  const [isLoadingLargeMessage, setLoadingLargeMessage] = useState(false);
+const PayloadComponent = observer(
+  (p: {
+    payload: Payload;
+    loadLargeMessage: () => Promise<void>;
+  }) => {
+    const { payload, loadLargeMessage } = p;
+    const toast = useToast();
+    const [isLoadingLargeMessage, setLoadingLargeMessage] = useState(false);
 
-  if (payload.isPayloadTooLarge) {
-    return (
-      <Flex flexDirection="column" gap="4">
-        <Flex alignItems="center" gap="2">
-          Because this message size exceeds the display limit, loading it could cause performance degradation.
+    if (payload.isPayloadTooLarge) {
+      return (
+        <Flex flexDirection="column" gap="4">
+          <Flex alignItems="center" gap="2">
+            Because this message size exceeds the display limit, loading it could cause performance degradation.
+          </Flex>
+          <Button
+            variant="outline"
+            width="10rem"
+            size="small"
+            data-testid="load-anyway-button"
+            isLoading={isLoadingLargeMessage}
+            loadingText="Loading..."
+            onClick={() => {
+              setLoadingLargeMessage(true);
+              loadLargeMessage()
+                .catch((err) =>
+                  toast({
+                    status: 'error',
+                    description: err instanceof Error ? err.message : String(err),
+                  }),
+                )
+                .finally(() => setLoadingLargeMessage(false));
+            }}
+          >
+            Load anyway
+          </Button>
         </Flex>
-        <Button
-          variant="outline"
-          width="10rem"
-          size="small"
-          data-testid="load-anyway-button"
-          isLoading={isLoadingLargeMessage}
-          loadingText="Loading..."
-          onClick={() => {
-            setLoadingLargeMessage(true);
-            loadLargeMessage()
-              .catch((err) =>
-                toast({
-                  status: 'error',
-                  description: err instanceof Error ? err.message : String(err),
-                }),
-              )
-              .finally(() => setLoadingLargeMessage(false));
-          }}
-        >
-          Load anyway
-        </Button>
-      </Flex>
-    );
-  }
+      );
+    }
 
-  try {
-    if (payload === null || payload === undefined || payload.payload === null || payload.payload === undefined)
-      return <code>null</code>;
+    try {
+      if (payload === null || payload === undefined || payload.payload === null || payload.payload === undefined)
+        return <code>null</code>;
 
-    const val = payload.payload;
-    const isPrimitive = typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean';
+      const val = payload.payload;
+      const isPrimitive = typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean';
 
-    if (payload.encoding === 'binary') {
-      const mode = 'hex' as 'ascii' | 'raw' | 'hex';
-      if (mode === 'raw') {
-        return <code style={{ fontSize: '.85em', lineHeight: '1em', whiteSpace: 'normal' }}>{val}</code>;
-      }
-      if (mode === 'hex') {
-        const rawBytes = payload.rawBytes ?? payload.normalizedPayload;
-
-        if (rawBytes) {
-          let result = '';
-          for (const rawByte of rawBytes) {
-            result += `${rawByte.toString(16).padStart(2, '0')} `;
-          }
-          return <code style={{ fontSize: '.85em', lineHeight: '1em', whiteSpace: 'normal' }}>{result}</code>;
+      if (payload.encoding === 'binary') {
+        const mode = 'hex' as 'ascii' | 'raw' | 'hex';
+        if (mode === 'raw') {
+          return <code style={{ fontSize: '.85em', lineHeight: '1em', whiteSpace: 'normal' }}>{val}</code>;
         }
-        return <div>Raw bytes not available</div>;
+        if (mode === 'hex') {
+          const rawBytes = payload.rawBytes ?? payload.normalizedPayload;
+
+          if (rawBytes) {
+            let result = '';
+            for (const rawByte of rawBytes) {
+              result += `${rawByte.toString(16).padStart(2, '0')} `;
+            }
+            return <code style={{ fontSize: '.85em', lineHeight: '1em', whiteSpace: 'normal' }}>{result}</code>;
+          }
+          return <div>Raw bytes not available</div>;
+        }
+        const str = String(val);
+        let result = '';
+        const isPrintable = /[\x20-\x7E]/;
+        for (let i = 0; i < str.length; i++) {
+          let ch = String.fromCharCode(str.charCodeAt(i)); // str.charAt(i);
+          ch = isPrintable.test(ch) ? ch : '. ';
+          result += `${ch} `;
+        }
+
+        return <code style={{ fontSize: '.85em', lineHeight: '1em', whiteSpace: 'normal' }}>{result}</code>;
       }
-      const str = String(val);
-      let result = '';
-      const isPrintable = /[\x20-\x7E]/;
-      for (let i = 0; i < str.length; i++) {
-        let ch = String.fromCharCode(str.charCodeAt(i)); // str.charAt(i);
-        ch = isPrintable.test(ch) ? ch : '. ';
-        result += `${ch} `;
+
+      // Decode payload from base64 and render control characters as code highlighted text, such as
+      // `NUL`, `ACK` etc.
+      if (payload.encoding === 'utf8WithControlChars') {
+        const elements = highlightControlChars(val);
+
+        return (
+          <div className="codeBox" data-testid="payload-content">
+            {elements}
+          </div>
+        );
       }
 
-      return <code style={{ fontSize: '.85em', lineHeight: '1em', whiteSpace: 'normal' }}>{result}</code>;
+      if (isPrimitive) {
+        return (
+          <div className="codeBox" data-testid="payload-content">
+            {String(val)}
+          </div>
+        );
+      }
+
+      return <KowlJsonView srcObj={val} />;
+    } catch (e) {
+      return <span style={{ color: 'red' }}>Error in RenderExpandedMessage: {(e as Error).message ?? String(e)}</span>;
     }
-
-    // Decode payload from base64 and render control characters as code highlighted text, such as
-    // `NUL`, `ACK` etc.
-    if (payload.encoding === 'utf8WithControlChars') {
-      const elements = highlightControlChars(val);
-
-      return (
-        <div className="codeBox" data-testid="payload-content">
-          {elements}
-        </div>
-      );
-    }
-
-    if (isPrimitive) {
-      return (
-        <div className="codeBox" data-testid="payload-content">
-          {String(val)}
-        </div>
-      );
-    }
-
-    return <KowlJsonView srcObj={val} />;
-  } catch (e) {
-    return <span style={{ color: 'red' }}>Error in RenderExpandedMessage: {(e as Error).message ?? String(e)}</span>;
-  }
-});
+  },
+);
 
 function highlightControlChars(str: string, maxLength?: number): ReactNode[] {
   const elements: ReactNode[] = [];
@@ -1985,9 +1848,11 @@ const MessageSchema = observer((p: { schemaId: number }) => {
 
   const s = subjects[0];
   return (
-    <Link as={ReactRouterLink} to={`/schema-registry/subjects/${encodeURIComponent(s.subject)}?version=${s.version}`}>
-      {s.subject} (version {s.version})
-    </Link>
+    <>
+      <Link as={ReactRouterLink} to={`/schema-registry/subjects/${encodeURIComponent(s.subject)}?version=${s.version}`}>
+        {s.subject} (version {s.version})
+      </Link>
+    </>
   );
 });
 
@@ -2149,7 +2014,7 @@ const ColumnSettings: FC<{
             </GridItem>
             <GridItem>
               <Label text="Preview">
-                <TimestampDisplay unixEpochMillisecond={Date.now()} format={uiState.topicSettings.previewTimestamps} />
+                <TimestampDisplay unixEpochMillisecond={+new Date()} format={uiState.topicSettings.previewTimestamps} />
               </Label>
             </GridItem>
           </Grid>
@@ -2323,16 +2188,11 @@ function renderEmptyIcon(tooltipText?: string) {
   );
 }
 
-function hasDeleteRecordsPrivilege(allowedActions: Array<TopicAction> | undefined) {
-  // undefined has the same meaning as 'all'
-  return !allowedActions || allowedActions.includes('deleteTopicRecords') || allowedActions.includes('all');
+function hasDeleteRecordsPrivilege(allowedActions: Array<TopicAction>) {
+  return allowedActions.includes('deleteTopicRecords') || allowedActions.includes('all');
 }
 
-export function DeleteRecordsMenuItem(
-  isCompacted: boolean,
-  allowedActions: Array<TopicAction> | undefined,
-  onClick: () => void,
-) {
+export function DeleteRecordsMenuItem(isCompacted: boolean, allowedActions: Array<TopicAction>, onClick: () => void) {
   const isEnabled = !isCompacted && hasDeleteRecordsPrivilege(allowedActions) && isSupported(Feature.DeleteRecords);
 
   let errorText: string | undefined;

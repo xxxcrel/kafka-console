@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -54,7 +54,7 @@ func (s *Service) IncrementalAlterConfigs(ctx context.Context,
 		errMessage := ""
 		kafkaErr := newKafkaErrorWithDynamicMessage(res.ErrorCode, res.ErrorMessage)
 		if kafkaErr != nil {
-			errMessage = kafkaErr.Error()
+			errMessage = err.Error()
 		}
 		patchedConfigs[i] = IncrementalAlterConfigsResourceResponse{
 			Error:        errMessage,

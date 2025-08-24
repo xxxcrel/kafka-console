@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -13,9 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"math"
-	"runtime/debug"
 	"sync"
 	"time"
 
@@ -23,6 +21,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
+	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/serde"
 )
@@ -151,7 +150,7 @@ func (s *Service) ListMessages(ctx context.Context, listReq ListMessageRequest, 
 	}
 	topicMetadata, exist := metadata.Topics[listReq.TopicName]
 	if !exist {
-		return errors.New("metadata response did not contain requested topic")
+		return fmt.Errorf("metadata response did not contain requested topic")
 	}
 	if topicMetadata.Err != nil {
 		return fmt.Errorf("failed to get metadata for topic %s: %w", listReq.TopicName, topicMetadata.Err)
@@ -188,7 +187,7 @@ func (s *Service) ListMessages(ctx context.Context, listReq ListMessageRequest, 
 
 		// Check if the requested partitionID is available
 		if pInfo.Err != nil {
-			return fmt.Errorf("requested partitionID (%v) is not available: %w", listReq.PartitionID, pInfo.Err)
+			return fmt.Errorf("requested partitionID (%v) is not available: %w", listReq.PartitionID, err)
 		}
 		partitionIDs = []int32{listReq.PartitionID}
 	}
@@ -207,7 +206,7 @@ func (s *Service) ListMessages(ctx context.Context, listReq ListMessageRequest, 
 		return fmt.Errorf("failed to get end offsets: %w", err)
 	}
 	if startOffsets.Error() != nil {
-		return fmt.Errorf("failed to get start offsets: %w", startOffsets.Error())
+		return fmt.Errorf("failed to get end offsets: %w", endOffsets.Error())
 	}
 
 	// Get partition consume request by calculating start and end offsets for each partition
@@ -242,7 +241,7 @@ func (s *Service) ListMessages(ctx context.Context, listReq ListMessageRequest, 
 	isCancelled := ctx.Err() != nil
 	progress.OnComplete(time.Since(start).Milliseconds(), isCancelled)
 	if isCancelled {
-		return errors.New("request was cancelled while waiting for messages")
+		return fmt.Errorf("request was cancelled while waiting for messages")
 	}
 
 	return nil
@@ -319,9 +318,9 @@ func (s *Service) calculateConsumeRequests(
 			// Request start offset by timestamp first and then consider it like a normal forward consuming / custom offset
 			offset, exists := startOffsetByPartitionID[startOffset.Partition]
 			if !exists {
-				s.logger.WarnContext(ctx, "resolved start offset (by timestamp) does not exist for this partition",
-					slog.String("topic", listReq.TopicName),
-					slog.Int("partition_id", int(startOffset.Partition)))
+				s.logger.Warn("resolved start offset (by timestamp) does not exist for this partition",
+					zap.String("topic", listReq.TopicName),
+					zap.Int32("partition_id", startOffset.Partition))
 			}
 			if offset < 0 {
 				// If there's no newer message than the given offset is -1 here, let's replace this with the newest
@@ -462,7 +461,7 @@ func (s *Service) fetchMessages(ctx context.Context, cl *kgo.Client, progress IL
 		// Setup JavaScript interpreter
 		isMessageOK, err := s.setupInterpreter(consumeReq.FilterInterpreterCode)
 		if err != nil {
-			s.logger.ErrorContext(ctx, "failed to setup interpreter", slog.Any("error", err))
+			s.logger.Error("failed to setup interpreter", zap.Error(err))
 			progress.OnError(fmt.Sprintf("failed to setup interpreter: %v", err.Error()))
 			return err
 		}
@@ -552,10 +551,7 @@ func (s *Service) startMessageWorker(ctx context.Context, wg *sync.WaitGroup,
 	defer wg.Done()
 	defer func() {
 		if r := recover(); r != nil {
-			s.logger.ErrorContext(ctx, "recovered from panic in message worker",
-				slog.Any("error", r),
-				slog.String("stack_trace", string(debug.Stack())),
-				slog.String("topic", consumeReq.TopicName))
+			s.logger.Error("recovered from panic in message worker", zap.Any("error", r))
 		}
 	}()
 
@@ -616,7 +612,7 @@ func (s *Service) startMessageWorker(ctx context.Context, wg *sync.WaitGroup,
 		isOK, err := isMessageOK(args)
 		var errMessage string
 		if err != nil {
-			s.logger.DebugContext(ctx, "failed to check if message is ok", slog.Any("error", err))
+			s.logger.Debug("failed to check if message is ok", zap.Error(err))
 			errMessage = fmt.Sprintf("Failed to check if message is ok (partition: '%v', offset: '%v'). Err: %v", record.Partition, record.Offset, err)
 		}
 
@@ -663,10 +659,10 @@ func (s *Service) consumeKafkaMessages(ctx context.Context, client *kgo.Client, 
 				// We cancel the context when we know the search is complete, hence this is expected and
 				// should not be logged as error in this case.
 				if !errors.Is(err.Err, context.Canceled) {
-					s.logger.ErrorContext(ctx, "errors while fetching records",
-						slog.String("topic_name", err.Topic),
-						slog.Int("partition", int(err.Partition)),
-						slog.Any("error", err.Err))
+					s.logger.Error("errors while fetching records",
+						zap.String("topic_name", err.Topic),
+						zap.Int32("partition", err.Partition),
+						zap.Error(err.Err))
 				}
 			}
 			iter := fetches.RecordIter()

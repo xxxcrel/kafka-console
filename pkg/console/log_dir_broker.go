@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -57,7 +57,7 @@ type LogDirPartition struct {
 	SizeBytes   int64 `json:"sizeBytes"`
 }
 
-// logDirsByBroker returns a map where the BrokerID is the key and the summed bytes of all log dirs of
+// LogDirSizeByBroker returns a map where the BrokerID is the key and the summed bytes of all log dirs of
 // the respective broker is the value.
 func (s *Service) logDirsByBroker(ctx context.Context, cl *kgo.Client) map[int32]LogDirsByBroker {
 	// 1. Describe log dirs for all topics, so that we can sum the size per broker

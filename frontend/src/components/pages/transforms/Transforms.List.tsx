@@ -12,24 +12,16 @@
 import { CheckIcon } from '@chakra-ui/icons';
 import { TrashIcon } from '@heroicons/react/outline';
 import { XIcon } from '@heroicons/react/solid';
-import {
-  Box,
-  Button,
-  Link as ChakraLink,
-  createStandaloneToast,
-  DataTable,
-  Flex,
-  SearchField,
-  Stack,
-  Text,
-} from '@redpanda-data/ui';
+import { Link as ChakraLink, createStandaloneToast } from '@redpanda-data/ui';
+import { Box, Button, DataTable, Flex, SearchField, Stack, Text } from '@redpanda-data/ui';
 import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
-import { Link, Link as ReactRouterLink } from 'react-router-dom';
+import { Link as ReactRouterLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   PartitionTransformStatus_PartitionStatus,
   type TransformMetadata,
-} from '../../../protogen/redpanda/api/dataplane/v1/transform_pb';
+} from '../../../protogen/redpanda/api/dataplane/v1alpha2/transform_pb';
 import { appGlobal } from '../../../state/appGlobal';
 import { transformsApi } from '../../../state/backendApi';
 import { uiSettings } from '../../../state/ui';
@@ -39,7 +31,6 @@ import PageContent from '../../misc/PageContent';
 import Section from '../../misc/Section';
 import { PageComponent, type PageInitHelper } from '../Page';
 import { openDeleteModal } from './modals';
-
 const { ToastContainer, toast } = createStandaloneToast();
 
 export const PartitionStatus = observer((p: { status: PartitionTransformStatus_PartitionStatus }) => {
@@ -69,7 +60,7 @@ export const PartitionStatus = observer((p: { status: PartitionTransformStatus_P
         </Flex>
       );
     default:
-      return 'Unknown';
+      return <> Unknown</>;
   }
 });
 
@@ -96,7 +87,7 @@ class TransformsList extends PageComponent<{}> {
   render() {
     if (!transformsApi.transforms) return DefaultSkeleton;
     if (transformsApi.transforms.length === 0) {
-      appGlobal.historyReplace('/transforms-setup');
+      appGlobal.history.replace('/transforms-setup');
       return null;
     }
 
@@ -176,6 +167,8 @@ class TransformsList extends PageComponent<{}> {
                   const partitionTransformStatus = r.statuses.first(
                     (x) => x.status !== PartitionTransformStatus_PartitionStatus.RUNNING,
                   )!;
+                  // const enumType = proto3.getEnumType(PartitionTransformStatus_PartitionStatus);
+                  // const entry = enumType.findNumber(s.status);
 
                   return (
                     <Flex alignItems="center">
@@ -209,7 +202,7 @@ class TransformsList extends PageComponent<{}> {
                     height="16px"
                     color="gray.500"
                     // disabledReason={api.userData?.canDeleteTransforms === false ? 'You don\'t have the \'canDeleteTransforms\' permission' : undefined}
-                    onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                    onClick={(e) => {
                       e.stopPropagation();
                       e.preventDefault();
 

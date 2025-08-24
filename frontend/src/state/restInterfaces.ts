@@ -9,7 +9,6 @@
  * by the Apache License, Version 2.0
  */
 
-import type { ConnectError } from '@connectrpc/connect';
 import type { AuthenticationMethod } from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
 import type {
   GetConsoleInfoResponse,
@@ -69,6 +68,7 @@ export const TopicActions = [
   'editConfig',
 ] as const;
 export type TopicAction = 'all' | (typeof TopicActions)[number];
+
 export interface Topic {
   topicName: string;
   isInternal: boolean;
@@ -77,7 +77,7 @@ export interface Topic {
   cleanupPolicy: string;
   documentation: 'UNKNOWN' | 'NOT_CONFIGURED' | 'NOT_EXISTENT' | 'AVAILABLE';
   logDirSummary: TopicLogDirSummary;
-  allowedActions: TopicAction[] | undefined; // undefined means 'all'
+  allowedActions: TopicAction[] | undefined;
 }
 
 export interface TopicLogDirSummary {
@@ -1387,7 +1387,6 @@ export interface CreateSecretResponse {
 
 export interface ClusterOverview {
   kafkaAuthorizerInfo: GetKafkaAuthorizerInfoResponse | null;
-  kafkaAuthorizerError?: ConnectError | null;
   kafka: GetKafkaInfoResponse | null;
   redpanda: GetRedpandaInfoResponse | null;
   console: GetConsoleInfoResponse | null;

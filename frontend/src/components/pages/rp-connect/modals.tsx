@@ -14,7 +14,7 @@ import { observer } from 'mobx-react';
 import { useState } from 'react';
 import { openModal } from '../../../utils/ModalContainer';
 
-export const ExplicitConfirmModal = observer(
+const ExplicitConfirmModal = observer(
   (p: {
     title: JSX.Element;
     body: JSX.Element;

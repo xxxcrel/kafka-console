@@ -165,7 +165,7 @@ export const alwaysChanging = () => (refreshCounter = (refreshCounter + 1) % 100
 
 export function assignDeep(target: any, source: any) {
   for (const key in source) {
-    if (!Object.hasOwn(source, key)) continue;
+    if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
     if (key === '__proto__' || key === 'constructor') continue;
 
     const value = source[key];
@@ -641,16 +641,16 @@ export function scrollTo(targetId: string, anchor: 'start' | 'end' | 'center' = 
 
   const rect = target.getBoundingClientRect();
   // @ts-ignore perhaps it affects the target for some reason?
-  let _top = 0;
+  let top = 0;
   switch (anchor) {
     case 'start':
-      _top = rect.top;
+      top = rect.top;
       break;
     case 'center':
-      _top = (rect.top + rect.bottom) / 2;
+      top = (rect.top + rect.bottom) / 2;
       break;
     case 'end':
-      _top = rect.bottom;
+      top = rect.bottom;
       break;
   }
 
@@ -686,7 +686,7 @@ export function isValidBase64(str: string): boolean {
   try {
     Base64.decode(str);
     return true;
-  } catch (_e) {
+  } catch (e) {
     return false;
   }
 }
@@ -715,7 +715,7 @@ export function base64ToHexString(base64: string): string {
     }
 
     return hex;
-  } catch (_err) {
+  } catch (err) {
     return '<<Unable to decode message>>';
   }
 }
@@ -731,7 +731,7 @@ export function uint8ArrayToHexString(ar: Uint8Array): string {
     }
 
     return hex;
-  } catch (_err) {
+  } catch (err) {
     return '<<Unable to convert uint8Array to hex>>';
   }
 }

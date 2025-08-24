@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -112,25 +112,17 @@ func (s *APIIntegrationTestSuite) SetupSuite() {
 	s.cfg.Serde.Protobuf.FileSystem.RefreshInterval = 1 * time.Minute
 	s.cfg.Serde.Protobuf.FileSystem.Paths = []string{absProtoPath}
 
-	s.api, err = New(s.cfg)
-	require.NoError(err)
+	s.api = New(s.cfg)
 
-	go func() {
-		if err := s.api.Start(context.Background()); err != nil {
-			s.T().Errorf("failed to start API: %v", err)
-		}
-	}()
+	go s.api.Start()
 
 	// allow for server to start
 	httpServerAddress := net.JoinHostPort("localhost", strconv.Itoa(httpListenPort))
 	retries := 60
 	for retries > 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-		if _, err := (&net.Dialer{}).DialContext(ctx, "tcp", httpServerAddress); err == nil {
-			cancel()
+		if _, err := net.DialTimeout("tcp", httpServerAddress, 100*time.Millisecond); err == nil {
 			break
 		}
-		cancel()
 		time.Sleep(100 * time.Millisecond)
 		retries--
 	}
@@ -142,7 +134,7 @@ func (s *APIIntegrationTestSuite) TearDownSuite() {
 
 	assert.NoError(s.redpandaContainer.Terminate(context.Background()))
 
-	assert.NoError(s.api.Stop(context.Background()))
+	assert.NoError(s.api.server.Server.Shutdown(context.Background()))
 }
 
 func (s *APIIntegrationTestSuite) httpAddress() string {

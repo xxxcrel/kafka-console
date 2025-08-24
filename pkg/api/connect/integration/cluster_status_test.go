@@ -7,8 +7,6 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-//go:build integration
-
 package integration
 
 import (
@@ -31,7 +29,7 @@ func (s *APISuite) TestClusterStatus() {
 	client := v1alpha1connect.NewClusterStatusServiceClient(http.DefaultClient, s.httpAddress())
 
 	t.Run("get cluster status for Kafka API (connect-go)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 6*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
 
 		kafkaInfo, err := client.GetKafkaInfo(ctx, connect.NewRequest(&v1alpha1.GetKafkaInfoRequest{}))
@@ -42,7 +40,7 @@ func (s *APISuite) TestClusterStatus() {
 	})
 
 	t.Run("get cluster status for Kafka API authorizer (connect-go)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 6*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
 
 		authorizerInfo, err := client.GetKafkaAuthorizerInfo(ctx, connect.NewRequest(&v1alpha1.GetKafkaAuthorizerInfoRequest{}))
@@ -51,7 +49,7 @@ func (s *APISuite) TestClusterStatus() {
 	})
 
 	t.Run("get cluster status for Redpanda admin api (connect-go)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 6*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
 
 		redpandaInfo, err := client.GetRedpandaInfo(ctx, connect.NewRequest(&v1alpha1.GetRedpandaInfoRequest{}))
@@ -60,7 +58,7 @@ func (s *APISuite) TestClusterStatus() {
 	})
 
 	t.Run("get cluster status for partition balancer status api (connect-go)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 6*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
 
 		pbs, err := client.GetRedpandaPartitionBalancerStatus(ctx, connect.NewRequest(&v1alpha1.GetRedpandaPartitionBalancerStatusRequest{}))
@@ -70,13 +68,12 @@ func (s *APISuite) TestClusterStatus() {
 		statuses := []string{
 			v1alpha1.GetRedpandaPartitionBalancerStatusResponse_STATUS_READY.String(),
 			v1alpha1.GetRedpandaPartitionBalancerStatusResponse_STATUS_IN_PROGRESS.String(),
-			v1alpha1.GetRedpandaPartitionBalancerStatusResponse_STATUS_STARTING.String(),
 		}
 		assert.Contains(t, statuses, pbs.Msg.GetStatus().String())
 	})
 
 	t.Run("get cluster status for Kafka Connect api (connect-go)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 6*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
 
 		kcInfo, err := client.GetKafkaConnectInfo(ctx, connect.NewRequest(&v1alpha1.GetKafkaConnectInfoRequest{}))
@@ -86,7 +83,7 @@ func (s *APISuite) TestClusterStatus() {
 	})
 
 	t.Run("get cluster status for schema registry api (connect-go)", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 6*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
 
 		schemaInfo, err := client.GetSchemaRegistryInfo(ctx, connect.NewRequest(&v1alpha1.GetSchemaRegistryInfoRequest{}))

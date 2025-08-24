@@ -11,15 +11,16 @@
 
 import { CheckIcon } from '@chakra-ui/icons';
 import { TrashIcon } from '@heroicons/react/outline';
-import { Box, Button, createStandaloneToast, DataTable, Flex, Image, SearchField, Text } from '@redpanda-data/ui';
+import { Box, Button, DataTable, Flex, Image, SearchField, Text, createStandaloneToast } from '@redpanda-data/ui';
 import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import { FaRegStopCircle } from 'react-icons/fa';
 import { HiX } from 'react-icons/hi';
-import { MdOutlineQuestionMark, MdRefresh } from 'react-icons/md';
+import { MdOutlineQuestionMark } from 'react-icons/md';
+import { MdRefresh } from 'react-icons/md';
 import { Link } from 'react-router-dom';
 import EmptyConnectors from '../../../assets/redpanda/EmptyConnectors.svg';
-import { type Pipeline, Pipeline_State } from '../../../protogen/redpanda/api/dataplane/v1/pipeline_pb';
+import { type Pipeline, Pipeline_State } from '../../../protogen/redpanda/api/dataplane/v1alpha2/pipeline_pb';
 import { appGlobal } from '../../../state/appGlobal';
 import { pipelinesApi } from '../../../state/backendApi';
 import { Features } from '../../../state/supportedFeatures';
@@ -27,6 +28,7 @@ import { uiSettings } from '../../../state/ui';
 import { DefaultSkeleton } from '../../../utils/tsxUtils';
 import { encodeURIComponentPercents } from '../../../utils/utils';
 import PageContent from '../../misc/PageContent';
+import Section from '../../misc/Section';
 import { PageComponent, type PageInitHelper } from '../Page';
 import { openDeleteModal } from './modals';
 
@@ -107,7 +109,7 @@ export const PipelineStatus = observer((p: { status: Pipeline_State }) => {
 
 export const PipelineThroughput = observer((p: { pipeline: Pipeline }) => {
   const { resources } = p.pipeline;
-  if (!resources) return null;
+  if (!resources) return <></>;
 
   return (
     <>
@@ -158,138 +160,137 @@ class RpConnectPipelinesList extends PageComponent<{}> {
   render() {
     if (!pipelinesApi.pipelines) return DefaultSkeleton;
 
-    const filteredPipelines = (pipelinesApi.pipelines ?? [])
-      ?.filter((pipeline) => pipeline?.tags?.__redpanda_cloud_pipeline_type !== 'agent') // Ensure we do not show the agents
-      .filter((u) => {
-        const filter = uiSettings.pipelinesList.quickSearch;
-        if (!filter) return true;
-        try {
-          const quickSearchRegExp = new RegExp(filter, 'i');
-          if (u.id.match(quickSearchRegExp)) return true;
-          if (u.displayName.match(quickSearchRegExp)) return true;
-          return false;
-        } catch {
-          return false;
-        }
-      });
+    const filteredPipelines = (pipelinesApi.pipelines ?? []).filter((u) => {
+      const filter = uiSettings.pipelinesList.quickSearch;
+      if (!filter) return true;
+      try {
+        const quickSearchRegExp = new RegExp(filter, 'i');
+        if (u.id.match(quickSearchRegExp)) return true;
+        if (u.displayName.match(quickSearchRegExp)) return true;
+        return false;
+      } catch {
+        return false;
+      }
+    });
 
     return (
       <PageContent>
-        <ToastContainer />
-        {/* Pipeline List */}
+        <Section>
+          <ToastContainer />
+          {/* Pipeline List */}
 
-        {pipelinesApi.pipelines.length !== 0 && (
-          <Flex my={5} flexDir={'column'} gap={2}>
-            <CreatePipelineButton />
-            <SearchField
-              width="350px"
-              searchText={uiSettings.pipelinesList.quickSearch}
-              setSearchText={(x) => (uiSettings.pipelinesList.quickSearch = x)}
-              placeholderText="Enter search term / regex..."
-            />
-          </Flex>
-        )}
+          {pipelinesApi.pipelines.length !== 0 && (
+            <Flex my={5} flexDir={'column'} gap={2}>
+              <CreatePipelineButton />
+              <SearchField
+                width="350px"
+                searchText={uiSettings.pipelinesList.quickSearch}
+                setSearchText={(x) => (uiSettings.pipelinesList.quickSearch = x)}
+                placeholderText="Enter search term / regex..."
+              />
+            </Flex>
+          )}
 
-        {(pipelinesApi.pipelines ?? []).length === 0 ? (
-          <EmptyPlaceholder />
-        ) : (
-          <DataTable<Pipeline>
-            data={filteredPipelines}
-            pagination
-            defaultPageSize={10}
-            sorting
-            columns={[
-              {
-                header: 'ID',
-                cell: ({ row: { original } }) => (
-                  <Link to={`/rp-connect/${encodeURIComponentPercents(original.id)}`}>
-                    <Text>{original.id}</Text>
-                  </Link>
-                ),
-                size: 100,
-              },
-              {
-                header: 'Pipeline Name',
-                cell: ({ row: { original } }) => (
-                  <Link to={`/rp-connect/${encodeURIComponentPercents(original.id)}`}>
-                    <Text wordBreak="break-word" whiteSpace="break-spaces">
-                      {original.displayName}
-                    </Text>
-                  </Link>
-                ),
-                size: Number.POSITIVE_INFINITY,
-              },
-              {
-                header: 'Description',
-                accessorKey: 'description',
-                cell: ({ row: { original } }) => (
-                  <Text minWidth="200px" wordBreak="break-word" whiteSpace="break-spaces">
-                    {original.description}
-                  </Text>
-                ),
-                size: 200,
-              },
-              {
-                header: 'State',
-                cell: ({ row: { original } }) => {
-                  return <PipelineStatus status={original.state} />;
+          {(pipelinesApi.pipelines ?? []).length === 0 ? (
+            <EmptyPlaceholder />
+          ) : (
+            <DataTable<Pipeline>
+              data={filteredPipelines}
+              pagination
+              defaultPageSize={10}
+              sorting
+              columns={[
+                {
+                  header: 'ID',
+                  cell: ({ row: { original } }) => (
+                    <Link to={`/rp-connect/${encodeURIComponentPercents(original.id)}`}>
+                      <Text>{original.id}</Text>
+                    </Link>
+                  ),
+                  size: 100,
                 },
-              },
-              // {
-              //     header: 'Throughput',
-              //     cell: ({ row: { original } }) => {
-              //         return <>
-              //             <PipelineThroughput pipeline={original} />
-              //         </>
-              //     },
-              //     size: 100,
-              // },
-              {
-                header: '',
-                id: 'actions',
-                cell: ({ row: { original: r } }) => (
-                  <Button
-                    variant="icon"
-                    height="16px"
-                    color="gray.500"
-                    // disabledReason={api.userData?.canDeleteTransforms === false ? 'You don\'t have the \'canDeleteTransforms\' permission' : undefined}
-                    onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                      e.stopPropagation();
-                      e.preventDefault();
+                {
+                  header: 'Pipeline Name',
+                  cell: ({ row: { original } }) => (
+                    <Link to={`/rp-connect/${encodeURIComponentPercents(original.id)}`}>
+                      <Text wordBreak="break-word" whiteSpace="break-spaces">
+                        {original.displayName}
+                      </Text>
+                    </Link>
+                  ),
+                  size: Number.POSITIVE_INFINITY,
+                },
+                {
+                  header: 'Description',
+                  accessorKey: 'description',
+                  size: 100,
+                },
+                {
+                  header: 'State',
+                  cell: ({ row: { original } }) => {
+                    return (
+                      <>
+                        <PipelineStatus status={original.state} />
+                      </>
+                    );
+                  },
+                },
+                // {
+                //     header: 'Throughput',
+                //     cell: ({ row: { original } }) => {
+                //         return <>
+                //             <PipelineThroughput pipeline={original} />
+                //         </>
+                //     },
+                //     size: 100,
+                // },
+                {
+                  header: '',
+                  id: 'actions',
+                  cell: ({ row: { original: r } }) => (
+                    <Button
+                      variant="icon"
+                      height="16px"
+                      color="gray.500"
+                      // disabledReason={api.userData?.canDeleteTransforms === false ? 'You don\'t have the \'canDeleteTransforms\' permission' : undefined}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
 
-                      openDeleteModal(r.displayName, () => {
-                        pipelinesApi
-                          .deletePipeline(r.id)
-                          .then(async () => {
-                            toast({
-                              status: 'success',
-                              duration: 4000,
-                              isClosable: false,
-                              title: 'Pipeline deleted',
+                        openDeleteModal(r.displayName, () => {
+                          pipelinesApi
+                            .deletePipeline(r.id)
+                            .then(async () => {
+                              toast({
+                                status: 'success',
+                                duration: 4000,
+                                isClosable: false,
+                                title: 'Pipeline deleted',
+                              });
+                              pipelinesApi.refreshPipelines(true);
+                            })
+                            .catch((err) => {
+                              toast({
+                                status: 'error',
+                                duration: null,
+                                isClosable: true,
+                                title: 'Failed to delete pipeline',
+                                description: String(err),
+                              });
                             });
-                            pipelinesApi.refreshPipelines(true);
-                          })
-                          .catch((err) => {
-                            toast({
-                              status: 'error',
-                              duration: null,
-                              isClosable: true,
-                              title: 'Failed to delete pipeline',
-                              description: String(err),
-                            });
-                          });
-                      });
-                    }}
-                  >
-                    <TrashIcon />
-                  </Button>
-                ),
-                size: 1,
-              },
-            ]}
-            emptyText=""
-          />
-        )}
+                        });
+                      }}
+                    >
+                      <TrashIcon />
+                    </Button>
+                  ),
+                  size: 1,
+                },
+              ]}
+              emptyText=""
+            />
+          )}
+        </Section>
       </PageContent>
     );
   }

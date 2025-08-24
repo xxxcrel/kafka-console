@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -10,7 +10,6 @@
 package kafka
 
 import (
-	"log/slog"
 	"net"
 	"sync"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"go.uber.org/zap"
 )
 
 var ( // interface checks to ensure we implement the hooks properly
@@ -30,7 +30,7 @@ var ( // interface checks to ensure we implement the hooks properly
 // clientHooks implements the various hook interfaces from the franz-go (kafka) library. We can use these hooks to
 // log additional information, collect Prometheus metrics and similar.
 type clientHooks struct {
-	logger *slog.Logger
+	logger *zap.Logger
 
 	requestSentCount prometheus.Counter
 	bytesSent        prometheus.Counter
@@ -52,7 +52,7 @@ var (
 	promBytesReceived    prometheus.Counter
 )
 
-func newClientHooks(logger *slog.Logger, metricsNamespace string) *clientHooks {
+func newClientHooks(logger *zap.Logger, metricsNamespace string) *clientHooks {
 	promInitOnce.Do(func() {
 		promRequestSent = promauto.NewCounter(prometheus.CounterOpts{
 			Namespace: metricsNamespace,
@@ -92,19 +92,19 @@ func newClientHooks(logger *slog.Logger, metricsNamespace string) *clientHooks {
 // Kafka cluster.
 func (c clientHooks) OnBrokerConnect(meta kgo.BrokerMetadata, dialDur time.Duration, _ net.Conn, err error) {
 	if err != nil {
-		c.logger.Debug("kafka connection failed", slog.String("broker_host", meta.Host), slog.Any("error", err))
+		c.logger.Debug("kafka connection failed", zap.String("broker_host", meta.Host), zap.Error(err))
 		return
 	}
 	c.logger.Debug("kafka connection succeeded",
-		slog.String("host", meta.Host),
-		slog.Duration("dial_duration", dialDur))
+		zap.String("host", meta.Host),
+		zap.Duration("dial_duration", dialDur))
 }
 
 // OnBrokerDisconnect is called when the client disconnects from any node of the target
 // Kafka cluster.
 func (c clientHooks) OnBrokerDisconnect(meta kgo.BrokerMetadata, _ net.Conn) {
 	c.logger.Debug("kafka broker disconnected",
-		slog.String("host", meta.Host))
+		zap.String("host", meta.Host))
 }
 
 // OnBrokerRead is passed the broker metadata, the key for the response that

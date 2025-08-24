@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -11,7 +11,6 @@ package filesystem
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 	"os/signal"
 	"path"
@@ -21,13 +20,15 @@ import (
 	"syscall"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/xxxcrel/kafka-console/pkg/config"
 )
 
 // Service provides functionality to serve files from a git repository. The contents are stored in memory.
 type Service struct {
 	Cfg    config.Filesystem
-	logger *slog.Logger
+	logger *zap.Logger
 
 	// In memory cache for markdowns. Map key is the filename with stripped ".md" suffix.
 	filesByName map[string]File
@@ -37,8 +38,8 @@ type Service struct {
 }
 
 // NewService creates a new Git service with preconfigured Auth
-func NewService(cfg config.Filesystem, logger *slog.Logger, onFilesUpdatedHook func()) (*Service, error) {
-	childLogger := logger.With(slog.String("provider", "file_provider"))
+func NewService(cfg config.Filesystem, logger *zap.Logger, onFilesUpdatedHook func()) (*Service, error) {
+	childLogger := logger.With(zap.String("source", "file_provider"))
 
 	return &Service{
 		Cfg:    cfg,
@@ -61,7 +62,7 @@ func (c *Service) Start() error {
 	if err != nil {
 		return err
 	}
-	c.logger.Info("successfully loaded all files from filesystem into cache", slog.Int("loaded_files", loadedFiles))
+	c.logger.Info("successfully loaded all files from filesystem into cache", zap.Int("loaded_files", loadedFiles))
 
 	go func(refreshInterval time.Duration) {
 		// Stop sync when we receive a signal
@@ -72,19 +73,19 @@ func (c *Service) Start() error {
 		for {
 			select {
 			case <-quit:
-				c.logger.Info("stopped sync", slog.String("reason", "received signal"))
+				c.logger.Info("stopped sync", zap.String("reason", "received signal"))
 				return
 			case <-ticker.C:
 				loadedFiles, err := c.loadFilesIntoCache()
 				if err != nil {
-					c.logger.Warn("failed to read files in file provider", slog.Any("error", err))
+					c.logger.Warn("failed to read files in file provider", zap.Error(err))
 					break
 				}
 
 				if c.OnFilesUpdatedHook != nil {
 					c.OnFilesUpdatedHook()
 				}
-				c.logger.Debug("successfully loaded all files from filesystem into cache", slog.Int("loaded_files", loadedFiles))
+				c.logger.Debug("successfully loaded all files from filesystem into cache", zap.Int("loaded_files", loadedFiles))
 			}
 		}
 	}(c.Cfg.RefreshInterval)
@@ -139,9 +140,9 @@ func (c *Service) readFiles() (map[string]File, error) {
 
 			if info.Size() > c.Cfg.MaxFileSize {
 				c.logger.Info("skipped file because it is too large",
-					slog.String("current_path", currentPath),
-					slog.Int64("file_size", info.Size()),
-					slog.Int64("max_allowed_file_size", c.Cfg.MaxFileSize))
+					zap.String("currentPath", currentPath),
+					zap.Int64("file_size", info.Size()),
+					zap.Int64("max_allowed_file_size", c.Cfg.MaxFileSize))
 				return nil
 			}
 			loadedFiles++

@@ -52,7 +52,7 @@ jobs:
           breaking: true
           push: false  # Only validate, don't push to registry
           # Compare against the default branch so the whole PR is checked
-          breaking_against: https://github.com/redpanda-data/console.git#branch=master
+          breaking_against: https://github.com/xxxcrel/kafka-console.git#branch=master
 
   # ===========================================================================
   # Job: push-to-registry (push events only - registry operations only)

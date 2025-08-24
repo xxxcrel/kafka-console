@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -13,10 +13,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/twmb/franz-go/pkg/kadm"
+	"go.uber.org/zap"
 )
 
 // TopicLogDirSummary provides log dir / size information for a single topic. Because each broker
@@ -132,7 +132,7 @@ func (p partitionInfo) Size() int64 {
 	return totalPartitionSize
 }
 
-// logDirsByTopic returns a map where the topic name is the key.
+// LogDirSizeByTopic returns a map where the topic name is the key.
 // It returns the log dir size for each topic.
 //
 //nolint:gocognit,cyclop // Complexity is indeed high, but ideally this will be solved by changing the API response
@@ -160,11 +160,11 @@ func (s *Service) logDirsByTopic(ctx context.Context) (map[string]TopicLogDirSum
 		if se.AllFailed {
 			return nil, fmt.Errorf("failed to describe all log dirs: %w", err)
 		}
-		s.logger.WarnContext(ctx, "failed to describe log dirs from some shards", slog.Int("failed_shards", len(se.Errs)))
+		s.logger.Warn("failed to describe log dirs from some shards", zap.Int("failed_shards", len(se.Errs)))
 		for _, shardErr := range se.Errs {
-			s.logger.WarnContext(ctx, "shard error for describing log dirs",
-				slog.Int("broker_id", int(shardErr.Broker.NodeID)),
-				slog.Any("error", shardErr.Err))
+			s.logger.Warn("shard error for describing log dirs",
+				zap.Int32("broker_id", shardErr.Broker.NodeID),
+				zap.Error(shardErr.Err))
 			shardErrors[shardErr.Broker.NodeID] = shardErr
 		}
 	}

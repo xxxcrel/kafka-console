@@ -10,26 +10,25 @@
 package config
 
 import (
-	"errors"
 	"flag"
+	"fmt"
 )
 
 // Proto has all configuration options for decoding proto-serialized Kafka records.
 type Proto struct {
-	// Enabled enables protobuf deserialization for other sources than schema registry.
-	Enabled bool `yaml:"enabled"`
+	Enabled bool `json:"enabled"`
 
-	// The required proto definitions can be provided via Git or Filesystem
-	Git        Git        `yaml:"git"`
-	FileSystem Filesystem `yaml:"fileSystem"`
+	// The required proto definitions can be provided via SchemaRegistry, Git or Filesystem
+	Git        Git        `json:"git"`
+	FileSystem Filesystem `json:"fileSystem"`
 
 	// Mappings define what proto types shall be used for each Kafka topic. If SchemaRegistry is used, no mappings are required.
-	Mappings []ProtoTopicMapping `yaml:"mappings"`
+	Mappings []ProtoTopicMapping `json:"mappings"`
 
 	// Proto import paths. By default, the baseDir/root is used. Set import paths
 	// if multiple import paths relative to the baseDir shall be used. The
 	// behavior is similar to the `-I` flag of protoc.
-	ImportPaths []string `yaml:"importPaths"`
+	ImportPaths []string `json:"importPaths"`
 }
 
 // RegisterFlags registers all nested config flags.
@@ -44,11 +43,11 @@ func (c *Proto) Validate() error {
 	}
 
 	if !c.Git.Enabled && !c.FileSystem.Enabled {
-		return errors.New("protobuf deserializer is enabled, at least one source provider for proto files must be configured")
+		return fmt.Errorf("protobuf deserializer is enabled, at least one source provider for proto files must be configured")
 	}
 
 	if len(c.Mappings) == 0 {
-		return errors.New("protobuf deserializer is enabled, but no topic mappings have been configured")
+		return fmt.Errorf("protobuf deserializer is enabled, but no topic mappings have been configured")
 	}
 
 	return nil

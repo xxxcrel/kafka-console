@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -14,7 +14,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"testing"
 	"time"
@@ -25,10 +24,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	"github.com/testcontainers/testcontainers-go/network"
+	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/config"
 	"github.com/xxxcrel/kafka-console/pkg/connect"
-	loggerpkg "github.com/xxxcrel/kafka-console/pkg/logger"
 	"github.com/xxxcrel/kafka-console/pkg/testutil"
 )
 
@@ -39,13 +38,13 @@ func (s *APIIntegrationTestSuite) TestHandleCreateConnector() {
 	assert := assert.New(t)
 
 	// setup
-	ctx := t.Context()
+	ctx := context.Background()
 
 	// create one common network that all containers will share
 	testNetwork, err := network.New(ctx, network.WithAttachable())
 	require.NoError(err)
 	t.Cleanup(func() {
-		assert.NoError(testNetwork.Remove(context.Background()))
+		assert.NoError(testNetwork.Remove(ctx))
 	})
 
 	redpandaContainer, err := redpanda.Run(ctx,
@@ -75,10 +74,8 @@ func (s *APIIntegrationTestSuite) TestHandleCreateConnector() {
 	require.NoError(err)
 
 	// new connect service
-	log := loggerpkg.NewSlogLogger(
-		loggerpkg.WithFormat(loggerpkg.FormatText),
-		loggerpkg.WithLevel(slog.LevelInfo),
-	)
+	log, err := zap.NewProduction()
+	require.NoError(err)
 
 	connectCfg := config.KafkaConnect{}
 	connectCfg.SetDefaults()
@@ -110,7 +107,7 @@ func (s *APIIntegrationTestSuite) TestHandleCreateConnector() {
 	})
 
 	t.Run("happy path", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		input := &createConnectorRequest{

@@ -12,7 +12,6 @@ package api
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -20,6 +19,8 @@ import (
 
 	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/sr"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/xxxcrel/kafka-console/pkg/console"
 )
@@ -399,7 +400,7 @@ func (api *API) handleDeleteSubject() http.HandlerFunc {
 				Err:          err,
 				Status:       http.StatusServiceUnavailable,
 				Message:      fmt.Sprintf("Failed to delete schema registry subject: %v", err.Error()),
-				InternalLogs: []slog.Attr{slog.String("subject_name", subjectName)},
+				InternalLogs: []zapcore.Field{zap.String("subject_name", subjectName)},
 				IsSilent:     false,
 			})
 			return
@@ -487,9 +488,9 @@ func (api *API) handleDeleteSubjectVersion() http.HandlerFunc {
 				Err:     err,
 				Status:  http.StatusServiceUnavailable,
 				Message: fmt.Sprintf("Failed to delete schema registry subject version: %v", err.Error()),
-				InternalLogs: []slog.Attr{
-					slog.String("subject_name", subjectName),
-					slog.Int("version", version),
+				InternalLogs: []zapcore.Field{
+					zap.String("subject_name", subjectName),
+					zap.Int("version", version),
 				},
 				IsSilent: false,
 			})
@@ -517,10 +518,10 @@ func (api *API) handleCreateSchema() http.HandlerFunc {
 		}
 		if payload.Schema == "" {
 			rest.SendRESTError(w, r, api.Logger, &rest.Error{
-				Err:          errors.New("payload validation failed for creating schema"),
+				Err:          fmt.Errorf("payload validation failed for creating schema"),
 				Status:       http.StatusBadRequest,
 				Message:      "You must set the schema field when creating a new schema",
-				InternalLogs: []slog.Attr{slog.String("subject_name", subjectName)},
+				InternalLogs: []zapcore.Field{zap.String("subject_name", subjectName)},
 				IsSilent:     false,
 			})
 			return
@@ -533,7 +534,7 @@ func (api *API) handleCreateSchema() http.HandlerFunc {
 				Err:          err,
 				Status:       http.StatusServiceUnavailable,
 				Message:      fmt.Sprintf("Failed to create schema: %v", err.Error()),
-				InternalLogs: []slog.Attr{slog.String("subject_name", subjectName)},
+				InternalLogs: []zapcore.Field{zap.String("subject_name", subjectName)},
 				IsSilent:     false,
 			})
 			return
@@ -566,10 +567,10 @@ func (api *API) handleValidateSchema() http.HandlerFunc {
 		}
 		if payload.Schema == "" {
 			rest.SendRESTError(w, r, api.Logger, &rest.Error{
-				Err:          errors.New("payload validation failed for validating schema"),
+				Err:          fmt.Errorf("payload validation failed for validating schema"),
 				Status:       http.StatusBadRequest,
 				Message:      "You must set the schema field when validating the schema",
-				InternalLogs: []slog.Attr{slog.String("subject_name", subjectName)},
+				InternalLogs: []zapcore.Field{zap.String("subject_name", subjectName)},
 				IsSilent:     false,
 			})
 			return
@@ -586,7 +587,7 @@ func (api *API) handleValidateSchema() http.HandlerFunc {
 				Err:          fmt.Errorf("failed validating schema: %w", err),
 				Status:       http.StatusBadRequest,
 				Message:      fmt.Sprintf("Failed validating schema: %v", err.Error()),
-				InternalLogs: []slog.Attr{slog.String("subject_name", subjectName)},
+				InternalLogs: []zapcore.Field{zap.String("subject_name", subjectName)},
 				IsSilent:     false,
 			})
 			return

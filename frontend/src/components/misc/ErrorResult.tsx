@@ -1,12 +1,12 @@
-import type { ConnectError } from '@connectrpc/connect';
 import { Code } from '@connectrpc/connect';
-import { Avatars, Box, CodeBlock, Heading, HStack, Image, Stack, Text } from '@redpanda-data/ui';
+import type { ConnectError } from '@connectrpc/connect';
+import { Avatars, Box, CodeBlock, HStack, Heading, Image, Stack, Text } from '@redpanda-data/ui';
 import React from 'react';
 import { capitalizeFirst } from 'utils/utils';
 import type { WrappedApiError } from '../../state/restInterfaces';
 
 interface ErrorResultProps {
-  error?: ConnectError | WrappedApiError | null;
+  error?: ConnectError | WrappedApiError;
   title?: string;
   message?: string;
 }

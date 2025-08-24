@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -13,11 +13,10 @@ package console
 
 import (
 	"context"
-	"log/slog"
-	"os"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/config"
 	kafkafactory "github.com/xxxcrel/kafka-console/pkg/factory/kafka"
@@ -30,13 +29,16 @@ func (s *ConsoleIntegrationTestSuite) TestGetTopicConfigs() {
 	require := require.New(t)
 
 	ctx := context.Background()
-	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logCfg := zap.NewDevelopmentConfig()
+	logCfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	log, err := logCfg.Build()
+	require.NoError(err)
 
 	testSeedBroker := s.testSeedBroker
 	topicName := testutil.TopicNameForTest("get_topic_configs")
 
 	// setup
-	_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
+	_, err = s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 	require.NoError(err)
 
 	cfg := config.Config{}

@@ -39,16 +39,17 @@ import { api } from '../../../state/backendApi';
 import { ConnectClusterStore, ConnectorValidationError } from '../../../state/connect/state';
 import { type ClusterConnectors, type ConnectorValidationResult, DataType } from '../../../state/restInterfaces';
 import { uiState } from '../../../state/uiState';
-import { containsIgnoreCase, delay, TimeSince } from '../../../utils/utils';
+import { TimeSince, containsIgnoreCase, delay } from '../../../utils/utils';
 import { HiddenRadioList } from '../../misc/HiddenRadioList';
 import KowlEditor from '../../misc/KowlEditor';
 import PageContent from '../../misc/PageContent';
-import { SingleSelect } from '../../misc/Select';
 import { Wizard, type WizardStep } from '../../misc/Wizard';
 import { PageComponent, type PageInitHelper } from '../Page';
 import { ConnectorBoxCard, type ConnectorPlugin, getConnectorFriendlyName } from './ConnectorBoxCard';
 import { ConfigPage } from './dynamic-ui/components';
 import { findConnectorMetadata } from './helper';
+
+import { SingleSelect } from '../../misc/Select';
 
 const ConnectorType = observer(
   (p: {
@@ -101,11 +102,13 @@ const ConnectorType = observer(
 
     const noResultsBox =
       filteredPlugins?.length > 0 ? null : (
-        <Flex p="10" alignItems="center" justifyContent="center" background="blackAlpha.100" borderRadius="8px">
-          <Text fontSize="large" color="gray">
-            No connectors that match the search filters
-          </Text>
-        </Flex>
+        <>
+          <Flex p="10" alignItems="center" justifyContent="center" background="blackAlpha.100" borderRadius="8px">
+            <Text fontSize="large" color="gray">
+              No connectors that match the search filters
+            </Text>
+          </Flex>
+        </>
       );
 
     return (
@@ -234,6 +237,7 @@ interface ConnectorWizardProps {
 
 const ConnectorWizard = observer(({ connectClusters, activeCluster }: ConnectorWizardProps) => {
   const toast = useToast();
+  const history = appGlobal.history;
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedPlugin, setSelectedPlugin] = useState<ConnectorPlugin | null>(null);
   const [invalidValidationResult, setInvalidValidationResult] = useState<ConnectorValidationResult | null>(null);
@@ -261,7 +265,7 @@ const ConnectorWizard = observer(({ connectClusters, activeCluster }: ConnectorW
   useEffect(() => {
     try {
       setParsedUpdatedConfig(JSON.parse(stringifiedConfig));
-    } catch (_e) {
+    } catch (e) {
       setParsedUpdatedConfig(null);
       setPostCondition(false);
     }
@@ -295,7 +299,7 @@ const ConnectorWizard = observer(({ connectClusters, activeCluster }: ConnectorW
               },
             ];
             // biome-ignore lint/style/noNonNullAssertion: we know clusterName is defined
-            appGlobal.historyPush(`/connect-clusters/${encodeURIComponent(clusterName!)}/create-connector`);
+            history.push(`/connect-clusters/${encodeURIComponent(clusterName!)}/create-connector`);
           }}
           selectedPlugin={selectedPlugin}
           onPluginSelectionChange={(e) => {
@@ -415,7 +419,7 @@ const ConnectorWizard = observer(({ connectClusters, activeCluster }: ConnectorW
             console.log('scanning for new connector...', { connectorName, elapsedTime });
             if (elapsedTime > maxScanTime) {
               // Abort, tried to wait for too long
-              appGlobal.historyPush(`/connect-clusters/${encodeURIComponent(activeCluster)}`);
+              history.push(`/connect-clusters/${encodeURIComponent(activeCluster)}`);
               break;
             }
 
@@ -424,7 +428,7 @@ const ConnectorWizard = observer(({ connectClusters, activeCluster }: ConnectorW
 
             if (connector) {
               // Success
-              appGlobal.historyPush(
+              history.push(
                 `/connect-clusters/${encodeURIComponent(activeCluster)}/${encodeURIComponent(connectorName)}`,
               );
               break;
@@ -524,12 +528,14 @@ function CreateConnectorHeading(p: { plugin: ConnectorPlugin | null }) {
   const displayName = getConnectorFriendlyName(p.plugin.class);
 
   return (
-    <Heading as="h1" fontSize="2xl" display="flex" alignItems="center" gap=".5ch" mb="8">
-      Create Connector:
-      {p.plugin.type === 'source' ? 'import data from ' : 'export data to '}
-      {displayName}
-      {/* <Box width="28px" height="28px" mr="1">{logo}</Box> */}
-    </Heading>
+    <>
+      <Heading as="h1" fontSize="2xl" display="flex" alignItems="center" gap=".5ch" mb="8">
+        Create Connector:
+        {p.plugin.type === 'source' ? 'import data from ' : 'export data to '}
+        {displayName}
+        {/* <Box width="28px" height="28px" mr="1">{logo}</Box> */}
+      </Heading>
+    </>
   );
 }
 

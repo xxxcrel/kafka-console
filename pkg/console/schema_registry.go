@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -13,13 +13,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
-	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/redpanda-data/common-go/rpsr"
+	"github.com/hamba/avro/v2"
 	"github.com/twmb/franz-go/pkg/sr"
+	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 )
@@ -130,6 +129,9 @@ func (s *Service) GetSchemaRegistrySubjects(ctx context.Context) ([]SchemaRegist
 		if err != nil {
 			return err
 		}
+		if err != nil {
+			return err
+		}
 		for _, subject := range res {
 			subjectsWithDeleted[subject] = struct{}{}
 		}
@@ -162,7 +164,7 @@ func (s *Service) GetSchemaRegistrySubjects(ctx context.Context) ([]SchemaRegist
 type SchemaRegistrySubjectDetails struct {
 	Name                string                                `json:"name"`
 	Type                sr.SchemaType                         `json:"type"`
-	Compatibility       string                                `json:"compatibility"`
+	Compatibility       *sr.CompatibilityLevel                `json:"compatibility"`
 	RegisteredVersions  []SchemaRegistrySubjectDetailsVersion `json:"versions"`
 	LatestActiveVersion int                                   `json:"latestActiveVersion"`
 	Schemas             []SchemaRegistryVersionedSchema       `json:"schemas"`
@@ -222,13 +224,20 @@ func (s *Service) GetSchemaRegistrySubjectDetails(ctx context.Context, subjectNa
 	}
 
 	// 2. Retrieve schemas and compat level concurrently
-	var compatLevel string
+	var compatLevel *sr.CompatibilityLevel
 
 	grp, grpCtx := errgroup.WithContext(ctx)
 	grp.SetLimit(10)
 
 	grp.Go(func() error {
-		compatLevel = s.getSubjectCompatibilityLevel(grpCtx, srClient, subjectName)
+		// 2. Retrieve subject config (subject compatibility level)
+		compatibilityRes := srClient.Compatibility(grpCtx, subjectName)
+		compatibility := compatibilityRes[0]
+		if err := compatibility.Err; err != nil {
+			s.logger.Warn("failed to get subject config", zap.String("subject", subjectName), zap.Error(err))
+			return nil
+		}
+		compatLevel = &compatibility.Level
 		return nil
 	})
 
@@ -238,7 +247,7 @@ func (s *Service) GetSchemaRegistrySubjectDetails(ctx context.Context, subjectNa
 	switch version {
 	case SchemaVersionsAll:
 		grp.Go(func() error {
-			subjectSchemas, err := srClient.Schemas(sr.WithParams(ctx, sr.ShowDeleted), subjectName)
+			subjectSchemas, err := srClient.Schemas(ctx, subjectName)
 			if err != nil {
 				return fmt.Errorf("failed to retrieve all sch versions for subject %q: %w", subjectName, err)
 			}
@@ -256,7 +265,7 @@ func (s *Service) GetSchemaRegistrySubjectDetails(ctx context.Context, subjectNa
 			if err != nil {
 				return fmt.Errorf("failed to parse version %q: %w", version, err)
 			}
-			subjectSchema, err := srClient.SchemaByVersion(sr.WithParams(ctx, sr.ShowDeleted), subjectName, versionInt)
+			subjectSchema, err := srClient.SchemaByVersion(ctx, subjectName, versionInt)
 			if err != nil {
 				return fmt.Errorf("failed to retrieve schema by version %q: %w", subjectName, err)
 			}
@@ -295,7 +304,7 @@ type SchemaRegistrySubjectDetailsVersion struct {
 // This will submit two versions requests where one includes softDeletedVersions.
 // This is done to retrieve a list with all versions including a flag whether it's
 // a soft-deleted or active version.
-func (*Service) getSchemaRegistrySchemaVersions(ctx context.Context, srClient *rpsr.Client, subjectName string) ([]SchemaRegistrySubjectDetailsVersion, error) {
+func (*Service) getSchemaRegistrySchemaVersions(ctx context.Context, srClient *sr.Client, subjectName string) ([]SchemaRegistrySubjectDetailsVersion, error) {
 	type chResponse struct {
 		Res             []int
 		WithSoftDeleted bool
@@ -373,24 +382,6 @@ func (*Service) getSchemaRegistrySchemaVersions(ctx context.Context, srClient *r
 	return response, nil
 }
 
-// getSubjectCompatibilityLevel retrieves the compatibility level for a subject,
-// handling the case where no specific compatibility is configured.
-func (s *Service) getSubjectCompatibilityLevel(ctx context.Context, srClient *rpsr.Client, subjectName string) string {
-	compatibilityRes := srClient.Compatibility(ctx, subjectName)
-	compatibility := compatibilityRes[0]
-	if err := compatibility.Err; err != nil {
-		var schemaErr *sr.ResponseError
-		if errors.As(err, &schemaErr) && schemaErr.ErrorCode == 40408 {
-			// Subject compatibility not configured, this means the default compatibility will be used
-			return "DEFAULT"
-		}
-		// For other errors, log warning and return UNKNOWN
-		s.logger.WarnContext(ctx, "failed to get subject config", slog.String("subject", subjectName), slog.Any("error", err))
-		return "UNKNOWN"
-	}
-	return compatibility.Level.String()
-}
-
 // SchemaRegistryVersionedSchema describes a retrieved schema.
 type SchemaRegistryVersionedSchema struct {
 	ID            int           `json:"id"`
@@ -452,7 +443,7 @@ func (s *Service) GetSchemaRegistrySchemaReferencedBy(ctx context.Context, subje
 		return nil, err
 	}
 
-	schemaRefs, err := srClient.SchemaReferences(sr.WithParams(ctx, sr.ShowDeleted), subjectName, version)
+	schemaRefs, err := srClient.SchemaReferences(ctx, subjectName, version)
 	if err != nil {
 		return nil, err
 	}
@@ -463,7 +454,7 @@ func (s *Service) GetSchemaRegistrySchemaReferencedBy(ctx context.Context, subje
 	for _, subjectSchema := range schemaRefs {
 		schemaIDCpy := subjectSchema.ID
 		grp.Go(func() error {
-			subjectVersions, err := srClient.SchemaUsagesByID(sr.WithParams(grpCtx, sr.ShowDeleted), schemaIDCpy)
+			subjectVersions, err := srClient.SchemaUsagesByID(grpCtx, schemaIDCpy)
 			if err != nil {
 				ch <- SchemaReference{
 					Error: err.Error(),
@@ -630,7 +621,7 @@ func (s *Service) ValidateSchemaRegistrySchema(
 	var parsingErr string
 	switch sch.Type {
 	case sr.TypeAvro:
-		if _, err := s.cachedSchemaClient.ParseAvroSchemaWithReferences(ctx, sch); err != nil {
+		if _, err := s.cachedSchemaClient.ParseAvroSchemaWithReferences(ctx, sch, &avro.SchemaCache{}); err != nil {
 			parsingErr = err.Error()
 		}
 	case sr.TypeJSON:
@@ -680,65 +671,4 @@ func (s *Service) GetSchemaUsagesByID(ctx context.Context, schemaID int) ([]Sche
 	}
 
 	return schemaVersions, nil
-}
-
-// CheckSchemaRegistryACLSupport checks if the Schema Registry supports ACL
-// operations by making a test call to the ACL endpoint.
-func (s *Service) CheckSchemaRegistryACLSupport(ctx context.Context) bool {
-	if !s.cfg.SchemaRegistry.Enabled {
-		return false
-	}
-	srClient, err := s.schemaClientFactory.GetSchemaRegistryClient(ctx)
-	if err != nil {
-		return false
-	}
-
-	faultyACL := []rpsr.ACL{{
-		ResourceType: "NOT_A_RESOURCE_TYPE",
-		PatternType:  "_CONSOLE_TEST",
-	}}
-	err = srClient.CreateACLs(ctx, faultyACL)
-	if err != nil {
-		var se *sr.ResponseError
-		if errors.As(err, &se) {
-			switch se.StatusCode {
-			case http.StatusNotFound:
-				return false
-			case http.StatusForbidden:
-				if strings.Contains(err.Error(), "license") {
-					return false
-				}
-			}
-		}
-		// Other errors (e.g., permissions) mean the endpoint exists
-		return true
-	}
-	return true
-}
-
-// ListSRACLs lists Schema Registry ACLs based on the provided filter
-func (s *Service) ListSRACLs(ctx context.Context, filter []rpsr.ACL) ([]rpsr.ACL, error) {
-	srClient, err := s.schemaClientFactory.GetSchemaRegistryClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return srClient.ListACLsBatch(ctx, filter)
-}
-
-// CreateSRACLs creates Schema Registry ACLs based on the provided ACL.
-func (s *Service) CreateSRACLs(ctx context.Context, acls []rpsr.ACL) error {
-	srClient, err := s.schemaClientFactory.GetSchemaRegistryClient(ctx)
-	if err != nil {
-		return err
-	}
-	return srClient.CreateACLs(ctx, acls)
-}
-
-// DeleteSRACLs deletes Schema Registry ACLs based on the provided ACL.
-func (s *Service) DeleteSRACLs(ctx context.Context, acls []rpsr.ACL) error {
-	srClient, err := s.schemaClientFactory.GetSchemaRegistryClient(ctx)
-	if err != nil {
-		return err
-	}
-	return srClient.DeleteACLs(ctx, acls)
 }

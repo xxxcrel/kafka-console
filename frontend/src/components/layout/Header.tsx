@@ -9,20 +9,20 @@
  * by the Apache License, Version 2.0
  */
 
-import { Badge, Box, Breadcrumbs, Button, ColorModeSwitch, CopyButton, Flex, Text } from '@redpanda-data/ui';
+import { Box, Breadcrumbs, Button, ColorModeSwitch, CopyButton, Flex, Text } from '@redpanda-data/ui';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react';
-import { Link as ReactRouterLink, useMatch } from 'react-router-dom';
+import { useRouteMatch } from 'react-router-dom';
+import { Link as ReactRouterLink } from 'react-router-dom';
 import { isEmbedded } from '../../config';
 import { api } from '../../state/backendApi';
 import { type BreadcrumbEntry, uiState } from '../../state/uiState';
 import { IsDev } from '../../utils/env';
-import DataRefreshButton from '../misc/buttons/data-refresh/Component';
 import { UserPreferencesButton } from '../misc/UserPreferences';
+import DataRefreshButton from '../misc/buttons/data-refresh/Component';
 
 const AppPageHeader = observer(() => {
   const showRefresh = useShouldShowRefresh();
-  const showBetaBadge = useShouldShowBetaBadge();
 
   const breadcrumbItems = computed(() => {
     const items: BreadcrumbEntry[] = [...uiState.pageBreadcrumbs];
@@ -76,7 +76,6 @@ const AppPageHeader = observer(() => {
               {lastBreadcrumb.title}
             </Text>
           )}
-          {showBetaBadge && <Badge ml={2}>beta</Badge>}
           {lastBreadcrumb && (
             <Box>
               {lastBreadcrumb.options?.canBeCopied && <CopyButton content={lastBreadcrumb.title} variant="ghost" />}
@@ -85,19 +84,17 @@ const AppPageHeader = observer(() => {
           {showRefresh && <DataRefreshButton />}
         </Flex>
         <Flex alignItems="center" gap={2}>
-          {!isEmbedded() && api.isRedpanda && (
-            <Button
-              as={ReactRouterLink}
-              to={api.userData?.canViewDebugBundle ? '/debug-bundle' : undefined}
-              variant="ghost"
-              isDisabled={!api.userData?.canViewDebugBundle}
-              tooltip={
-                !api.userData?.canViewDebugBundle ? 'You need RedpandaCapability.MANAGE_DEBUG_BUNDLE permission' : null
-              }
-            >
-              Debug bundle
-            </Button>
-          )}
+          <Button
+            as={ReactRouterLink}
+            to={api.userData?.canViewDebugBundle ? '/debug-bundle' : undefined}
+            variant="ghost"
+            isDisabled={!api.userData?.canViewDebugBundle}
+            tooltip={
+              !api.userData?.canViewDebugBundle ? 'You need RedpandaCapability.MANAGE_DEBUG_BUNDLE permission' : null
+            }
+          >
+            Debug bundle
+          </Button>
           <UserPreferencesButton />
           {IsDev && !isEmbedded() && <ColorModeSwitch m={0} p={0} variant="ghost" />}
         </Flex>
@@ -116,57 +113,32 @@ export default AppPageHeader;
  * @returns {boolean} Indicates whether the refresh button should be shown (true/false).
  */
 function useShouldShowRefresh() {
-  const connectClusterMatch = useMatch({
+  const connectClusterMatch = useRouteMatch<{ clusterName: string; connectorName: string }>({
     path: '/connect-clusters/:clusterName/:connectorName',
-    end: false,
+    strict: false,
+    sensitive: true,
+    exact: true,
   });
 
-  const schemaCreateMatch = useMatch({
+  const schemaCreateMatch = useRouteMatch({
     path: '/schema-registry/create',
-    end: false,
+    strict: false,
+    sensitive: true,
+    exact: true,
   });
 
-  const topicProduceRecordMatch = useMatch({
+  const topicProduceRecordMatch = useRouteMatch({
     path: '/topics/:topicName/produce-record',
-    end: false,
-  });
-
-  const secretsMatch = useMatch({
-    path: '/secrets',
-    end: true,
-  });
-
-  const agentsMatch = useMatch({
-    path: '/agents',
-    end: true,
-  });
-
-  const agentDetailsMatch = useMatch({
-    path: '/agents/:agentId',
-    end: true,
-  });
-
-  const createAgentMatch = useMatch({
-    path: '/agents/create',
-    end: false,
+    strict: false,
+    sensitive: true,
+    exact: true,
   });
 
   if (connectClusterMatch && connectClusterMatch.params.connectorName === 'create-connector') return false;
+
   if (schemaCreateMatch) return false;
+
   if (topicProduceRecordMatch) return false;
-  if (secretsMatch) return false;
-  if (agentsMatch) return false;
-  if (agentDetailsMatch) return false;
-  if (createAgentMatch) return false;
 
   return true;
-}
-
-function useShouldShowBetaBadge() {
-  const agentsMatch = useMatch({
-    path: '/agents',
-    end: false,
-  });
-
-  return agentsMatch !== null;
 }

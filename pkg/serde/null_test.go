@@ -10,6 +10,7 @@
 package serde
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -66,7 +67,7 @@ func TestNullSerde_DeserializePayload(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			payload, err := serde.DeserializePayload(t.Context(), test.record, test.payloadType)
+			payload, err := serde.DeserializePayload(context.Background(), test.record, test.payloadType)
 			test.validationFunc(t, *payload, err)
 		})
 	}
@@ -140,7 +141,7 @@ func TestNullSerde_SerializeObject(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			data, err := serde.SerializeObject(t.Context(), test.input, test.payloadType, test.options...)
+			data, err := serde.SerializeObject(context.Background(), test.input, test.payloadType, test.options...)
 			test.validationFunc(t, data, err)
 		})
 	}

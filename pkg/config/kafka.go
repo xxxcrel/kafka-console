@@ -10,7 +10,6 @@
 package config
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 )
@@ -39,7 +38,7 @@ func (c *Kafka) RegisterFlags(f *flag.FlagSet) {
 // Validate the Kafka config
 func (c *Kafka) Validate() error {
 	if len(c.Brokers) == 0 {
-		return errors.New("you must specify at least one broker to connect to")
+		return fmt.Errorf("you must specify at least one broker to connect to")
 	}
 
 	err := c.SASL.Validate()

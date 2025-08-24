@@ -9,17 +9,16 @@
  * by the Apache License, Version 2.0
  */
 
-import { create } from '@bufbuild/protobuf';
 import { Badge, Box, DataTable, Link, Stack, Text, Tooltip } from '@redpanda-data/ui';
 import ErrorResult from 'components/misc/ErrorResult';
 import { observer, useLocalObservable } from 'mobx-react';
 import { Component, type FunctionComponent } from 'react';
 import { useLocation } from 'react-router-dom';
 import { isServerless } from '../../../config';
-import { ListSecretScopesRequestSchema } from '../../../protogen/redpanda/api/dataplane/v1/secret_pb';
+import { ListSecretScopesRequest } from '../../../protogen/redpanda/api/dataplane/v1/secret_pb';
 import { appGlobal } from '../../../state/appGlobal';
 import { api, rpcnSecretManagerApi } from '../../../state/backendApi';
-import type { ClusterConnectorInfo, ClusterConnectors, ClusterConnectorTaskInfo } from '../../../state/restInterfaces';
+import type { ClusterConnectorInfo, ClusterConnectorTaskInfo, ClusterConnectors } from '../../../state/restInterfaces';
 import { Features } from '../../../state/supportedFeatures';
 import { uiSettings } from '../../../state/ui';
 import { Code, DefaultSkeleton } from '../../../utils/tsxUtils';
@@ -30,15 +29,16 @@ import Tabs, { type Tab } from '../../misc/tabs/Tabs';
 import { PageComponent, type PageInitHelper } from '../Page';
 import RpConnectPipelinesList from '../rp-connect/Pipelines.List';
 import { RedpandaConnectIntro } from '../rp-connect/RedpandaConnectIntro';
+import RpConnectSecretsList from '../rp-connect/secrets/Secrets.List';
 import {
   ConnectorClass,
   ConnectorsColumn,
-  errIcon,
-  mr05,
   NotConfigured,
   OverviewStatisticsCard,
   TaskState,
   TasksColumn,
+  errIcon,
+  mr05,
 } from './helper';
 
 enum ConnectView {
@@ -91,7 +91,7 @@ class KafkaConnectOverview extends PageComponent<{ defaultView: string }> {
 
   async checkRPCNSecretEnable() {
     if (Features.pipelinesApi) {
-      await rpcnSecretManagerApi.checkScope(create(ListSecretScopesRequestSchema));
+      await rpcnSecretManagerApi.checkScope(new ListSecretScopesRequest());
     }
   }
 
@@ -101,7 +101,7 @@ class KafkaConnectOverview extends PageComponent<{ defaultView: string }> {
     //     const clusters = api.connectConnectors.clusters;
     //     if (clusters?.length == 1) {
     //         const cluster = clusters[0];
-    //         appGlobal.historyReplace(`/connect-clusters/${cluster.clusterName}`);
+    //         appGlobal.history.replace(`/connect-clusters/${cluster.clusterName}`);
     //     }
     // }
   }
@@ -124,7 +124,7 @@ class KafkaConnectOverview extends PageComponent<{ defaultView: string }> {
                 Learn more.
               </Link>
             </Text>
-            {Features.pipelinesApi ? <RpConnectPipelinesList matchedPath="/rp-connect" /> : <RedpandaConnectIntro />}
+            <TabRedpandaConnect defaultView={getDefaultView(this.props.defaultView).redpandaConnectTab} />
           </Box>
         ),
       },
@@ -192,18 +192,19 @@ class TabClusters extends Component {
               if (r.error) {
                 return (
                   <Tooltip label={r.error} placement="top" hasArrow={true}>
-                    <span style={mr05}>{errIcon}</span>
-                    {r.clusterName}
+                    <>
+                      <span style={mr05}>{errIcon}</span>
+                      {r.clusterName}
+                    </>
                   </Tooltip>
                 );
               }
 
               return (
-                // biome-ignore lint/a11y/noStaticElementInteractions: part of TabClusters implementation
                 <span
                   className="hoverLink"
                   style={{ display: 'inline-block', width: '100%' }}
-                  onClick={() => appGlobal.historyPush(`/connect-clusters/${encodeURIComponent(r.clusterName)}`)}
+                  onClick={() => appGlobal.history.push(`/connect-clusters/${encodeURIComponent(r.clusterName)}`)}
                 >
                   {r.clusterName}
                 </span>
@@ -252,7 +253,7 @@ const TabConnectors = observer(() => {
     try {
       const quickSearchRegExp = new RegExp(uiSettings.clusterOverview.connectorsList.quickSearch, 'i');
       return Boolean(item.name.match(quickSearchRegExp)) || Boolean(item.class.match(quickSearchRegExp));
-    } catch (_e) {
+    } catch (e) {
       console.warn('Invalid expression');
       return item.name.toLowerCase().includes(filter.toLowerCase());
     }
@@ -283,12 +284,11 @@ const TabConnectors = observer(() => {
             size: 35, // Assuming '35%' is approximated to '35'
             cell: ({ row: { original } }) => (
               <Tooltip placement="top" label={original.name} hasArrow={true}>
-                {/** biome-ignore lint/a11y/noStaticElementInteractions: part of TabConnectors implementation */}
                 <span
                   className="hoverLink"
                   style={{ display: 'inline-block', width: '100%' }}
                   onClick={() =>
-                    appGlobal.historyPush(
+                    appGlobal.history.push(
                       `/connect-clusters/${encodeURIComponent(original.cluster.clusterName)}/${encodeURIComponent(original.name)}`,
                     )
                   }
@@ -368,7 +368,7 @@ class TabTasks extends Component {
                 whiteSpace="break-spaces"
                 className="hoverLink"
                 onClick={() =>
-                  appGlobal.historyPush(
+                  appGlobal.history.push(
                     `/connect-clusters/${encodeURIComponent(original.cluster.clusterName)}/${encodeURIComponent(original.connectorName)}`,
                   )
                 }
@@ -419,6 +419,48 @@ const TabKafkaConnect = observer((_p: {}) => {
         <Tabs tabs={connectTabs} onChange={() => settings.selectedTab} selectedTabKey={settings.selectedTab} />
       </Section>
     </Stack>
+  );
+});
+
+const TabRedpandaConnect = observer((_p: { defaultView: ConnectView }) => {
+  if (!Features.pipelinesApi)
+    // If the backend doesn't support pipelines, show the intro page
+    return <RedpandaConnectIntro />;
+
+  const tabs = [
+    {
+      key: 'pipelines',
+      title: (
+        <Box minWidth="180px" data-testid={'tab-rpcn-connect'}>
+          Pipelines
+        </Box>
+      ),
+      content: <RpConnectPipelinesList matchedPath="/rp-connect" />,
+    },
+    {
+      key: 'secrets',
+      title: (
+        <Box minWidth="180px" data-testid={'tab-rpcn-secret'}>
+          Secrets
+        </Box>
+      ),
+      content: <RpConnectSecretsList matchedPath="/rp-connect/secrets" />,
+    },
+  ] as Tab[];
+
+  /**
+   * Verify if the RPCN secret is enabled. Unlike the pipeline, this feature checks
+   * the result endpoint rather than the endpoint itself.
+   */
+  if (!rpcnSecretManagerApi.isEnable) {
+    return <RpConnectPipelinesList matchedPath="/rp-connect" />;
+  }
+
+  return (
+    <Tabs
+      tabs={tabs}
+      defaultSelectedTabKey={_p.defaultView === ConnectView.RedpandaConnectSecret ? 'secrets' : 'pipelines'}
+    />
   );
 });
 

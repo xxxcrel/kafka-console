@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -11,7 +11,6 @@ package api
 
 import (
 	"context"
-	"log/slog"
 	"net"
 	"net/http"
 	"strconv"
@@ -20,6 +19,7 @@ import (
 
 	"github.com/cloudhut/common/rest"
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 )
 
 // BasePathCtxKey is a helper to avoid allocations, idea taken from chi
@@ -147,17 +147,17 @@ func createSetVersionInfoHeader(builtAt string) func(next http.Handler) http.Han
 }
 
 // forceLoopbackMiddleware blocks requests not coming from the loopback interface.
-func forceLoopbackMiddleware(logger *slog.Logger) func(next http.Handler) http.Handler {
+func forceLoopbackMiddleware(logger *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			addr, ok := r.Context().Value(http.LocalAddrContextKey).(*net.TCPAddr)
 			if !ok {
-				logger.InfoContext(r.Context(), "request does not contain interface binding information")
+				logger.Info("request does not contain interface binding information")
 				rest.HandleNotFound(logger).ServeHTTP(w, r)
 				return
 			}
 			if !addr.IP.IsLoopback() {
-				logger.InfoContext(r.Context(), "blocking request not directed to the loopback interface")
+				logger.Info("blocking request not directed to the loopback interface")
 				rest.HandleNotFound(logger).ServeHTTP(w, r)
 				return
 			}

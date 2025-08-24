@@ -16,7 +16,7 @@ import (
 	"errors"
 	"fmt"
 
-	v1proto "github.com/golang/protobuf/proto"
+	v1proto "github.com/golang/protobuf/proto" //nolint:staticcheck // intentional import of old module
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/twmb/franz-go/pkg/kgo"
 	v2proto "google.golang.org/protobuf/proto"
@@ -39,7 +39,7 @@ func (ProtobufSerde) Name() PayloadEncoding {
 // DeserializePayload deserializes the kafka record to our internal record payload representation.
 func (d ProtobufSerde) DeserializePayload(_ context.Context, record *kgo.Record, payloadType PayloadType) (*RecordPayload, error) {
 	if d.ProtoSvc == nil {
-		return &RecordPayload{}, errors.New("no protobuf file registry configured")
+		return &RecordPayload{}, fmt.Errorf("no protobuf file registry configured")
 	}
 
 	property := proto.RecordValue
@@ -133,7 +133,7 @@ func (d ProtobufSerde) SerializeObject(_ context.Context, obj any, payloadType P
 			return nil, err
 		}
 		if !startsWithJSON {
-			return nil, errors.New("first byte indicates this it not valid JSON, expected brackets")
+			return nil, fmt.Errorf("first byte indicates this it not valid JSON, expected brackets")
 		}
 
 		b, err := d.serializeJSON([]byte(trimmed), payloadType, so.topic)

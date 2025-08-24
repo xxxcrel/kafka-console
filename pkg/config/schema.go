@@ -10,7 +10,6 @@
 package config
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"net/url"
@@ -39,7 +38,7 @@ func (c *Schema) Validate() error {
 	}
 
 	if len(c.URLs) == 0 {
-		return errors.New("schema registry is enabled but no URL is configured")
+		return fmt.Errorf("schema registry is enabled but no URL is configured")
 	}
 
 	for _, u := range c.URLs {

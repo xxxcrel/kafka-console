@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -15,7 +15,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"sort"
 	"testing"
@@ -26,33 +25,12 @@ import (
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kfake"
 	"github.com/twmb/franz-go/pkg/kmsg"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/xxxcrel/kafka-console/pkg/console"
-	"github.com/xxxcrel/kafka-console/pkg/logger"
 	"github.com/xxxcrel/kafka-console/pkg/testutil"
 )
-
-// testLogHandler captures log records for testing
-type testLogHandler struct {
-	entries *[]slog.Record
-}
-
-func (h *testLogHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return level >= slog.LevelWarn
-}
-
-func (h *testLogHandler) Handle(ctx context.Context, record slog.Record) error {
-	*h.entries = append(*h.entries, record)
-	return nil
-}
-
-func (h *testLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return h
-}
-
-func (h *testLogHandler) WithGroup(name string) slog.Handler {
-	return h
-}
 
 func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 	t := s.T()
@@ -60,24 +38,24 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 	assert := assert.New(t)
 
 	// create some test topics
-	testutil.CreateTestData(t, t.Context(), s.kafkaClient, s.kafkaAdminClient,
+	testutil.CreateTestData(t, context.Background(), s.kafkaClient, s.kafkaAdminClient,
 		testutil.TopicNameForTest("get_topics_0"))
 
-	testutil.CreateTestData(t, t.Context(), s.kafkaClient, s.kafkaAdminClient,
+	testutil.CreateTestData(t, context.Background(), s.kafkaClient, s.kafkaAdminClient,
 		testutil.TopicNameForTest("get_topics_1"))
 
-	testutil.CreateTestData(t, t.Context(), s.kafkaClient, s.kafkaAdminClient,
+	testutil.CreateTestData(t, context.Background(), s.kafkaClient, s.kafkaAdminClient,
 		testutil.TopicNameForTest("get_topics_2"))
 
 	defer func() {
-		s.kafkaAdminClient.DeleteTopics(t.Context(),
+		s.kafkaAdminClient.DeleteTopics(context.Background(),
 			testutil.TopicNameForTest("get_topics_0"),
 			testutil.TopicNameForTest("get_topics_1"),
 			testutil.TopicNameForTest("get_topics_2"))
 	}()
 
 	t.Run("happy path", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		res, body := s.apiRequest(ctx, http.MethodGet, "/api/topics", nil)
@@ -113,13 +91,13 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 		fakeClient, fakeAdminClient := testutil.CreateClients(t, fakeCluster.ListenAddrs())
 
 		// create fake data
-		testutil.CreateTestData(t, t.Context(), fakeClient, fakeAdminClient,
+		testutil.CreateTestData(t, context.Background(), fakeClient, fakeAdminClient,
 			testutil.TopicNameForTest("get_topics_0"))
 
-		testutil.CreateTestData(t, t.Context(), fakeClient, fakeAdminClient,
+		testutil.CreateTestData(t, context.Background(), fakeClient, fakeAdminClient,
 			testutil.TopicNameForTest("get_topics_1"))
 
-		testutil.CreateTestData(t, t.Context(), fakeClient, fakeAdminClient,
+		testutil.CreateTestData(t, context.Background(), fakeClient, fakeAdminClient,
 			testutil.TopicNameForTest("get_topics_2"))
 
 		defer func() {
@@ -134,8 +112,7 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 		newConfig.MetricsNamespace = "get_metadata_fail"
 
 		// new console service
-		newApi, err := New(newConfig)
-		require.NoError(err)
+		newApi := New(newConfig)
 
 		// save old
 		oldConsoleSvc := s.api.ConsoleSvc
@@ -186,7 +163,7 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 		})
 
 		// make the request
-		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		res, body := s.apiRequest(ctx, http.MethodGet, "/api/topics", nil)
@@ -211,13 +188,13 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 		fakeClient, fakeAdminClient := testutil.CreateClients(t, fakeCluster.ListenAddrs())
 
 		// create fake data
-		testutil.CreateTestData(t, t.Context(), fakeClient, fakeAdminClient,
+		testutil.CreateTestData(t, context.Background(), fakeClient, fakeAdminClient,
 			testutil.TopicNameForTest("get_topics_0"))
 
-		testutil.CreateTestData(t, t.Context(), fakeClient, fakeAdminClient,
+		testutil.CreateTestData(t, context.Background(), fakeClient, fakeAdminClient,
 			testutil.TopicNameForTest("get_topics_1"))
 
-		testutil.CreateTestData(t, t.Context(), fakeClient, fakeAdminClient,
+		testutil.CreateTestData(t, context.Background(), fakeClient, fakeAdminClient,
 			testutil.TopicNameForTest("get_topics_2"))
 
 		defer func() {
@@ -226,24 +203,16 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 
 		newConfig := s.copyConfig()
 
-		// Create a handler that captures logs at WARN level for testing
-		var logEntries []slog.Record
-		handler := &testLogHandler{entries: &logEntries}
+		core, obs := observer.New(zap.WarnLevel)
+		log := zap.New(core)
 
 		// new kafka service
 		newConfig.Kafka.Brokers = fakeCluster.ListenAddrs()
 
 		newConfig.MetricsNamespace = "describe_configs_fail"
 
-		// new console service with custom logger handler
-		customLogger := logger.NewSlogLogger(
-			logger.WithLevel(slog.LevelDebug),
-			logger.WithFormat(logger.FormatJSON),
-			logger.WithHandler(func(next slog.Handler) slog.Handler {
-				return handler
-			}),
-		)
-		newApi, err := New(newConfig, WithLogger(customLogger))
+		// new console service
+		newApi := New(newConfig, WithLogger(log))
 		require.NoError(err)
 
 		// save old
@@ -305,7 +274,7 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 		})
 
 		// make the request
-		ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		res, body := s.apiRequest(ctx, http.MethodGet, "/api/topics", nil)
@@ -327,18 +296,16 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 		assert.Equal(testutil.TopicNameForTest("get_topics_2"), getRes.Topics[2].TopicName)
 
 		// verify warning logs
-		require.Len(logEntries, 1)
-		assert.Equal("config resource response has an error", logEntries[0].Message)
-		assert.Equal(slog.LevelWarn, logEntries[0].Level)
-		// Check that the error attribute exists
-		found := false
-		logEntries[0].Attrs(func(a slog.Attr) bool {
-			if a.Key == "error" {
-				assert.Equal("INVALID_TOPIC_EXCEPTION: The request attempted to perform an operation on an invalid topic.", a.Value.String())
-				found = true
-			}
-			return true
-		})
-		assert.True(found, "expected to find error attribute in log entry")
+		allLogs := obs.All()
+
+		require.Len(allLogs, 1)
+		assert.Equal("config resource response has an error", allLogs[0].Message)
+		assert.Equal(zap.WarnLevel, allLogs[0].Level)
+		contextMap := allLogs[0].ContextMap()
+		logObj, ok := contextMap["error"]
+		assert.True(ok)
+		fieldValue, ok := logObj.(string)
+		assert.True(ok)
+		assert.Equal("INVALID_TOPIC_EXCEPTION: The request attempted to perform an operation on an invalid topic.", fieldValue)
 	})
 }

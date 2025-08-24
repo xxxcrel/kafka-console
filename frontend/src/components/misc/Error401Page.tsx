@@ -14,8 +14,8 @@ import {
   Box,
   Button,
   Flex,
-  Hide,
   HStack,
+  Hide,
   Image,
   Link,
   SectionHeading,
@@ -23,16 +23,17 @@ import {
   Text,
   VStack,
 } from '@redpanda-data/ui';
+import PageContent from './PageContent';
+
 import { observer } from 'mobx-react';
 import { config } from '../../config';
 import { appGlobal } from '../../state/appGlobal';
 import fetchWithTimeout from '../../utils/fetchWithTimeout';
-import PageContent from './PageContent';
 
 const ErrorPage = observer(() => {
   fetchWithTimeout(`${config.restBasePath}/console/endpoints`, 5 * 1000).then((r) => {
     if (r.ok) {
-      appGlobal.historyReplace('/overview');
+      appGlobal.history.replace('/overview');
       window.location.reload();
     }
   });

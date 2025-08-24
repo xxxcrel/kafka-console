@@ -16,7 +16,6 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"mime/multipart"
 	"net/http"
@@ -61,7 +60,7 @@ func (s *APISuite) TestDeployTransform_v1() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 24*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 24*time.Second)
 		defer cancel()
 
 		tfName := "test-valid-identity-transform"
@@ -160,7 +159,7 @@ func (s *APISuite) TestDeployTransform_v1() {
 		kafkaConsumerCl, err := kgo.NewClient(consumerOpts...)
 		require.NoError(err)
 
-		consumeCtx, cancel := context.WithTimeoutCause(ctx, 6*time.Second, errors.New("consumer context deadline exceeded"))
+		consumeCtx, cancel := context.WithTimeoutCause(ctx, 6*time.Second, fmt.Errorf("consumer context deadline exceeded"))
 		defer cancel()
 		fetches := kafkaConsumerCl.PollRecords(consumeCtx, 1)
 		assert.Empty(fetches.Errors(), "unexpected errors when polling record in output topic")
@@ -175,7 +174,7 @@ func (s *APISuite) TestDeployTransform_v1() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		body := &bytes.Buffer{}
@@ -222,7 +221,7 @@ func (s *APISuite) TestDeployTransform_v1() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		body := &bytes.Buffer{}
@@ -273,7 +272,7 @@ func (s *APISuite) TestDeployTransform_v1() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		body := &bytes.Buffer{}
@@ -314,7 +313,7 @@ func (s *APISuite) TestDeployTransform_v1() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		var errResponse string
@@ -336,7 +335,7 @@ func (s *APISuite) TestDeployTransform_v1() {
 		require := requirepkg.New(t)
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		// This team we try to deploy a WASM transform for something that the API does not validate
@@ -367,7 +366,7 @@ func (s *APISuite) TestGetTransform_v1() {
 	inputTopicName := "wasm-tfm-create-test-c"
 	outputTopicName := "wasm-tfm-create-test-d"
 
-	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	t.Cleanup(cancel)
 
 	// Create pre-requisites for getting the transform
@@ -424,7 +423,7 @@ func (s *APISuite) TestGetTransform_v1() {
 		assert := assertpkg.New(t)
 		require := requirepkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		type partitionTransformStatus struct {
@@ -468,10 +467,10 @@ func (s *APISuite) TestGetTransform_v1() {
 	})
 
 	t.Run("get transform with special chars in name - valid request (http)", func(t *testing.T) {
-		// Skip this test, until https://github.com/redpanda-data/redpanda/issues/16643 is fixed.
+		// Skip this test, until https://github.com/xxxcrel/redpanda/issues/16643 is fixed.
 		t.Skip()
 
-		ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 		defer cancel()
 
 		transformNameWithSpecialChars := "some-transform/name that&requires! encoding"
@@ -526,7 +525,7 @@ func (s *APISuite) TestGetTransform_v1() {
 	t.Run("get non-existent transform (http)", func(t *testing.T) {
 		assert := assertpkg.New(t)
 
-		ctx, cancel := context.WithTimeout(t.Context(), 6*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		t.Cleanup(cancel)
 
 		var httpRes string
@@ -567,7 +566,7 @@ func (s *APISuite) TestListTransforms_v1() {
 	tfNameTwo := "test-lt-tf-2"
 	inputTopicName := "wasm-tfm-lt-test-c"
 	outputTopicName := "wasm-tfm-lt-test-d"
-	ctx, cancel := context.WithTimeout(t.Context(), 12*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 	defer cancel()
 
 	transformClient := v1connect.NewTransformServiceClient(http.DefaultClient, s.httpAddress())
@@ -691,7 +690,7 @@ func (s *APISuite) TestDeleteTransforms_v1() {
 	require := requirepkg.New(t)
 	assert := assertpkg.New(t)
 
-	ctx, cancel := context.WithTimeout(t.Context(), 24*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 24*time.Second)
 	defer cancel()
 
 	inputTopicName := "wasm-tfm-test-delete-input"
@@ -790,7 +789,7 @@ func findExactTransformByName(ts []adminapi.TransformMetadata, name string) (*ad
 			return &t, nil
 		}
 	}
-	return nil, errors.New("transform not found")
+	return nil, fmt.Errorf("transform not found")
 }
 
 func createTransform(ctx context.Context, svc *adminapi.AdminAPI, meta adminapi.TransformMetadata, b []byte) (*adminapi.TransformMetadata, error) {

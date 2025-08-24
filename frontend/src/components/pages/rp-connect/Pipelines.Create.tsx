@@ -9,7 +9,6 @@
  * by the Apache License, Version 2.0
  */
 
-import { create } from '@bufbuild/protobuf';
 import type { Monaco } from '@monaco-editor/react';
 import {
   Alert,
@@ -23,16 +22,15 @@ import {
   Input,
   NumberInput,
   Text,
+  createStandaloneToast,
   useDisclosure,
-  useToast,
-  CreateToastFnReturn,
 } from '@redpanda-data/ui';
 import { action, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
-import type { editor, IDisposable, languages } from 'monaco-editor';
-import { PipelineCreateSchema } from 'protogen/redpanda/api/dataplane/v1/pipeline_pb';
+import type { IDisposable, editor, languages } from 'monaco-editor';
 import React, { type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { PipelineCreate } from '../../../protogen/redpanda/api/dataplane/v1/pipeline_pb';
 import { appGlobal } from '../../../state/appGlobal';
 import { pipelinesApi, rpcnSecretManagerApi } from '../../../state/backendApi';
 import { DefaultSkeleton } from '../../../utils/tsxUtils';
@@ -42,7 +40,9 @@ import Tabs from '../../misc/tabs/Tabs';
 import { PageComponent, type PageInitHelper } from '../Page';
 import { formatPipelineError } from './errors';
 import { SecretsQuickAdd } from './secrets/Secrets.QuickAdd';
-import { MAX_TASKS, MIN_TASKS, tasksToCPU, cpuToTasks } from './tasks';
+import { MAX_TASKS, MIN_TASKS, tasksToCPU } from './tasks';
+
+const { ToastContainer, toast } = createStandaloneToast();
 
 const exampleContent = `
 `;
@@ -55,9 +55,6 @@ class RpConnectPipelinesCreate extends PageComponent<{}> {
   @observable editorContent = exampleContent;
   @observable isCreating = false;
   @observable secrets: string[] = [];
-  // TODO: Actually show this within the pipeline create page
-  @observable tags = {} as Record<string, string>;
-
   constructor(p: any) {
     super(p);
     makeObservable(this, undefined, { autoBind: true });
@@ -87,24 +84,10 @@ class RpConnectPipelinesCreate extends PageComponent<{}> {
     const alreadyExists = pipelinesApi.pipelines.any((x) => x.id === this.fileName);
     const isNameEmpty = this.fileName.trim().length === 0;
 
-    const CreateButton = () => {
-      const toast = useToast();
-
-      return (
-        <Button
-          variant="solid"
-          isDisabled={alreadyExists || isNameEmpty || this.isCreating}
-          loadingText="Creating..."
-          isLoading={this.isCreating}
-          onClick={action(() => this.createPipeline(toast))}
-        >
-          Create
-        </Button>
-      )
-    }
-
     return (
       <PageContent>
+        <ToastContainer />
+
         <Box my="2">
           For help creating your pipeline, see our{' '}
           <ChLink href="https://docs.redpanda.com/redpanda-cloud/develop/connect/connect-quickstart/" isExternal>
@@ -145,7 +128,7 @@ class RpConnectPipelinesCreate extends PageComponent<{}> {
           </FormField>
           <FormField
             label="Compute Units"
-            description="One compute unit is equivalent to 0.1 CPU and 400 MB of memory. This is enough to experiment with low-volume pipelines."
+            description="One compute unit is equivalent to 0.1 CPU and 400 MB of memory. This is enough to experiment with low-volume pipelines. For pipelines that include the AI Ollama components, one AI compute unit is equivalent to 1 GPU. This can have cost implications."
             w={500}
           >
             <NumberInput
@@ -163,7 +146,15 @@ class RpConnectPipelinesCreate extends PageComponent<{}> {
         </Box>
 
         <Flex alignItems="center" gap="4">
-          <CreateButton />
+          <Button
+            variant="solid"
+            isDisabled={alreadyExists || isNameEmpty || this.isCreating}
+            loadingText="Creating..."
+            isLoading={this.isCreating}
+            onClick={action(() => this.createPipeline())}
+          >
+            Create
+          </Button>
           <Link to="/connect-clusters">
             <Button variant="link">Cancel</Button>
           </Link>
@@ -172,12 +163,12 @@ class RpConnectPipelinesCreate extends PageComponent<{}> {
     );
   }
 
-  async createPipeline(toast: CreateToastFnReturn) {
+  async createPipeline() {
     this.isCreating = true;
 
     pipelinesApi
       .createPipeline(
-        create(PipelineCreateSchema, {
+        new PipelineCreate({
           configYaml: this.editorContent,
           description: this.description,
           displayName: this.fileName,
@@ -185,30 +176,17 @@ class RpConnectPipelinesCreate extends PageComponent<{}> {
             cpuShares: tasksToCPU(this.tasks) || '0',
             memoryShares: '0', // still required by API but unused
           },
-          tags: {
-            ...this.tags,
-            __redpanda_cloud_pipeline_type: 'pipeline',
-          },
-        }),
+        })
       )
-      .then(async (r) => {
+      .then(async () => {
         toast({
           status: 'success',
           duration: 4000,
           isClosable: false,
           title: 'Pipeline created',
         });
-        const retUnits = cpuToTasks(r.response?.pipeline?.resources?.cpuShares);
-        if (retUnits && this.tasks !== retUnits) {
-          toast({
-            status: 'warning',
-            duration: 6000,
-            isClosable: false,
-            title: `Pipeline has been resized to use ${retUnits} compute units`,
-          });
-        }
         await pipelinesApi.refreshPipelines(true);
-        appGlobal.historyPush('/connect-clusters');
+        appGlobal.history.push('/connect-clusters');
       })
       .catch((err) => {
         toast({
@@ -263,7 +241,7 @@ const QuickActions = ({ editorInstance, resetAutocompleteSecrets }: QuickActions
 
 const registerSecretsAutocomplete = async (
   monaco: Monaco,
-  setSecretAutocomplete: Dispatch<SetStateAction<IDisposable | undefined>>,
+  setSecretAutocomplete: Dispatch<SetStateAction<IDisposable | undefined>>
 ) => {
   await rpcnSecretManagerApi.refreshSecrets(true);
   const secrets = rpcnSecretManagerApi.secrets || [];
@@ -294,10 +272,9 @@ const registerSecretsAutocomplete = async (
 export const PipelineEditor = observer(
   (p: {
     yaml: string;
-    onChange?: (newYaml: string) => void;
+    onChange: (newYaml: string) => void;
     secrets?: string[];
     quickActions?: React.FunctionComponent;
-    isDisabled?: boolean;
   }) => {
     const [editorInstance, setEditorInstance] = useState<null | editor.IStandaloneCodeEditor>(null);
     const [secretAutocomplete, setSecretAutocomplete] = useState<IDisposable | undefined>(undefined);
@@ -333,21 +310,16 @@ export const PipelineEditor = observer(
                     path="config.yaml"
                     value={p.yaml}
                     onChange={(e) => {
-                      if (e) p.onChange?.(e);
+                      if (e) p.onChange(e);
                     }}
                     language="yaml"
-                    options={{
-                      readOnly: p.isDisabled,
-                    }}
                     onMount={async (editor, monaco) => {
                       setMonaco(monaco);
                       setEditorInstance(editor);
                       await registerSecretsAutocomplete(monaco, setSecretAutocomplete);
                     }}
                   />
-                  {!p.isDisabled && (
-                    <QuickActions editorInstance={editorInstance} resetAutocompleteSecrets={resetEditor} />
-                  )}
+                  <QuickActions editorInstance={editorInstance} resetAutocompleteSecrets={resetEditor} />
                 </Flex>
                 {isKafkaConnectPipeline(p.yaml) && (
                   <Alert status="error" my={2}>
@@ -376,7 +348,7 @@ export const PipelineEditor = observer(
         ]}
       />
     );
-  },
+  }
 );
 
 /**
@@ -410,7 +382,7 @@ const isKafkaConnectPipeline = (value: string | undefined): boolean => {
   let json: object;
   try {
     json = JSON.parse(value);
-  } catch (_e) {
+  } catch (e) {
     // If parsing fails, it's not a valid JSON and hence not a Kafka Connect config
     return false;
   }
@@ -424,7 +396,7 @@ const isKafkaConnectPipeline = (value: string | undefined): boolean => {
     'errors.log.enable',
   ];
 
-  const matchCount = kafkaConfigKeys.filter((key) => Object.keys(json).includes(key)).length;
+  const matchCount = kafkaConfigKeys.filter((key) => key in json).length;
 
   return matchCount > 0;
 };

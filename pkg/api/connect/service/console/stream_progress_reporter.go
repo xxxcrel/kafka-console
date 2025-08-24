@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -11,12 +11,12 @@ package console
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"connectrpc.com/connect"
+	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/console"
 	v1alpha "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1"
@@ -24,7 +24,7 @@ import (
 
 // streamProgressReporter is in charge of sending status updates and messages regularly to the frontend.
 type streamProgressReporter struct {
-	logger  *slog.Logger
+	logger  *zap.Logger
 	request *console.ListMessageRequest
 	stream  *connect.ServerStream[v1alpha.ListMessagesResponse]
 
@@ -86,7 +86,7 @@ func (p *streamProgressReporter) reportProgress() {
 			},
 		},
 	); err != nil {
-		p.logger.Error("send error in stream reportProgress", slog.Any("error", err))
+		p.logger.Error("send error in stream reportProgress", zap.Error(err))
 	}
 }
 
@@ -105,7 +105,7 @@ func (p *streamProgressReporter) OnPhase(name string) {
 			},
 		},
 	); err != nil {
-		p.logger.Error("send error in stream OnPhase", slog.Any("error", err))
+		p.logger.Error("send error in stream OnPhase", zap.Error(err))
 	}
 }
 
@@ -212,7 +212,7 @@ func (p *streamProgressReporter) OnMessage(message *console.TopicMessage) {
 			},
 		},
 	); err != nil {
-		p.logger.Error("send error in stream OnMessage", slog.Any("error", err))
+		p.logger.Error("send error in stream OnMessage", zap.Error(err))
 	}
 }
 
@@ -234,7 +234,7 @@ func (p *streamProgressReporter) OnComplete(elapsedMs int64, isCancelled bool) {
 			},
 		},
 	); err != nil {
-		p.logger.Error("send error in stream OnComplete", slog.Any("error", err))
+		p.logger.Error("send error in stream OnComplete", zap.Error(err))
 	}
 }
 
@@ -253,6 +253,6 @@ func (p *streamProgressReporter) OnError(message string) {
 			},
 		},
 	); err != nil {
-		p.logger.Error("send error in stream OnError", slog.Any("error", err))
+		p.logger.Error("send error in stream OnError", zap.Error(err))
 	}
 }

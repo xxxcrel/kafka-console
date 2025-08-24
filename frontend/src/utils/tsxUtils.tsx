@@ -10,21 +10,21 @@
  */
 
 import { InfoIcon } from '@primer/octicons-react';
+import { Skeleton } from '@redpanda-data/ui';
 import {
   Box,
-  createStandaloneToast,
   Flex,
   type PlacementWithLogical,
   Progress,
   RadioGroup,
   Button as RpButton,
   type ButtonProps as RpButtonProps,
-  redpandaTheme,
-  redpandaToastOptions,
-  Skeleton,
   Text,
   type ToastId,
   Tooltip,
+  createStandaloneToast,
+  redpandaTheme,
+  redpandaToastOptions,
 } from '@redpanda-data/ui';
 import { motion } from 'framer-motion';
 import { makeObservable, observable } from 'mobx';
@@ -72,7 +72,6 @@ export function numberToThousandsString(n: number): JSX.Element {
 export class TimestampDisplay extends Component<{ unixEpochMillisecond: number; format: TimestampDisplayFormat }> {
   render() {
     const { unixEpochMillisecond: ts, format } = this.props;
-    // biome-ignore lint/correctness/useHookAtTopLevel: part of TimestampDisplay implementation
     if (format === 'relative') DebugTimerStore.Instance.useSeconds();
 
     switch (format) {
@@ -219,14 +218,16 @@ export const Label = (p: {
   // </label>
 
   return (
-    <div className={p.className} style={divStyle}>
-      <div className={labelClasses.join(' ')}>
-        <label htmlFor={id}>
-          {p.text} {p.textSuffix}
-        </label>
+    <>
+      <div className={p.className} style={divStyle}>
+        <div className={labelClasses.join(' ')}>
+          <label htmlFor={id}>
+            {p.text} {p.textSuffix}
+          </label>
+        </div>
+        <div>{newChild}</div>
       </div>
-      <div>{newChild}</div>
-    </div>
+    </>
   );
 };
 
@@ -631,7 +632,6 @@ export function IconButton(p: {
 }) {
   if (!p.disabledReason) {
     return (
-      // biome-ignore lint/a11y/noStaticElementInteractions: part of IconButton implementation
       <span className="iconButton" onClick={p.onClick}>
         {p.children}
       </span>

@@ -15,7 +15,8 @@ import '../../../utils/arrayExtensions';
 import { Button, Empty, VStack } from '@redpanda-data/ui';
 import { motion } from 'framer-motion';
 import { observer } from 'mobx-react';
-import ReactMarkdown, { defaultUrlTransform as baseUriTransformer } from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
+import { uriTransformer as baseUriTransformer } from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkEmoji from 'remark-emoji';
@@ -33,9 +34,8 @@ My nonsuspious link
 
 const allowedProtocols = ['http://', 'https://', 'mailto://'];
 
-function sanitizeUrl(uri: string): string {
+function sanitizeUrl(uri: string, _children?: any, _title?: string | null): string {
   const baseTransformed = baseUriTransformer(uri);
-  console.log('baseTransformed', baseTransformed);
   if (baseTransformed !== uri) return baseTransformed;
 
   const cleanedUri = uri.trim().toLocaleLowerCase();
@@ -92,7 +92,7 @@ export class TopicDocumentation extends Component<{ topic: Topic }> {
           components={this.components}
           remarkPlugins={[remarkGfm, remarkEmoji]}
           skipHtml={false}
-          urlTransform={sanitizeUrl}
+          transformLinkUri={sanitizeUrl}
         >
           {markdown}
         </ReactMarkdown>

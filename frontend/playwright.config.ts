@@ -1,19 +1,17 @@
 import { defineConfig, devices } from '@playwright/test';
-import dotenv from 'dotenv';
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
 // require('dotenv').config();
-dotenv.config();
 
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
   expect: {
-    timeout: 60 * 1000,
+    timeout: 15000,
   },
   testDir: './tests',
   /* Run tests in files in parallel */
@@ -62,7 +60,7 @@ export default defineConfig({
       timeout: 180 * 1000,
     },
     {
-      command: 'NODE_ENV=production bun run start',
+      command: 'npm run start',
       url: 'http://localhost:3000',
       timeout: 180 * 1000,
       reuseExistingServer: !process.env.CI,

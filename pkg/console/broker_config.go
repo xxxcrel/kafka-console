@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -11,14 +11,13 @@ package console
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kmsg"
+	"go.uber.org/zap"
 )
 
 // BrokerConfig contains all broker configurations for a broker.
@@ -72,7 +71,7 @@ func (s *Service) GetAllBrokerConfigs(ctx context.Context) (map[int32]BrokerConf
 			cfg, restErr := s.GetBrokerConfig(ctx, bID)
 			errMsg := ""
 			if restErr != nil {
-				s.logger.Warn("failed to describe broker config", slog.Int("broker_id", int(bID)), slog.Any("error", restErr.Err))
+				s.logger.Warn("failed to describe broker config", zap.Int32("broker_id", bID), zap.Error(restErr.Err))
 				errMsg = restErr.Err.Error()
 			}
 			resCh <- BrokerConfig{
@@ -176,7 +175,7 @@ func (s *Service) GetBrokerConfig(ctx context.Context, brokerID int32) ([]Broker
 	}
 
 	return nil, &rest.Error{
-		Err:      errors.New("broker describe config response was empty"),
+		Err:      fmt.Errorf("broker describe config response was empty"),
 		Status:   http.StatusInternalServerError,
 		Message:  "BrokerWithLogDirs config response was empty",
 		IsSilent: false,

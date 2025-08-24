@@ -1,7 +1,7 @@
 // Copyright 2022 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
-// included in the file https://github.com/redpanda-data/redpanda/blob/dev/licenses/bsl.md
+// included in the file https://github.com/xxxcrel/redpanda/blob/dev/licenses/bsl.md
 //
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
@@ -10,6 +10,7 @@
 package console
 
 import (
+	"context"
 	"math"
 	"testing"
 
@@ -49,7 +50,7 @@ func TestCalculateConsumeRequests_AllPartitions_FewNewestMessages(t *testing.T) 
 		1: {PartitionID: 1, IsDrained: false, StartOffset: 10 - 1, EndOffset: 10 - 1, MaxMessageCount: 1, LowWaterMark: 0, HighWaterMark: 10},
 		2: {PartitionID: 2, IsDrained: false, StartOffset: 30 - 1, EndOffset: 30 - 1, MaxMessageCount: 1, LowWaterMark: 10, HighWaterMark: 30},
 	}
-	actual, err := svc.calculateConsumeRequests(t.Context(), nil, req, []int32{0, 1, 2}, startOffsets, endOffsets)
+	actual, err := svc.calculateConsumeRequests(context.Background(), nil, req, []int32{0, 1, 2}, startOffsets, endOffsets)
 	require.NoError(t, err)
 	assert.Equal(t, expected, actual, "expected other result for unbalanced message distribution - all partition IDs")
 }
@@ -84,7 +85,7 @@ func TestCalculateConsumeRequests_AllPartitions_Unbalanced(t *testing.T) {
 		1: {PartitionID: 1, IsDrained: true, LowWaterMark: 0, HighWaterMark: 10, StartOffset: 0, EndOffset: 10 - 1, MaxMessageCount: 10},
 		2: {PartitionID: 2, IsDrained: true, LowWaterMark: 10, HighWaterMark: 30, StartOffset: 10, EndOffset: 30 - 1, MaxMessageCount: 20},
 	}
-	actual, err := svc.calculateConsumeRequests(t.Context(), nil, req, []int32{0, 1, 2}, startOffsets, endOffsets)
+	actual, err := svc.calculateConsumeRequests(context.Background(), nil, req, []int32{0, 1, 2}, startOffsets, endOffsets)
 	require.NoError(t, err)
 	assert.Equal(t, expected, actual, "expected other result for unbalanced message distribution - all partition IDs")
 }
@@ -167,7 +168,7 @@ func TestCalculateConsumeRequests_SinglePartition(t *testing.T) {
 	}
 
 	for i, table := range tt {
-		actual, err := svc.calculateConsumeRequests(t.Context(), nil, table.req, []int32{14}, startOffsets, endOffsets)
+		actual, err := svc.calculateConsumeRequests(context.Background(), nil, table.req, []int32{14}, startOffsets, endOffsets)
 		assert.NoError(t, err)
 		assert.Equal(t, table.expected, actual, "expected other result for single partition test. Case: ", i)
 	}
@@ -226,7 +227,7 @@ func TestCalculateConsumeRequests_AllPartitions_WithFilter(t *testing.T) {
 	}
 
 	for i, table := range tt {
-		actual, err := svc.calculateConsumeRequests(t.Context(), nil, table.req, []int32{0, 1, 2}, startOffsets, endOffsets)
+		actual, err := svc.calculateConsumeRequests(context.Background(), nil, table.req, []int32{0, 1, 2}, startOffsets, endOffsets)
 		assert.NoError(t, err)
 		assert.Equal(t, table.expected, actual, "expected other result for all partitions with filter enable. Case: ", i)
 	}

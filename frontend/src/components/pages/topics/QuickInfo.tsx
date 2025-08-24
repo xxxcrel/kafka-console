@@ -14,10 +14,8 @@ import { api } from '../../../state/backendApi';
 import type { ConfigEntry, Topic } from '../../../state/restInterfaces';
 import '../../../utils/arrayExtensions';
 import { Box, Divider, Flex, Text, Tooltip } from '@redpanda-data/ui';
-import type { ReactNode } from 'react';
 import { MdInfoOutline } from 'react-icons/md';
 import { formatConfigValue } from '../../../utils/formatters/ConfigValueFormatter';
-import { numberToThousandsString } from '../../../utils/tsxUtils';
 import { prettyBytesOrNA } from '../../../utils/utils';
 import type { CleanupPolicyType } from './types';
 
@@ -28,15 +26,14 @@ export const TopicQuickInfoStatistic = observer((p: { topic: Topic }) => {
   // Messages
   const partitions = api.topicPartitions.get(topic.topicName);
 
-  let messageSum: ReactNode;
+  let messageSum: null | string;
 
   if (partitions === undefined) {
     messageSum = '...'; // no response yet
   } else if (partitions === null) {
     messageSum = 'N/A'; // explicit null -> not allowed
   } else {
-    const sum = partitions.sum((p) => p.waterMarkHigh - p.waterMarkLow);
-    messageSum = numberToThousandsString(sum);
+    messageSum = partitions.sum((p) => p.waterMarkHigh - p.waterMarkLow).toString();
   }
 
   // Config Entries / Separator
@@ -110,9 +107,12 @@ export const TopicQuickInfoStatistic = observer((p: { topic: Topic }) => {
             </Text>
             {segmentMs && segmentBytes && (
               <Text as="dd">
-                ~{formatConfigValue(segmentMs.name, segmentMs.value, 'friendly')} or{' '}
-                {formatConfigValue(segmentBytes.name, segmentBytes.value, 'friendly')}
-                {Number.isFinite(Number(segmentBytes.value)) && Number(segmentBytes.value) !== -1 && ' / partition'}
+                ~
+                <>
+                  {formatConfigValue(segmentMs.name, segmentMs.value, 'friendly')} or{' '}
+                  {formatConfigValue(segmentBytes.name, segmentBytes.value, 'friendly')}
+                  {Number.isFinite(Number(segmentBytes.value)) && Number(segmentBytes.value) !== -1 && ' / partition'}
+                </>
               </Text>
             )}
           </>

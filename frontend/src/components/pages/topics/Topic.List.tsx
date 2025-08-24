@@ -28,13 +28,11 @@ import {
   Grid,
   Icon,
   Popover,
-  SearchField,
   Text,
   Tooltip,
   useToast,
 } from '@redpanda-data/ui';
-import { AnimatePresence, motion } from 'framer-motion';
-import { autorun, computed, type IReactionDisposer, makeObservable, observable } from 'mobx';
+import { type IReactionDisposer, autorun, computed, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import React, { type FC, useRef, useState } from 'react';
 import { HiOutlineTrash } from 'react-icons/hi';
@@ -50,10 +48,11 @@ import createAutoModal from '../../../utils/createAutoModal';
 import { onPaginationChange } from '../../../utils/pagination';
 import { editQuery } from '../../../utils/queryHelper';
 import { Code, DefaultSkeleton, QuickTable } from '../../../utils/tsxUtils';
-import { renderLogDirSummary } from '../../misc/common';
 import PageContent from '../../misc/PageContent';
+import SearchBar from '../../misc/SearchBar';
 import Section from '../../misc/Section';
 import { Statistic } from '../../misc/Statistic';
+import { renderLogDirSummary } from '../../misc/common';
 import { PageComponent, type PageInitHelper } from '../Page';
 import {
   CreateTopicModalContent,
@@ -92,14 +91,14 @@ class TopicList extends PageComponent {
   componentDidMount() {
     // 1. use 'q' parameter for quick search (if it exists)
     editQuery((query) => {
-      uiSettings.topicList.quickSearch = query.q ? String(query.q) : '';
+      if (query.q) uiSettings.topicList.quickSearch = String(query.q);
     });
 
     // 2. whenever the quick search box changes, update the url
     this.quickSearchReaction = autorun(() => {
       editQuery((query) => {
         const q = String(uiSettings.topicList.quickSearch);
-        query.q = q ? String(q) : '';
+        if (q) query.q = q;
       });
     });
   }
@@ -113,56 +112,23 @@ class TopicList extends PageComponent {
     void api.refreshClusterHealth();
   }
 
+  isFilterMatch(filter: string, item: Topic): boolean {
+    try {
+      const quickSearchRegExp = new RegExp(filter, 'i');
+      return Boolean(item.topicName.match(quickSearchRegExp));
+    } catch (e) {
+      console.warn('Invalid expression');
+      return item.topicName.toLowerCase().includes(filter.toLowerCase());
+    }
+  }
+
   @computed get topics() {
     let topics = api.topics ?? [];
     if (uiSettings.topicList.hideInternalTopics) {
       topics = topics.filter((x) => !x.isInternal && !x.topicName.startsWith('_'));
     }
-
-    if (uiSettings.topicList.quickSearch) {
-      try {
-        const quickSearchRegExp = new RegExp(uiSettings.topicList.quickSearch, 'i');
-        topics = topics.filter((topic) => Boolean(topic.topicName.match(quickSearchRegExp)));
-      } catch (_e) {
-        console.warn('Invalid expression');
-        const searchLower = uiSettings.topicList.quickSearch.toLowerCase();
-        topics = topics.filter((topic) => topic.topicName.toLowerCase().includes(searchLower));
-      }
-    }
-
     return topics;
   }
-
-  SearchBar = observer(() => {
-    return (
-      <Flex gap={2}>
-        <SearchField
-          width="350px"
-          placeholderText="Enter search term/regex"
-          searchText={uiSettings.topicList.quickSearch}
-          setSearchText={(x) => (uiSettings.topicList.quickSearch = x)}
-        />
-        <AnimatePresence>
-          {uiSettings.topicList.quickSearch && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.12 }}
-              style={{ display: 'flex', alignItems: 'center' }}
-            >
-              <Text ml={4} alignSelf="center" lineHeight="1" whiteSpace="nowrap">
-                <Text fontWeight="bold" display="inline">
-                  {this.topics.length}
-                </Text>{' '}
-                {this.topics.length === 1 ? 'result' : 'results'}
-              </Text>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </Flex>
-    );
-  });
 
   render() {
     if (!api.topics) return DefaultSkeleton;
@@ -183,7 +149,14 @@ class TopicList extends PageComponent {
         </Section>
 
         <Box pt={6}>
-          <this.SearchBar />
+          <SearchBar<Topic>
+            placeholderText="Enter search term/regex"
+            dataSource={() => this.topics}
+            isFilterMatch={this.isFilterMatch}
+            filterText={uiSettings.topicList.quickSearch}
+            onQueryChanged={(filterText) => (uiSettings.topicList.quickSearch = filterText)}
+            onFilteredDataChanged={(data) => (this.filteredTopics = data)}
+          />
         </Box>
         <Section>
           <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
@@ -210,7 +183,7 @@ class TopicList extends PageComponent {
           </div>
           <Box my={4}>
             <TopicsTable
-              topics={this.topics}
+              topics={this.filteredTopics}
               onDelete={(record) => {
                 this.topicToDelete = record;
               }}
@@ -233,7 +206,7 @@ class TopicList extends PageComponent {
 export default TopicList;
 
 const TopicsTable: FC<{ topics: Topic[]; onDelete: (record: Topic) => void }> = ({ topics, onDelete }) => {
-  const paginationParams = usePaginationParams(topics.length, uiSettings.topicList.pageSize);
+  const paginationParams = usePaginationParams(uiSettings.topicList.pageSize, topics.length);
 
   return (
     <DataTable<Topic>
@@ -400,11 +373,7 @@ function ConfirmDeletionModal({
   topicToDelete,
   onFinish,
   onCancel,
-}: {
-  topicToDelete: Topic | null;
-  onFinish: () => void;
-  onCancel: () => void;
-}) {
+}: { topicToDelete: Topic | null; onFinish: () => void; onCancel: () => void }) {
   const [deletionPending, setDeletionPending] = useState(false);
   const [error, setError] = useState<string | Error | null>(null);
   const toast = useToast();
@@ -472,15 +441,9 @@ function ConfirmDeletionModal({
                 if (topicToDelete?.topicName) {
                   setDeletionPending(true);
                   api
-                    .deleteTopic(topicToDelete?.topicName)
+                    .deleteTopic(topicToDelete?.topicName) // modal is not shown when topic is null
                     .then(finish)
-                    .catch((err) => {
-                      toast({
-                        title: 'Failed to delete topic',
-                        description: <Text as="span">{err.message}</Text>,
-                        status: 'error',
-                      });
-                    })
+                    .catch(setError)
                     .finally(() => {
                       setDeletionPending(false);
                     });

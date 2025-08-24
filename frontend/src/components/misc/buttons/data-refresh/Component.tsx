@@ -13,7 +13,7 @@ import { observer } from 'mobx-react';
  */
 import { MdOutlineCached, MdPause, MdPlayCircleOutline } from 'react-icons/md';
 import { appGlobal } from '../../../../state/appGlobal';
-import { api, REST_CACHE_DURATION_SEC } from '../../../../state/backendApi';
+import { REST_CACHE_DURATION_SEC, api } from '../../../../state/backendApi';
 import { uiSettings } from '../../../../state/ui';
 import { prettyMilliseconds } from '../../../../utils/utils';
 
@@ -26,7 +26,7 @@ const autoRefresh = observable(
     remainingSeconds: 0,
 
     get currentTime() {
-      return Date.now();
+      return new Date().getTime();
     },
 
     toggleAutorefresh() {
@@ -105,7 +105,6 @@ export const DataRefreshButton = observer(() => {
           hideCloseButton={true}
         >
           <IconButton
-            p={0}
             variant="ghost"
             onClick={autoRefresh.toggleAutorefresh}
             aria-label="Auth Refresh"
@@ -131,7 +130,6 @@ export const DataRefreshButton = observer(() => {
             hideCloseButton={true}
           >
             <IconButton
-              p={0}
               variant="ghost"
               onClick={() => appGlobal.onRefresh()}
               aria-label="Force Refresh"

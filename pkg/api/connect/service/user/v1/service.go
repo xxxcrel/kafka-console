@@ -26,7 +26,7 @@ import (
 
 	apierrors "github.com/xxxcrel/kafka-console/pkg/api/connect/errors"
 	"github.com/xxxcrel/kafka-console/pkg/config"
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 	redpandafactory "github.com/xxxcrel/kafka-console/pkg/factory/redpanda"
 	v1 "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/dataplane/v1"
 	"github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/dataplane/v1/dataplanev1connect"
@@ -38,16 +38,16 @@ var _ dataplanev1connect.UserServiceHandler = (*Service)(nil)
 // RPCs to manage Redpanda or Kafka users.
 type Service struct {
 	cfg                    *config.Config
-	logger                 *zap.Logger
-	consoleSvc             console.Servicer
-	defaulter              defaulter
+	logger     *zap.Logger
+	consoleSvc kconsole.Servicer
+	defaulter  defaulter
 	redpandaClientProvider redpandafactory.ClientFactory
 }
 
 // NewService creates a new user service handler.
 func NewService(cfg *config.Config,
 	logger *zap.Logger,
-	consoleSvc console.Servicer,
+	consoleSvc kconsole.Servicer,
 	redpandaClientProvider redpandafactory.ClientFactory,
 ) *Service {
 	return &Service{

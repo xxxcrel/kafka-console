@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: redpanda/api/console/v1alpha1/cluster_status.proto
+// source: redpanda/api/kconsole/v1alpha1/cluster_status.proto
 
 package consolev1alpha1
 
@@ -20,13 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ClusterStatusService_GetKafkaInfo_FullMethodName                       = "/redpanda.api.console.v1alpha1.ClusterStatusService/GetKafkaInfo"
-	ClusterStatusService_GetKafkaAuthorizerInfo_FullMethodName             = "/redpanda.api.console.v1alpha1.ClusterStatusService/GetKafkaAuthorizerInfo"
-	ClusterStatusService_GetRedpandaInfo_FullMethodName                    = "/redpanda.api.console.v1alpha1.ClusterStatusService/GetRedpandaInfo"
-	ClusterStatusService_GetRedpandaPartitionBalancerStatus_FullMethodName = "/redpanda.api.console.v1alpha1.ClusterStatusService/GetRedpandaPartitionBalancerStatus"
-	ClusterStatusService_GetConsoleInfo_FullMethodName                     = "/redpanda.api.console.v1alpha1.ClusterStatusService/GetConsoleInfo"
-	ClusterStatusService_GetKafkaConnectInfo_FullMethodName                = "/redpanda.api.console.v1alpha1.ClusterStatusService/GetKafkaConnectInfo"
-	ClusterStatusService_GetSchemaRegistryInfo_FullMethodName              = "/redpanda.api.console.v1alpha1.ClusterStatusService/GetSchemaRegistryInfo"
+	ClusterStatusService_GetKafkaInfo_FullMethodName                       = "/redpanda.api.kconsole.v1alpha1.ClusterStatusService/GetKafkaInfo"
+	ClusterStatusService_GetKafkaAuthorizerInfo_FullMethodName             = "/redpanda.api.kconsole.v1alpha1.ClusterStatusService/GetKafkaAuthorizerInfo"
+	ClusterStatusService_GetRedpandaInfo_FullMethodName                    = "/redpanda.api.kconsole.v1alpha1.ClusterStatusService/GetRedpandaInfo"
+	ClusterStatusService_GetRedpandaPartitionBalancerStatus_FullMethodName = "/redpanda.api.kconsole.v1alpha1.ClusterStatusService/GetRedpandaPartitionBalancerStatus"
+	ClusterStatusService_GetConsoleInfo_FullMethodName                     = "/redpanda.api.kconsole.v1alpha1.ClusterStatusService/GetConsoleInfo"
+	ClusterStatusService_GetKafkaConnectInfo_FullMethodName                = "/redpanda.api.kconsole.v1alpha1.ClusterStatusService/GetKafkaConnectInfo"
+	ClusterStatusService_GetSchemaRegistryInfo_FullMethodName              = "/redpanda.api.kconsole.v1alpha1.ClusterStatusService/GetSchemaRegistryInfo"
 )
 
 // ClusterStatusServiceClient is the client API for ClusterStatusService service.
@@ -339,7 +339,7 @@ func _ClusterStatusService_GetSchemaRegistryInfo_Handler(srv interface{}, ctx co
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ClusterStatusService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "redpanda.api.console.v1alpha1.ClusterStatusService",
+	ServiceName: "redpanda.api.kconsole.v1alpha1.ClusterStatusService",
 	HandlerType: (*ClusterStatusServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -372,5 +372,5 @@ var ClusterStatusService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "redpanda/api/console/v1alpha1/cluster_status.proto",
+	Metadata: "redpanda/api/kconsole/v1alpha1/cluster_status.proto",
 }

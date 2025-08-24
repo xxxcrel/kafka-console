@@ -22,7 +22,7 @@ import (
 
 	"github.com/xxxcrel/kafka-console/pkg/api/httptypes"
 	pkgconnect "github.com/xxxcrel/kafka-console/pkg/connect"
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 	"github.com/xxxcrel/kafka-console/pkg/license"
 	v1alpha1 "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1"
 	"github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1/consolev1alpha1connect"
@@ -120,7 +120,7 @@ type ConsoleHooks interface {
 	// version and what features are supported by our upstream systems.
 	// The response of this hook will be merged into the response that was originally
 	// composed by Console.
-	EndpointCompatibility(ctx context.Context) []console.EndpointCompatibilityEndpoint
+	EndpointCompatibility(ctx context.Context) []kconsole.EndpointCompatibilityEndpoint
 }
 
 // defaultHooks is the default hook which is used if you don't attach your own hooks
@@ -158,7 +158,7 @@ func (*defaultHooks) EnabledFeatures() []string {
 	return []string{}
 }
 
-func (*defaultHooks) EndpointCompatibility(context.Context) []console.EndpointCompatibilityEndpoint {
+func (*defaultHooks) EndpointCompatibility(context.Context) []kconsole.EndpointCompatibilityEndpoint {
 	return nil
 }
 

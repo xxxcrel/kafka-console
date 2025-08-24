@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/debug_bundle.proto
+// source: redpanda/api/kconsole/v1alpha1/debug_bundle.proto
 
 package consolev1alpha1
 
@@ -279,7 +279,7 @@ type SCRAMAuth struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
-	Mechanism     SCRAMAuth_Mechanism    `protobuf:"varint,3,opt,name=mechanism,proto3,enum=redpanda.api.console.v1alpha1.SCRAMAuth_Mechanism" json:"mechanism,omitempty"`
+	Mechanism     SCRAMAuth_Mechanism    `protobuf:"varint,3,opt,name=mechanism,proto3,enum=redpanda.api.kconsole.v1alpha1.SCRAMAuth_Mechanism" json:"mechanism,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -674,7 +674,7 @@ type DebugBundleStatus struct {
 	// The job UUID of this process.
 	JobId string `protobuf:"bytes,2,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
 	// The status of the job.
-	Status DebugBundleStatus_Status `protobuf:"varint,3,opt,name=status,proto3,enum=redpanda.api.console.v1alpha1.DebugBundleStatus_Status" json:"status,omitempty"`
+	Status DebugBundleStatus_Status `protobuf:"varint,3,opt,name=status,proto3,enum=redpanda.api.kconsole.v1alpha1.DebugBundleStatus_Status" json:"status,omitempty"`
 	// When the job was started.
 	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// Path in API to get the file.
@@ -1093,7 +1093,7 @@ type BundleError struct {
 	// Whether the broker URL was determined speculatively.
 	Speculative bool `protobuf:"varint,3,opt,name=speculative,proto3" json:"speculative,omitempty"`
 	// The error code.
-	Code BundleErrorCode `protobuf:"varint,4,opt,name=code,proto3,enum=redpanda.api.console.v1alpha1.BundleErrorCode" json:"code,omitempty"`
+	Code BundleErrorCode `protobuf:"varint,4,opt,name=code,proto3,enum=redpanda.api.kconsole.v1alpha1.BundleErrorCode" json:"code,omitempty"`
 	// Additional information
 	Message       string `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1207,7 +1207,7 @@ type GetClusterHealthResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// whether cluster is health or not
 	IsHealthy        bool              `protobuf:"varint,1,opt,name=is_healthy,json=isHealthy,proto3" json:"is_healthy,omitempty"`
-	UnhealthyReasons []UnhealthyReason `protobuf:"varint,2,rep,packed,name=unhealthy_reasons,json=unhealthyReasons,proto3,enum=redpanda.api.console.v1alpha1.UnhealthyReason" json:"unhealthy_reasons,omitempty"`
+	UnhealthyReasons []UnhealthyReason `protobuf:"varint,2,rep,packed,name=unhealthy_reasons,json=unhealthyReasons,proto3,enum=redpanda.api.kconsole.v1alpha1.UnhealthyReason" json:"unhealthy_reasons,omitempty"`
 	// optional controller ID.
 	// if cluster has no controller the property will not be present.
 	ControllerId                   *int32             `protobuf:"varint,3,opt,name=controller_id,json=controllerId,proto3,oneof" json:"controller_id,omitempty"`
@@ -1895,57 +1895,57 @@ func file_redpanda_api_console_v1alpha1_debug_bundle_proto_rawDescGZIP() []byte 
 var file_redpanda_api_console_v1alpha1_debug_bundle_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_redpanda_api_console_v1alpha1_debug_bundle_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_redpanda_api_console_v1alpha1_debug_bundle_proto_goTypes = []any{
-	(BundleErrorCode)(0),                                         // 0: redpanda.api.console.v1alpha1.BundleErrorCode
-	(UnhealthyReason)(0),                                         // 1: redpanda.api.console.v1alpha1.UnhealthyReason
-	(SCRAMAuth_Mechanism)(0),                                     // 2: redpanda.api.console.v1alpha1.SCRAMAuth.Mechanism
-	(DebugBundleStatus_Status)(0),                                // 3: redpanda.api.console.v1alpha1.DebugBundleStatus.Status
-	(*SCRAMAuth)(nil),                                            // 4: redpanda.api.console.v1alpha1.SCRAMAuth
-	(*CreateDebugBundleRequest)(nil),                             // 5: redpanda.api.console.v1alpha1.CreateDebugBundleRequest
-	(*LabelSelector)(nil),                                        // 6: redpanda.api.console.v1alpha1.LabelSelector
-	(*CreateDebugBundleResponse)(nil),                            // 7: redpanda.api.console.v1alpha1.CreateDebugBundleResponse
-	(*GetDebugBundleStatusRequest)(nil),                          // 8: redpanda.api.console.v1alpha1.GetDebugBundleStatusRequest
-	(*DebugBundleStatus)(nil),                                    // 9: redpanda.api.console.v1alpha1.DebugBundleStatus
-	(*GetDebugBundleStatusResponse)(nil),                         // 10: redpanda.api.console.v1alpha1.GetDebugBundleStatusResponse
-	(*CancelDebugBundleProcessRequest)(nil),                      // 11: redpanda.api.console.v1alpha1.CancelDebugBundleProcessRequest
-	(*CancelDebugBundleProcessResponse)(nil),                     // 12: redpanda.api.console.v1alpha1.CancelDebugBundleProcessResponse
-	(*DeleteDebugBundleFileRequest)(nil),                         // 13: redpanda.api.console.v1alpha1.DeleteDebugBundleFileRequest
-	(*DeleteDebugBundleFileForBroker)(nil),                       // 14: redpanda.api.console.v1alpha1.DeleteDebugBundleFileForBroker
-	(*DeleteDebugBundleFileResponse)(nil),                        // 15: redpanda.api.console.v1alpha1.DeleteDebugBundleFileResponse
-	(*BundleError)(nil),                                          // 16: redpanda.api.console.v1alpha1.BundleError
-	(*GetClusterHealthRequest)(nil),                              // 17: redpanda.api.console.v1alpha1.GetClusterHealthRequest
-	(*GetClusterHealthResponse)(nil),                             // 18: redpanda.api.console.v1alpha1.GetClusterHealthResponse
-	(*TopicPartitions)(nil),                                      // 19: redpanda.api.console.v1alpha1.TopicPartitions
-	(*GetDebugBundleStatusResponse_DebugBundleBrokerStatus)(nil), // 20: redpanda.api.console.v1alpha1.GetDebugBundleStatusResponse.DebugBundleBrokerStatus
+	(BundleErrorCode)(0),                                         // 0: redpanda.api.kconsole.v1alpha1.BundleErrorCode
+	(UnhealthyReason)(0),                                         // 1: redpanda.api.kconsole.v1alpha1.UnhealthyReason
+	(SCRAMAuth_Mechanism)(0),                                     // 2: redpanda.api.kconsole.v1alpha1.SCRAMAuth.Mechanism
+	(DebugBundleStatus_Status)(0),                                // 3: redpanda.api.kconsole.v1alpha1.DebugBundleStatus.Status
+	(*SCRAMAuth)(nil),                                            // 4: redpanda.api.kconsole.v1alpha1.SCRAMAuth
+	(*CreateDebugBundleRequest)(nil),                             // 5: redpanda.api.kconsole.v1alpha1.CreateDebugBundleRequest
+	(*LabelSelector)(nil),                                        // 6: redpanda.api.kconsole.v1alpha1.LabelSelector
+	(*CreateDebugBundleResponse)(nil),                            // 7: redpanda.api.kconsole.v1alpha1.CreateDebugBundleResponse
+	(*GetDebugBundleStatusRequest)(nil),                          // 8: redpanda.api.kconsole.v1alpha1.GetDebugBundleStatusRequest
+	(*DebugBundleStatus)(nil),                                    // 9: redpanda.api.kconsole.v1alpha1.DebugBundleStatus
+	(*GetDebugBundleStatusResponse)(nil),                         // 10: redpanda.api.kconsole.v1alpha1.GetDebugBundleStatusResponse
+	(*CancelDebugBundleProcessRequest)(nil),                      // 11: redpanda.api.kconsole.v1alpha1.CancelDebugBundleProcessRequest
+	(*CancelDebugBundleProcessResponse)(nil),                     // 12: redpanda.api.kconsole.v1alpha1.CancelDebugBundleProcessResponse
+	(*DeleteDebugBundleFileRequest)(nil),                         // 13: redpanda.api.kconsole.v1alpha1.DeleteDebugBundleFileRequest
+	(*DeleteDebugBundleFileForBroker)(nil),                       // 14: redpanda.api.kconsole.v1alpha1.DeleteDebugBundleFileForBroker
+	(*DeleteDebugBundleFileResponse)(nil),                        // 15: redpanda.api.kconsole.v1alpha1.DeleteDebugBundleFileResponse
+	(*BundleError)(nil),                                          // 16: redpanda.api.kconsole.v1alpha1.BundleError
+	(*GetClusterHealthRequest)(nil),                              // 17: redpanda.api.kconsole.v1alpha1.GetClusterHealthRequest
+	(*GetClusterHealthResponse)(nil),                             // 18: redpanda.api.kconsole.v1alpha1.GetClusterHealthResponse
+	(*TopicPartitions)(nil),                                      // 19: redpanda.api.kconsole.v1alpha1.TopicPartitions
+	(*GetDebugBundleStatusResponse_DebugBundleBrokerStatus)(nil), // 20: redpanda.api.kconsole.v1alpha1.GetDebugBundleStatusResponse.DebugBundleBrokerStatus
 	(*timestamppb.Timestamp)(nil),                                // 21: google.protobuf.Timestamp
 }
 var file_redpanda_api_console_v1alpha1_debug_bundle_proto_depIdxs = []int32{
-	2,  // 0: redpanda.api.console.v1alpha1.SCRAMAuth.mechanism:type_name -> redpanda.api.console.v1alpha1.SCRAMAuth.Mechanism
-	4,  // 1: redpanda.api.console.v1alpha1.CreateDebugBundleRequest.scram:type_name -> redpanda.api.console.v1alpha1.SCRAMAuth
-	21, // 2: redpanda.api.console.v1alpha1.CreateDebugBundleRequest.logs_since:type_name -> google.protobuf.Timestamp
-	21, // 3: redpanda.api.console.v1alpha1.CreateDebugBundleRequest.logs_until:type_name -> google.protobuf.Timestamp
-	6,  // 4: redpanda.api.console.v1alpha1.CreateDebugBundleRequest.label_selector:type_name -> redpanda.api.console.v1alpha1.LabelSelector
-	3,  // 5: redpanda.api.console.v1alpha1.DebugBundleStatus.status:type_name -> redpanda.api.console.v1alpha1.DebugBundleStatus.Status
-	21, // 6: redpanda.api.console.v1alpha1.DebugBundleStatus.created_at:type_name -> google.protobuf.Timestamp
-	20, // 7: redpanda.api.console.v1alpha1.GetDebugBundleStatusResponse.broker_statuses:type_name -> redpanda.api.console.v1alpha1.GetDebugBundleStatusResponse.DebugBundleBrokerStatus
-	16, // 8: redpanda.api.console.v1alpha1.CancelDebugBundleProcessResponse.errors:type_name -> redpanda.api.console.v1alpha1.BundleError
-	14, // 9: redpanda.api.console.v1alpha1.DeleteDebugBundleFileRequest.files:type_name -> redpanda.api.console.v1alpha1.DeleteDebugBundleFileForBroker
-	16, // 10: redpanda.api.console.v1alpha1.DeleteDebugBundleFileResponse.errors:type_name -> redpanda.api.console.v1alpha1.BundleError
-	0,  // 11: redpanda.api.console.v1alpha1.BundleError.code:type_name -> redpanda.api.console.v1alpha1.BundleErrorCode
-	1,  // 12: redpanda.api.console.v1alpha1.GetClusterHealthResponse.unhealthy_reasons:type_name -> redpanda.api.console.v1alpha1.UnhealthyReason
-	19, // 13: redpanda.api.console.v1alpha1.GetClusterHealthResponse.leaderless_partitions:type_name -> redpanda.api.console.v1alpha1.TopicPartitions
-	19, // 14: redpanda.api.console.v1alpha1.GetClusterHealthResponse.under_replicated_partitions:type_name -> redpanda.api.console.v1alpha1.TopicPartitions
-	16, // 15: redpanda.api.console.v1alpha1.GetDebugBundleStatusResponse.DebugBundleBrokerStatus.error:type_name -> redpanda.api.console.v1alpha1.BundleError
-	9,  // 16: redpanda.api.console.v1alpha1.GetDebugBundleStatusResponse.DebugBundleBrokerStatus.bundle_status:type_name -> redpanda.api.console.v1alpha1.DebugBundleStatus
-	17, // 17: redpanda.api.console.v1alpha1.DebugBundleService.GetClusterHealth:input_type -> redpanda.api.console.v1alpha1.GetClusterHealthRequest
-	5,  // 18: redpanda.api.console.v1alpha1.DebugBundleService.CreateDebugBundle:input_type -> redpanda.api.console.v1alpha1.CreateDebugBundleRequest
-	8,  // 19: redpanda.api.console.v1alpha1.DebugBundleService.GetDebugBundleStatus:input_type -> redpanda.api.console.v1alpha1.GetDebugBundleStatusRequest
-	11, // 20: redpanda.api.console.v1alpha1.DebugBundleService.CancelDebugBundleProcess:input_type -> redpanda.api.console.v1alpha1.CancelDebugBundleProcessRequest
-	13, // 21: redpanda.api.console.v1alpha1.DebugBundleService.DeleteDebugBundleFile:input_type -> redpanda.api.console.v1alpha1.DeleteDebugBundleFileRequest
-	18, // 22: redpanda.api.console.v1alpha1.DebugBundleService.GetClusterHealth:output_type -> redpanda.api.console.v1alpha1.GetClusterHealthResponse
-	7,  // 23: redpanda.api.console.v1alpha1.DebugBundleService.CreateDebugBundle:output_type -> redpanda.api.console.v1alpha1.CreateDebugBundleResponse
-	10, // 24: redpanda.api.console.v1alpha1.DebugBundleService.GetDebugBundleStatus:output_type -> redpanda.api.console.v1alpha1.GetDebugBundleStatusResponse
-	12, // 25: redpanda.api.console.v1alpha1.DebugBundleService.CancelDebugBundleProcess:output_type -> redpanda.api.console.v1alpha1.CancelDebugBundleProcessResponse
-	15, // 26: redpanda.api.console.v1alpha1.DebugBundleService.DeleteDebugBundleFile:output_type -> redpanda.api.console.v1alpha1.DeleteDebugBundleFileResponse
+	2,  // 0: redpanda.api.kconsole.v1alpha1.SCRAMAuth.mechanism:type_name -> redpanda.api.kconsole.v1alpha1.SCRAMAuth.Mechanism
+	4,  // 1: redpanda.api.kconsole.v1alpha1.CreateDebugBundleRequest.scram:type_name -> redpanda.api.kconsole.v1alpha1.SCRAMAuth
+	21, // 2: redpanda.api.kconsole.v1alpha1.CreateDebugBundleRequest.logs_since:type_name -> google.protobuf.Timestamp
+	21, // 3: redpanda.api.kconsole.v1alpha1.CreateDebugBundleRequest.logs_until:type_name -> google.protobuf.Timestamp
+	6,  // 4: redpanda.api.kconsole.v1alpha1.CreateDebugBundleRequest.label_selector:type_name -> redpanda.api.kconsole.v1alpha1.LabelSelector
+	3,  // 5: redpanda.api.kconsole.v1alpha1.DebugBundleStatus.status:type_name -> redpanda.api.kconsole.v1alpha1.DebugBundleStatus.Status
+	21, // 6: redpanda.api.kconsole.v1alpha1.DebugBundleStatus.created_at:type_name -> google.protobuf.Timestamp
+	20, // 7: redpanda.api.kconsole.v1alpha1.GetDebugBundleStatusResponse.broker_statuses:type_name -> redpanda.api.kconsole.v1alpha1.GetDebugBundleStatusResponse.DebugBundleBrokerStatus
+	16, // 8: redpanda.api.kconsole.v1alpha1.CancelDebugBundleProcessResponse.errors:type_name -> redpanda.api.kconsole.v1alpha1.BundleError
+	14, // 9: redpanda.api.kconsole.v1alpha1.DeleteDebugBundleFileRequest.files:type_name -> redpanda.api.kconsole.v1alpha1.DeleteDebugBundleFileForBroker
+	16, // 10: redpanda.api.kconsole.v1alpha1.DeleteDebugBundleFileResponse.errors:type_name -> redpanda.api.kconsole.v1alpha1.BundleError
+	0,  // 11: redpanda.api.kconsole.v1alpha1.BundleError.code:type_name -> redpanda.api.kconsole.v1alpha1.BundleErrorCode
+	1,  // 12: redpanda.api.kconsole.v1alpha1.GetClusterHealthResponse.unhealthy_reasons:type_name -> redpanda.api.kconsole.v1alpha1.UnhealthyReason
+	19, // 13: redpanda.api.kconsole.v1alpha1.GetClusterHealthResponse.leaderless_partitions:type_name -> redpanda.api.kconsole.v1alpha1.TopicPartitions
+	19, // 14: redpanda.api.kconsole.v1alpha1.GetClusterHealthResponse.under_replicated_partitions:type_name -> redpanda.api.kconsole.v1alpha1.TopicPartitions
+	16, // 15: redpanda.api.kconsole.v1alpha1.GetDebugBundleStatusResponse.DebugBundleBrokerStatus.error:type_name -> redpanda.api.kconsole.v1alpha1.BundleError
+	9,  // 16: redpanda.api.kconsole.v1alpha1.GetDebugBundleStatusResponse.DebugBundleBrokerStatus.bundle_status:type_name -> redpanda.api.kconsole.v1alpha1.DebugBundleStatus
+	17, // 17: redpanda.api.kconsole.v1alpha1.DebugBundleService.GetClusterHealth:input_type -> redpanda.api.kconsole.v1alpha1.GetClusterHealthRequest
+	5,  // 18: redpanda.api.kconsole.v1alpha1.DebugBundleService.CreateDebugBundle:input_type -> redpanda.api.kconsole.v1alpha1.CreateDebugBundleRequest
+	8,  // 19: redpanda.api.kconsole.v1alpha1.DebugBundleService.GetDebugBundleStatus:input_type -> redpanda.api.kconsole.v1alpha1.GetDebugBundleStatusRequest
+	11, // 20: redpanda.api.kconsole.v1alpha1.DebugBundleService.CancelDebugBundleProcess:input_type -> redpanda.api.kconsole.v1alpha1.CancelDebugBundleProcessRequest
+	13, // 21: redpanda.api.kconsole.v1alpha1.DebugBundleService.DeleteDebugBundleFile:input_type -> redpanda.api.kconsole.v1alpha1.DeleteDebugBundleFileRequest
+	18, // 22: redpanda.api.kconsole.v1alpha1.DebugBundleService.GetClusterHealth:output_type -> redpanda.api.kconsole.v1alpha1.GetClusterHealthResponse
+	7,  // 23: redpanda.api.kconsole.v1alpha1.DebugBundleService.CreateDebugBundle:output_type -> redpanda.api.kconsole.v1alpha1.CreateDebugBundleResponse
+	10, // 24: redpanda.api.kconsole.v1alpha1.DebugBundleService.GetDebugBundleStatus:output_type -> redpanda.api.kconsole.v1alpha1.GetDebugBundleStatusResponse
+	12, // 25: redpanda.api.kconsole.v1alpha1.DebugBundleService.CancelDebugBundleProcess:output_type -> redpanda.api.kconsole.v1alpha1.CancelDebugBundleProcessResponse
+	15, // 26: redpanda.api.kconsole.v1alpha1.DebugBundleService.DeleteDebugBundleFile:output_type -> redpanda.api.kconsole.v1alpha1.DeleteDebugBundleFileResponse
 	22, // [22:27] is the sub-list for method output_type
 	17, // [17:22] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name

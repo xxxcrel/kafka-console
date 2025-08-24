@@ -56,7 +56,7 @@ func NewService(
 	}, nil
 }
 
-// ListLicenses retrieves the licenses associated with the Redpanda console and
+// ListLicenses retrieves the licenses associated with the Redpanda kconsole and
 // cluster. It requires the requester to be authenticated and have the necessary
 // permissions.
 func (s Service) ListLicenses(ctx context.Context, _ *connect.Request[v1alpha1.ListLicensesRequest]) (*connect.Response[v1alpha1.ListLicensesResponse], error) {

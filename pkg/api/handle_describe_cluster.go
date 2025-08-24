@@ -14,12 +14,12 @@ import (
 
 	"github.com/cloudhut/common/rest"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 func (api *API) handleDescribeCluster() http.HandlerFunc {
 	type response struct {
-		ClusterInfo *console.ClusterInfo `json:"clusterInfo"`
+		ClusterInfo *kconsole.ClusterInfo `json:"clusterInfo"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {

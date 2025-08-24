@@ -616,7 +616,7 @@ func (api *API) routes() *chi.Mux {
 				r.Put("/transforms", transformSvc.HandleDeployTransform())
 
 				// Console Endpoints that inform which endpoints & features are available to the frontend.
-				r.Get("/console/endpoints", api.handleGetEndpoints())
+				r.Get("/kconsole/endpoints", api.handleGetEndpoints())
 			})
 
 			api.Hooks.Route.ConfigAPIRouterPostRegistration(r)

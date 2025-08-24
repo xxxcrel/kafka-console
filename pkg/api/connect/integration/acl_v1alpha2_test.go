@@ -80,7 +80,7 @@ func (s *APISuite) TestCreateACL_v1alpha2() {
 			ResourceType:        v1alpha2.ACL_RESOURCE_TYPE_TOPIC,
 			ResourceName:        "*",
 			ResourcePatternType: v1alpha2.ACL_RESOURCE_PATTERN_TYPE_LITERAL,
-			Principal:           "User:console-create-acl-test-connect-go",
+			Principal:           "User:kconsole-create-acl-test-connect-go",
 			Host:                "*",
 			Operation:           v1alpha2.ACL_OPERATION_ALL,
 			PermissionType:      v1alpha2.ACL_PERMISSION_TYPE_ALLOW,
@@ -97,7 +97,7 @@ func (s *APISuite) TestCreateACL_v1alpha2() {
 
 		// 2. List ACLs via Kafka API
 		describeReq := kadm.NewACLs().
-			Allow("User:console-create-acl-test-connect-go").
+			Allow("User:kconsole-create-acl-test-connect-go").
 			AllowHosts("*").
 			ResourcePatternType(kadm.ACLPatternLiteral).
 			Operations(kadm.OpAll).
@@ -109,7 +109,7 @@ func (s *APISuite) TestCreateACL_v1alpha2() {
 		assert.NoError(describeResult.Err)
 		assert.Equal(describeResult.Name, kadm.StringPtr("*"))
 		assert.Equal(describeResult.Operation, kadm.OpAll)
-		assert.Equal(*describeResult.Principal, "User:console-create-acl-test-connect-go")
+		assert.Equal(*describeResult.Principal, "User:kconsole-create-acl-test-connect-go")
 		assert.Equal(*describeResult.Host, "*")
 		assert.Equal(describeResult.Type, kmsg.ACLResourceTypeTopic)
 		assert.Equal(describeResult.Pattern, kmsg.ACLResourcePatternTypeLiteral)
@@ -138,7 +138,7 @@ func (s *APISuite) TestCreateACL_v1alpha2() {
 			Host:                "*",
 			Operation:           "OPERATION_ALL",
 			PermissionType:      "PERMISSION_TYPE_ALLOW",
-			Principal:           "User:console-create-acl-test-http",
+			Principal:           "User:kconsole-create-acl-test-http",
 			ResourceName:        "*",
 			ResourcePatternType: "RESOURCE_PATTERN_TYPE_LITERAL",
 			ResourceType:        "RESOURCE_TYPE_TOPIC",
@@ -165,7 +165,7 @@ func (s *APISuite) TestCreateACL_v1alpha2() {
 
 		// 2. List ACLs via Kafka API
 		describeReq := kadm.NewACLs().
-			Allow("User:console-create-acl-test-http").
+			Allow("User:kconsole-create-acl-test-http").
 			AllowHosts("*").
 			ResourcePatternType(kadm.ACLPatternLiteral).
 			Operations(kadm.OpAll).
@@ -177,7 +177,7 @@ func (s *APISuite) TestCreateACL_v1alpha2() {
 		assert.NoError(describeResult.Err)
 		assert.Equal(*describeResult.Name, "*")
 		assert.Equal(describeResult.Operation, kadm.OpAll)
-		assert.Equal(*describeResult.Principal, "User:console-create-acl-test-http")
+		assert.Equal(*describeResult.Principal, "User:kconsole-create-acl-test-http")
 		assert.Equal(*describeResult.Host, "*")
 		assert.Equal(describeResult.Type, kmsg.ACLResourceTypeTopic)
 		assert.Equal(describeResult.Pattern, kmsg.ACLResourcePatternTypeLiteral)
@@ -205,7 +205,7 @@ func (s *APISuite) TestCreateACL_v1alpha2() {
 			Host:                "*",
 			Operation:           "OPERATION_ALL",
 			PermissionType:      "PERMISSION_TYPE_ALLOW",
-			Principal:           "User:console-create-acl-test-http",
+			Principal:           "User:kconsole-create-acl-test-http",
 			ResourceName:        "*",
 			ResourcePatternType: "RESOURCE_PATTERN_TYPE_LITERAL",
 			// Omit the ResourceType - all of these fields are mandatory
@@ -253,7 +253,7 @@ func (s *APISuite) TestListACLs_v1alpha2() {
 
 		// 1. Seed some ACLs
 		principal := "User:test"
-		resourceNamePrefix := "console-test-"
+		resourceNamePrefix := "kconsole-test-"
 
 		resourceNames := map[v1alpha2.ACL_ResourceType]string{
 			v1alpha2.ACL_RESOURCE_TYPE_GROUP:            fmt.Sprintf("%vgroup", resourceNamePrefix),
@@ -356,7 +356,7 @@ func (s *APISuite) TestListACLs_v1alpha2() {
 
 		// 1. Seed some ACLs
 		principal := "User:test"
-		resourceNamePrefix := "console-test-"
+		resourceNamePrefix := "kconsole-test-"
 
 		resourceNames := map[v1alpha2.ACL_ResourceType]string{
 			v1alpha2.ACL_RESOURCE_TYPE_GROUP:            fmt.Sprintf("%vgroup", resourceNamePrefix),
@@ -430,7 +430,7 @@ func (s *APISuite) TestDeleteACLs_v1alpha2() {
 
 		// 1. Seed some ACLs
 		principal := "User:test"
-		resourceNamePrefix := "console-deletion-test-"
+		resourceNamePrefix := "kconsole-deletion-test-"
 
 		resourceNames := map[v1alpha2.ACL_ResourceType]string{
 			v1alpha2.ACL_RESOURCE_TYPE_GROUP:            fmt.Sprintf("%vgroup", resourceNamePrefix),
@@ -506,7 +506,7 @@ func (s *APISuite) TestDeleteACLs_v1alpha2() {
 
 		// 1. Seed some ACLs
 		principal := "User:test"
-		resourceNamePrefix := "console-deletion-test-"
+		resourceNamePrefix := "kconsole-deletion-test-"
 
 		resourceNames := map[v1alpha2.ACL_ResourceType]string{
 			v1alpha2.ACL_RESOURCE_TYPE_GROUP:            fmt.Sprintf("%vgroup", resourceNamePrefix),

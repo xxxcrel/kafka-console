@@ -26,7 +26,7 @@ import (
 
 	apierrors "github.com/xxxcrel/kafka-console/pkg/api/connect/errors"
 	"github.com/xxxcrel/kafka-console/pkg/config"
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 	v1alpha2 "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/dataplane/v1alpha2"
 	"github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/dataplane/v1alpha2/dataplanev1alpha2connect"
 )
@@ -38,7 +38,7 @@ var _ dataplanev1alpha2connect.TopicServiceHandler = (*Service)(nil)
 type Service struct {
 	cfg        *config.Config
 	logger     *zap.Logger
-	consoleSvc console.Servicer
+	consoleSvc kconsole.Servicer
 	mapper     mapper
 	defaulter  defaulter
 }
@@ -334,7 +334,7 @@ func (s *Service) SetTopicConfigurations(ctx context.Context, req *connect.Reque
 // NewService creates a new user service handler.
 func NewService(cfg *config.Config,
 	logger *zap.Logger,
-	consoleSvc console.Servicer,
+	consoleSvc kconsole.Servicer,
 ) *Service {
 	return &Service{
 		cfg:        cfg,

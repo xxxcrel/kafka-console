@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/license.proto
+// source: redpanda/api/kconsole/v1alpha1/license.proto
 
 package consolev1alpha1
 
@@ -180,9 +180,9 @@ func (ListEnterpriseFeaturesResponse_LicenseStatus) EnumDescriptor() ([]byte, []
 type License struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Source is where the license is used (e.g. Redpanda Cluster, Console).
-	Source License_Source `protobuf:"varint,1,opt,name=source,proto3,enum=redpanda.api.console.v1alpha1.License_Source" json:"source,omitempty"`
+	Source License_Source `protobuf:"varint,1,opt,name=source,proto3,enum=redpanda.api.kconsole.v1alpha1.License_Source" json:"source,omitempty"`
 	// Type is the type of license (community, trial, enterprise).
-	Type License_Type `protobuf:"varint,2,opt,name=type,proto3,enum=redpanda.api.console.v1alpha1.License_Type" json:"type,omitempty"`
+	Type License_Type `protobuf:"varint,2,opt,name=type,proto3,enum=redpanda.api.kconsole.v1alpha1.License_Type" json:"type,omitempty"`
 	// UnixEpochSeconds is the timestamp when the license is going to expire.
 	ExpiresAt     int64 `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -455,7 +455,7 @@ func (*ListEnterpriseFeaturesRequest) Descriptor() ([]byte, []int) {
 type ListEnterpriseFeaturesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// LicenseStatus reports the status of the installed license in the Redpanda cluster.
-	LicenseStatus ListEnterpriseFeaturesResponse_LicenseStatus `protobuf:"varint,1,opt,name=license_status,json=licenseStatus,proto3,enum=redpanda.api.console.v1alpha1.ListEnterpriseFeaturesResponse_LicenseStatus" json:"license_status,omitempty"`
+	LicenseStatus ListEnterpriseFeaturesResponse_LicenseStatus `protobuf:"varint,1,opt,name=license_status,json=licenseStatus,proto3,enum=redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesResponse_LicenseStatus" json:"license_status,omitempty"`
 	// Violation is true if license_status is not 'valid' AND one or more enterprise features are enabled
 	Violation bool `protobuf:"varint,2,opt,name=violation,proto3" json:"violation,omitempty"`
 	// Features is a ist of enterprise features (name and whether in use)
@@ -717,31 +717,31 @@ func file_redpanda_api_console_v1alpha1_license_proto_rawDescGZIP() []byte {
 var file_redpanda_api_console_v1alpha1_license_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_redpanda_api_console_v1alpha1_license_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_redpanda_api_console_v1alpha1_license_proto_goTypes = []any{
-	(License_Source)(0), // 0: redpanda.api.console.v1alpha1.License.Source
-	(License_Type)(0),   // 1: redpanda.api.console.v1alpha1.License.Type
-	(ListEnterpriseFeaturesResponse_LicenseStatus)(0), // 2: redpanda.api.console.v1alpha1.ListEnterpriseFeaturesResponse.LicenseStatus
-	(*License)(nil),                                // 3: redpanda.api.console.v1alpha1.License
-	(*ListLicensesRequest)(nil),                    // 4: redpanda.api.console.v1alpha1.ListLicensesRequest
-	(*ListLicensesResponse)(nil),                   // 5: redpanda.api.console.v1alpha1.ListLicensesResponse
-	(*SetLicenseRequest)(nil),                      // 6: redpanda.api.console.v1alpha1.SetLicenseRequest
-	(*SetLicenseResponse)(nil),                     // 7: redpanda.api.console.v1alpha1.SetLicenseResponse
-	(*ListEnterpriseFeaturesRequest)(nil),          // 8: redpanda.api.console.v1alpha1.ListEnterpriseFeaturesRequest
-	(*ListEnterpriseFeaturesResponse)(nil),         // 9: redpanda.api.console.v1alpha1.ListEnterpriseFeaturesResponse
-	(*ListEnterpriseFeaturesResponse_Feature)(nil), // 10: redpanda.api.console.v1alpha1.ListEnterpriseFeaturesResponse.Feature
+	(License_Source)(0), // 0: redpanda.api.kconsole.v1alpha1.License.Source
+	(License_Type)(0),   // 1: redpanda.api.kconsole.v1alpha1.License.Type
+	(ListEnterpriseFeaturesResponse_LicenseStatus)(0), // 2: redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesResponse.LicenseStatus
+	(*License)(nil),                                // 3: redpanda.api.kconsole.v1alpha1.License
+	(*ListLicensesRequest)(nil),                    // 4: redpanda.api.kconsole.v1alpha1.ListLicensesRequest
+	(*ListLicensesResponse)(nil),                   // 5: redpanda.api.kconsole.v1alpha1.ListLicensesResponse
+	(*SetLicenseRequest)(nil),                      // 6: redpanda.api.kconsole.v1alpha1.SetLicenseRequest
+	(*SetLicenseResponse)(nil),                     // 7: redpanda.api.kconsole.v1alpha1.SetLicenseResponse
+	(*ListEnterpriseFeaturesRequest)(nil),          // 8: redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesRequest
+	(*ListEnterpriseFeaturesResponse)(nil),         // 9: redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesResponse
+	(*ListEnterpriseFeaturesResponse_Feature)(nil), // 10: redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesResponse.Feature
 }
 var file_redpanda_api_console_v1alpha1_license_proto_depIdxs = []int32{
-	0,  // 0: redpanda.api.console.v1alpha1.License.source:type_name -> redpanda.api.console.v1alpha1.License.Source
-	1,  // 1: redpanda.api.console.v1alpha1.License.type:type_name -> redpanda.api.console.v1alpha1.License.Type
-	3,  // 2: redpanda.api.console.v1alpha1.ListLicensesResponse.licenses:type_name -> redpanda.api.console.v1alpha1.License
-	3,  // 3: redpanda.api.console.v1alpha1.SetLicenseResponse.license:type_name -> redpanda.api.console.v1alpha1.License
-	2,  // 4: redpanda.api.console.v1alpha1.ListEnterpriseFeaturesResponse.license_status:type_name -> redpanda.api.console.v1alpha1.ListEnterpriseFeaturesResponse.LicenseStatus
-	10, // 5: redpanda.api.console.v1alpha1.ListEnterpriseFeaturesResponse.features:type_name -> redpanda.api.console.v1alpha1.ListEnterpriseFeaturesResponse.Feature
-	4,  // 6: redpanda.api.console.v1alpha1.LicenseService.ListLicenses:input_type -> redpanda.api.console.v1alpha1.ListLicensesRequest
-	6,  // 7: redpanda.api.console.v1alpha1.LicenseService.SetLicense:input_type -> redpanda.api.console.v1alpha1.SetLicenseRequest
-	8,  // 8: redpanda.api.console.v1alpha1.LicenseService.ListEnterpriseFeatures:input_type -> redpanda.api.console.v1alpha1.ListEnterpriseFeaturesRequest
-	5,  // 9: redpanda.api.console.v1alpha1.LicenseService.ListLicenses:output_type -> redpanda.api.console.v1alpha1.ListLicensesResponse
-	7,  // 10: redpanda.api.console.v1alpha1.LicenseService.SetLicense:output_type -> redpanda.api.console.v1alpha1.SetLicenseResponse
-	9,  // 11: redpanda.api.console.v1alpha1.LicenseService.ListEnterpriseFeatures:output_type -> redpanda.api.console.v1alpha1.ListEnterpriseFeaturesResponse
+	0,  // 0: redpanda.api.kconsole.v1alpha1.License.source:type_name -> redpanda.api.kconsole.v1alpha1.License.Source
+	1,  // 1: redpanda.api.kconsole.v1alpha1.License.type:type_name -> redpanda.api.kconsole.v1alpha1.License.Type
+	3,  // 2: redpanda.api.kconsole.v1alpha1.ListLicensesResponse.licenses:type_name -> redpanda.api.kconsole.v1alpha1.License
+	3,  // 3: redpanda.api.kconsole.v1alpha1.SetLicenseResponse.license:type_name -> redpanda.api.kconsole.v1alpha1.License
+	2,  // 4: redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesResponse.license_status:type_name -> redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesResponse.LicenseStatus
+	10, // 5: redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesResponse.features:type_name -> redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesResponse.Feature
+	4,  // 6: redpanda.api.kconsole.v1alpha1.LicenseService.ListLicenses:input_type -> redpanda.api.kconsole.v1alpha1.ListLicensesRequest
+	6,  // 7: redpanda.api.kconsole.v1alpha1.LicenseService.SetLicense:input_type -> redpanda.api.kconsole.v1alpha1.SetLicenseRequest
+	8,  // 8: redpanda.api.kconsole.v1alpha1.LicenseService.ListEnterpriseFeatures:input_type -> redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesRequest
+	5,  // 9: redpanda.api.kconsole.v1alpha1.LicenseService.ListLicenses:output_type -> redpanda.api.kconsole.v1alpha1.ListLicensesResponse
+	7,  // 10: redpanda.api.kconsole.v1alpha1.LicenseService.SetLicense:output_type -> redpanda.api.kconsole.v1alpha1.SetLicenseResponse
+	9,  // 11: redpanda.api.kconsole.v1alpha1.LicenseService.ListEnterpriseFeatures:output_type -> redpanda.api.kconsole.v1alpha1.ListEnterpriseFeaturesResponse
 	9,  // [9:12] is the sub-list for method output_type
 	6,  // [6:9] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name

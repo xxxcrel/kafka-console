@@ -20,7 +20,7 @@ import "google/type/money.proto";
 import "google/type/month.proto";
 import "google/type/phone_number.proto";
 
-option go_package = "github.com/xxxcrel/kafka-console/pkg/console/testdata/proto/gen/common";
+option go_package = "github.com/xxxcrel/kafka-kconsole/pkg/kconsole/testdata/proto/gen/common";
 
 message CommonMessage {
   string id = 1;

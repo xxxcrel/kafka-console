@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/cluster_status.proto
+// source: redpanda/api/kconsole/v1alpha1/cluster_status.proto
 
 package consolev1alpha1
 
@@ -350,7 +350,7 @@ type GetKafkaInfoResponse struct {
 	// Version is the Kafka API version.
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 	// Distribution indicates the software flavor (e.g. Apache Kafka, Redpanda).
-	Distribution KafkaDistribution `protobuf:"varint,3,opt,name=distribution,proto3,enum=redpanda.api.console.v1alpha1.KafkaDistribution" json:"distribution,omitempty"`
+	Distribution KafkaDistribution `protobuf:"varint,3,opt,name=distribution,proto3,enum=redpanda.api.kconsole.v1alpha1.KafkaDistribution" json:"distribution,omitempty"`
 	// BrokersOnline is the number of brokers currently online.
 	BrokersOnline int32 `protobuf:"varint,4,opt,name=brokers_online,json=brokersOnline,proto3" json:"brokers_online,omitempty"`
 	// BrokersExpected is the number of brokers expected.
@@ -689,7 +689,7 @@ func (*GetRedpandaPartitionBalancerStatusRequest) Descriptor() ([]byte, []int) {
 type GetRedpandaPartitionBalancerStatusResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Status describes the current partition balancer state.
-	Status GetRedpandaPartitionBalancerStatusResponse_Status `protobuf:"varint,1,opt,name=status,proto3,enum=redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusResponse_Status" json:"status,omitempty"`
+	Status GetRedpandaPartitionBalancerStatusResponse_Status `protobuf:"varint,1,opt,name=status,proto3,enum=redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusResponse_Status" json:"status,omitempty"`
 	// Violations are the partition balancer violations.
 	Violations *GetRedpandaPartitionBalancerStatusResponse_Violations `protobuf:"bytes,2,opt,name=violations,proto3" json:"violations,omitempty"`
 	// SecondsSinceLastTick is the last time the partition balancer ran.
@@ -1047,7 +1047,7 @@ func (x *GetSchemaRegistryInfoResponse) GetRegisteredSubjectsCount() int32 {
 type ComponentStatus struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Status is the overall health.
-	Status StatusType `protobuf:"varint,1,opt,name=status,proto3,enum=redpanda.api.console.v1alpha1.StatusType" json:"status,omitempty"`
+	Status StatusType `protobuf:"varint,1,opt,name=status,proto3,enum=redpanda.api.kconsole.v1alpha1.StatusType" json:"status,omitempty"`
 	// StatusReason provides details if the component is not healthy.
 	StatusReason  string `protobuf:"bytes,2,opt,name=status_reason,json=statusReason,proto3" json:"status_reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1615,54 +1615,54 @@ func file_redpanda_api_console_v1alpha1_cluster_status_proto_rawDescGZIP() []byt
 var file_redpanda_api_console_v1alpha1_cluster_status_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_redpanda_api_console_v1alpha1_cluster_status_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_redpanda_api_console_v1alpha1_cluster_status_proto_goTypes = []any{
-	(StatusType)(0),        // 0: redpanda.api.console.v1alpha1.StatusType
-	(KafkaDistribution)(0), // 1: redpanda.api.console.v1alpha1.KafkaDistribution
-	(LicenseType)(0),       // 2: redpanda.api.console.v1alpha1.LicenseType
-	(LicenseSource)(0),     // 3: redpanda.api.console.v1alpha1.LicenseSource
-	(GetRedpandaPartitionBalancerStatusResponse_Status)(0),        // 4: redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.Status
-	(*GetKafkaInfoRequest)(nil),                                   // 5: redpanda.api.console.v1alpha1.GetKafkaInfoRequest
-	(*GetKafkaInfoResponse)(nil),                                  // 6: redpanda.api.console.v1alpha1.GetKafkaInfoResponse
-	(*GetKafkaAuthorizerInfoRequest)(nil),                         // 7: redpanda.api.console.v1alpha1.GetKafkaAuthorizerInfoRequest
-	(*GetKafkaAuthorizerInfoResponse)(nil),                        // 8: redpanda.api.console.v1alpha1.GetKafkaAuthorizerInfoResponse
-	(*GetRedpandaInfoRequest)(nil),                                // 9: redpanda.api.console.v1alpha1.GetRedpandaInfoRequest
-	(*GetRedpandaInfoResponse)(nil),                               // 10: redpanda.api.console.v1alpha1.GetRedpandaInfoResponse
-	(*GetRedpandaPartitionBalancerStatusRequest)(nil),             // 11: redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusRequest
-	(*GetRedpandaPartitionBalancerStatusResponse)(nil),            // 12: redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusResponse
-	(*GetConsoleInfoRequest)(nil),                                 // 13: redpanda.api.console.v1alpha1.GetConsoleInfoRequest
-	(*GetConsoleInfoResponse)(nil),                                // 14: redpanda.api.console.v1alpha1.GetConsoleInfoResponse
-	(*GetKafkaConnectInfoRequest)(nil),                            // 15: redpanda.api.console.v1alpha1.GetKafkaConnectInfoRequest
-	(*GetKafkaConnectInfoResponse)(nil),                           // 16: redpanda.api.console.v1alpha1.GetKafkaConnectInfoResponse
-	(*GetSchemaRegistryInfoRequest)(nil),                          // 17: redpanda.api.console.v1alpha1.GetSchemaRegistryInfoRequest
-	(*GetSchemaRegistryInfoResponse)(nil),                         // 18: redpanda.api.console.v1alpha1.GetSchemaRegistryInfoResponse
-	(*ComponentStatus)(nil),                                       // 19: redpanda.api.console.v1alpha1.ComponentStatus
-	(*KafkaBroker)(nil),                                           // 20: redpanda.api.console.v1alpha1.KafkaBroker
-	(*GetRedpandaPartitionBalancerStatusResponse_Violations)(nil), // 21: redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.Violations
-	(*GetKafkaConnectInfoResponse_KafkaConnectCluster)(nil),       // 22: redpanda.api.console.v1alpha1.GetKafkaConnectInfoResponse.KafkaConnectCluster
+	(StatusType)(0),        // 0: redpanda.api.kconsole.v1alpha1.StatusType
+	(KafkaDistribution)(0), // 1: redpanda.api.kconsole.v1alpha1.KafkaDistribution
+	(LicenseType)(0),       // 2: redpanda.api.kconsole.v1alpha1.LicenseType
+	(LicenseSource)(0),     // 3: redpanda.api.kconsole.v1alpha1.LicenseSource
+	(GetRedpandaPartitionBalancerStatusResponse_Status)(0),        // 4: redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.Status
+	(*GetKafkaInfoRequest)(nil),                                   // 5: redpanda.api.kconsole.v1alpha1.GetKafkaInfoRequest
+	(*GetKafkaInfoResponse)(nil),                                  // 6: redpanda.api.kconsole.v1alpha1.GetKafkaInfoResponse
+	(*GetKafkaAuthorizerInfoRequest)(nil),                         // 7: redpanda.api.kconsole.v1alpha1.GetKafkaAuthorizerInfoRequest
+	(*GetKafkaAuthorizerInfoResponse)(nil),                        // 8: redpanda.api.kconsole.v1alpha1.GetKafkaAuthorizerInfoResponse
+	(*GetRedpandaInfoRequest)(nil),                                // 9: redpanda.api.kconsole.v1alpha1.GetRedpandaInfoRequest
+	(*GetRedpandaInfoResponse)(nil),                               // 10: redpanda.api.kconsole.v1alpha1.GetRedpandaInfoResponse
+	(*GetRedpandaPartitionBalancerStatusRequest)(nil),             // 11: redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusRequest
+	(*GetRedpandaPartitionBalancerStatusResponse)(nil),            // 12: redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusResponse
+	(*GetConsoleInfoRequest)(nil),                                 // 13: redpanda.api.kconsole.v1alpha1.GetConsoleInfoRequest
+	(*GetConsoleInfoResponse)(nil),                                // 14: redpanda.api.kconsole.v1alpha1.GetConsoleInfoResponse
+	(*GetKafkaConnectInfoRequest)(nil),                            // 15: redpanda.api.kconsole.v1alpha1.GetKafkaConnectInfoRequest
+	(*GetKafkaConnectInfoResponse)(nil),                           // 16: redpanda.api.kconsole.v1alpha1.GetKafkaConnectInfoResponse
+	(*GetSchemaRegistryInfoRequest)(nil),                          // 17: redpanda.api.kconsole.v1alpha1.GetSchemaRegistryInfoRequest
+	(*GetSchemaRegistryInfoResponse)(nil),                         // 18: redpanda.api.kconsole.v1alpha1.GetSchemaRegistryInfoResponse
+	(*ComponentStatus)(nil),                                       // 19: redpanda.api.kconsole.v1alpha1.ComponentStatus
+	(*KafkaBroker)(nil),                                           // 20: redpanda.api.kconsole.v1alpha1.KafkaBroker
+	(*GetRedpandaPartitionBalancerStatusResponse_Violations)(nil), // 21: redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.Violations
+	(*GetKafkaConnectInfoResponse_KafkaConnectCluster)(nil),       // 22: redpanda.api.kconsole.v1alpha1.GetKafkaConnectInfoResponse.KafkaConnectCluster
 }
 var file_redpanda_api_console_v1alpha1_cluster_status_proto_depIdxs = []int32{
-	19, // 0: redpanda.api.console.v1alpha1.GetKafkaInfoResponse.status:type_name -> redpanda.api.console.v1alpha1.ComponentStatus
-	1,  // 1: redpanda.api.console.v1alpha1.GetKafkaInfoResponse.distribution:type_name -> redpanda.api.console.v1alpha1.KafkaDistribution
-	20, // 2: redpanda.api.console.v1alpha1.GetKafkaInfoResponse.brokers:type_name -> redpanda.api.console.v1alpha1.KafkaBroker
-	4,  // 3: redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.status:type_name -> redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.Status
-	21, // 4: redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.violations:type_name -> redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.Violations
-	22, // 5: redpanda.api.console.v1alpha1.GetKafkaConnectInfoResponse.clusters:type_name -> redpanda.api.console.v1alpha1.GetKafkaConnectInfoResponse.KafkaConnectCluster
-	19, // 6: redpanda.api.console.v1alpha1.GetSchemaRegistryInfoResponse.status:type_name -> redpanda.api.console.v1alpha1.ComponentStatus
-	0,  // 7: redpanda.api.console.v1alpha1.ComponentStatus.status:type_name -> redpanda.api.console.v1alpha1.StatusType
-	19, // 8: redpanda.api.console.v1alpha1.GetKafkaConnectInfoResponse.KafkaConnectCluster.status:type_name -> redpanda.api.console.v1alpha1.ComponentStatus
-	5,  // 9: redpanda.api.console.v1alpha1.ClusterStatusService.GetKafkaInfo:input_type -> redpanda.api.console.v1alpha1.GetKafkaInfoRequest
-	7,  // 10: redpanda.api.console.v1alpha1.ClusterStatusService.GetKafkaAuthorizerInfo:input_type -> redpanda.api.console.v1alpha1.GetKafkaAuthorizerInfoRequest
-	9,  // 11: redpanda.api.console.v1alpha1.ClusterStatusService.GetRedpandaInfo:input_type -> redpanda.api.console.v1alpha1.GetRedpandaInfoRequest
-	11, // 12: redpanda.api.console.v1alpha1.ClusterStatusService.GetRedpandaPartitionBalancerStatus:input_type -> redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusRequest
-	13, // 13: redpanda.api.console.v1alpha1.ClusterStatusService.GetConsoleInfo:input_type -> redpanda.api.console.v1alpha1.GetConsoleInfoRequest
-	15, // 14: redpanda.api.console.v1alpha1.ClusterStatusService.GetKafkaConnectInfo:input_type -> redpanda.api.console.v1alpha1.GetKafkaConnectInfoRequest
-	17, // 15: redpanda.api.console.v1alpha1.ClusterStatusService.GetSchemaRegistryInfo:input_type -> redpanda.api.console.v1alpha1.GetSchemaRegistryInfoRequest
-	6,  // 16: redpanda.api.console.v1alpha1.ClusterStatusService.GetKafkaInfo:output_type -> redpanda.api.console.v1alpha1.GetKafkaInfoResponse
-	8,  // 17: redpanda.api.console.v1alpha1.ClusterStatusService.GetKafkaAuthorizerInfo:output_type -> redpanda.api.console.v1alpha1.GetKafkaAuthorizerInfoResponse
-	10, // 18: redpanda.api.console.v1alpha1.ClusterStatusService.GetRedpandaInfo:output_type -> redpanda.api.console.v1alpha1.GetRedpandaInfoResponse
-	12, // 19: redpanda.api.console.v1alpha1.ClusterStatusService.GetRedpandaPartitionBalancerStatus:output_type -> redpanda.api.console.v1alpha1.GetRedpandaPartitionBalancerStatusResponse
-	14, // 20: redpanda.api.console.v1alpha1.ClusterStatusService.GetConsoleInfo:output_type -> redpanda.api.console.v1alpha1.GetConsoleInfoResponse
-	16, // 21: redpanda.api.console.v1alpha1.ClusterStatusService.GetKafkaConnectInfo:output_type -> redpanda.api.console.v1alpha1.GetKafkaConnectInfoResponse
-	18, // 22: redpanda.api.console.v1alpha1.ClusterStatusService.GetSchemaRegistryInfo:output_type -> redpanda.api.console.v1alpha1.GetSchemaRegistryInfoResponse
+	19, // 0: redpanda.api.kconsole.v1alpha1.GetKafkaInfoResponse.status:type_name -> redpanda.api.kconsole.v1alpha1.ComponentStatus
+	1,  // 1: redpanda.api.kconsole.v1alpha1.GetKafkaInfoResponse.distribution:type_name -> redpanda.api.kconsole.v1alpha1.KafkaDistribution
+	20, // 2: redpanda.api.kconsole.v1alpha1.GetKafkaInfoResponse.brokers:type_name -> redpanda.api.kconsole.v1alpha1.KafkaBroker
+	4,  // 3: redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.status:type_name -> redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.Status
+	21, // 4: redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.violations:type_name -> redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusResponse.Violations
+	22, // 5: redpanda.api.kconsole.v1alpha1.GetKafkaConnectInfoResponse.clusters:type_name -> redpanda.api.kconsole.v1alpha1.GetKafkaConnectInfoResponse.KafkaConnectCluster
+	19, // 6: redpanda.api.kconsole.v1alpha1.GetSchemaRegistryInfoResponse.status:type_name -> redpanda.api.kconsole.v1alpha1.ComponentStatus
+	0,  // 7: redpanda.api.kconsole.v1alpha1.ComponentStatus.status:type_name -> redpanda.api.kconsole.v1alpha1.StatusType
+	19, // 8: redpanda.api.kconsole.v1alpha1.GetKafkaConnectInfoResponse.KafkaConnectCluster.status:type_name -> redpanda.api.kconsole.v1alpha1.ComponentStatus
+	5,  // 9: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetKafkaInfo:input_type -> redpanda.api.kconsole.v1alpha1.GetKafkaInfoRequest
+	7,  // 10: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetKafkaAuthorizerInfo:input_type -> redpanda.api.kconsole.v1alpha1.GetKafkaAuthorizerInfoRequest
+	9,  // 11: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetRedpandaInfo:input_type -> redpanda.api.kconsole.v1alpha1.GetRedpandaInfoRequest
+	11, // 12: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetRedpandaPartitionBalancerStatus:input_type -> redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusRequest
+	13, // 13: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetConsoleInfo:input_type -> redpanda.api.kconsole.v1alpha1.GetConsoleInfoRequest
+	15, // 14: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetKafkaConnectInfo:input_type -> redpanda.api.kconsole.v1alpha1.GetKafkaConnectInfoRequest
+	17, // 15: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetSchemaRegistryInfo:input_type -> redpanda.api.kconsole.v1alpha1.GetSchemaRegistryInfoRequest
+	6,  // 16: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetKafkaInfo:output_type -> redpanda.api.kconsole.v1alpha1.GetKafkaInfoResponse
+	8,  // 17: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetKafkaAuthorizerInfo:output_type -> redpanda.api.kconsole.v1alpha1.GetKafkaAuthorizerInfoResponse
+	10, // 18: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetRedpandaInfo:output_type -> redpanda.api.kconsole.v1alpha1.GetRedpandaInfoResponse
+	12, // 19: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetRedpandaPartitionBalancerStatus:output_type -> redpanda.api.kconsole.v1alpha1.GetRedpandaPartitionBalancerStatusResponse
+	14, // 20: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetConsoleInfo:output_type -> redpanda.api.kconsole.v1alpha1.GetConsoleInfoResponse
+	16, // 21: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetKafkaConnectInfo:output_type -> redpanda.api.kconsole.v1alpha1.GetKafkaConnectInfoResponse
+	18, // 22: redpanda.api.kconsole.v1alpha1.ClusterStatusService.GetSchemaRegistryInfo:output_type -> redpanda.api.kconsole.v1alpha1.GetSchemaRegistryInfoResponse
 	16, // [16:23] is the sub-list for method output_type
 	9,  // [9:16] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name

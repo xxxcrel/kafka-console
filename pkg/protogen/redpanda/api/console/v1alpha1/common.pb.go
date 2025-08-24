@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/common.proto
+// source: redpanda/api/kconsole/v1alpha1/common.proto
 
 package consolev1alpha1
 
@@ -369,10 +369,10 @@ func file_redpanda_api_console_v1alpha1_common_proto_rawDescGZIP() []byte {
 var file_redpanda_api_console_v1alpha1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_redpanda_api_console_v1alpha1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_redpanda_api_console_v1alpha1_common_proto_goTypes = []any{
-	(CompressionType)(0),       // 0: redpanda.api.console.v1alpha1.CompressionType
-	(PayloadEncoding)(0),       // 1: redpanda.api.console.v1alpha1.PayloadEncoding
-	(*KafkaRecordHeader)(nil),  // 2: redpanda.api.console.v1alpha1.KafkaRecordHeader
-	(*TroubleshootReport)(nil), // 3: redpanda.api.console.v1alpha1.TroubleshootReport
+	(CompressionType)(0),       // 0: redpanda.api.kconsole.v1alpha1.CompressionType
+	(PayloadEncoding)(0),       // 1: redpanda.api.kconsole.v1alpha1.PayloadEncoding
+	(*KafkaRecordHeader)(nil),  // 2: redpanda.api.kconsole.v1alpha1.KafkaRecordHeader
+	(*TroubleshootReport)(nil), // 3: redpanda.api.kconsole.v1alpha1.TroubleshootReport
 }
 var file_redpanda_api_console_v1alpha1_common_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

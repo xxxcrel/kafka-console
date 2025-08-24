@@ -52,7 +52,7 @@ const (
 type KafkaConnectServiceClient interface {
 	// Deprecated: Do not use.
 	// ListConnectClusters implements the list clusters method, list connect
-	// clusters available in the console configuration
+	// clusters available in the kconsole configuration
 	ListConnectClusters(ctx context.Context, in *ListConnectClustersRequest, opts ...grpc.CallOption) (*ListConnectClustersResponse, error)
 	// Deprecated: Do not use.
 	// GetConnectCluster implements the get cluster info method, exposes a Kafka
@@ -300,7 +300,7 @@ func (c *kafkaConnectServiceClient) ResetConnectorTopics(ctx context.Context, in
 type KafkaConnectServiceServer interface {
 	// Deprecated: Do not use.
 	// ListConnectClusters implements the list clusters method, list connect
-	// clusters available in the console configuration
+	// clusters available in the kconsole configuration
 	ListConnectClusters(context.Context, *ListConnectClustersRequest) (*ListConnectClustersResponse, error)
 	// Deprecated: Do not use.
 	// GetConnectCluster implements the get cluster info method, exposes a Kafka

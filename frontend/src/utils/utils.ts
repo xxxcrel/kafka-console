@@ -172,12 +172,12 @@ export function assignDeep(target: any, source: any) {
     const existing = key in target ? target[key] : undefined;
 
     // if (existing === undefined && onlySetExisting) {
-    // 	console.log('skipping key ' + key + ' because it doesnt exist in the target');
+    // 	kconsole.log('skipping key ' + key + ' because it doesnt exist in the target');
     // 	continue;
     // }
 
     if (typeof value === 'function' || typeof value === 'symbol') {
-      //console.log('skipping key ' + key + ' because its type is ' + typeof value);
+      //kconsole.log('skipping key ' + key + ' because its type is ' + typeof value);
       continue;
     }
 
@@ -190,7 +190,7 @@ export function assignDeep(target: any, source: any) {
 
     if (existing === value) continue;
 
-    // console.log(`Key ["${key}"]:  ${JSON.stringify(existing)} ->  ${JSON.stringify(value)}`);
+    // kconsole.log(`Key ["${key}"]:  ${JSON.stringify(existing)} ->  ${JSON.stringify(value)}`);
 
     target[key] = value;
   }
@@ -368,7 +368,7 @@ export function getAllMessageKeys(messages: TopicMessage[]): Property[] {
     ctx.currentFullPath = '';
   }
 
-  // console.log('getAllMessageKeys', ctx.results);
+  // kconsole.log('getAllMessageKeys', ctx.results);
 
   return ctx.results;
 }
@@ -846,7 +846,7 @@ export function decodeURIComponentPercents(encodedStr: string): string {
  * };
  *
  * const subject = getOidcSubject(error);
- * console.log(subject); // Output: "1231231232131"
+ * kconsole.log(subject); // Output: "1231231232131"
  * ```
  */
 export function getOidcSubject(error: any): string | null {

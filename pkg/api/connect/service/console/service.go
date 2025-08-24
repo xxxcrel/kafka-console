@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// Package console contains the implementation of all Console service RPC endpoints.
+// Package kconsole contains the implementation of all Console service RPC endpoints.
 package console
 
 import (
@@ -25,7 +25,7 @@ import (
 
 	apierrors "github.com/xxxcrel/kafka-console/pkg/api/connect/errors"
 	"github.com/xxxcrel/kafka-console/pkg/api/httptypes"
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 	v1alpha "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1"
 	dataplane "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/dataplane/v1alpha2"
 )
@@ -33,13 +33,13 @@ import (
 // Service that implements the ConsoleServiceHandler interface.
 type Service struct {
 	logger     *zap.Logger
-	consoleSvc console.Servicer
+	consoleSvc kconsole.Servicer
 }
 
 // NewService creates a new Console service handler.
 func NewService(
 	logger *zap.Logger,
-	consoleSvc console.Servicer,
+	consoleSvc kconsole.Servicer,
 ) *Service {
 	return &Service{
 		logger:     logger,
@@ -84,7 +84,7 @@ func (api *Service) ListMessages(
 	}
 
 	// Request messages from kafka and return them once we got all the messages or the context is done
-	listReq := console.ListMessageRequest{
+	listReq := kconsole.ListMessageRequest{
 		TopicName:             lmq.TopicName,
 		PartitionID:           lmq.PartitionID,
 		StartOffset:           lmq.StartOffset,
@@ -99,7 +99,7 @@ func (api *Service) ListMessages(
 	}
 
 	timeout := 35 * time.Second
-	if req.Msg.GetFilterInterpreterCode() != "" || req.Msg.GetStartOffset() == console.StartOffsetNewest {
+	if req.Msg.GetFilterInterpreterCode() != "" || req.Msg.GetStartOffset() == kconsole.StartOffsetNewest {
 		// Push-down filters and StartOffset = Newest may be long-running streams.
 		// There's already a client-side provided timeout which we usually trust.
 		// But additionally we want to ensure it never takes much longer than that.

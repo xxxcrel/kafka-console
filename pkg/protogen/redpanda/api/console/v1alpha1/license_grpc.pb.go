@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: redpanda/api/console/v1alpha1/license.proto
+// source: redpanda/api/kconsole/v1alpha1/license.proto
 
 package consolev1alpha1
 
@@ -20,9 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LicenseService_ListLicenses_FullMethodName           = "/redpanda.api.console.v1alpha1.LicenseService/ListLicenses"
-	LicenseService_SetLicense_FullMethodName             = "/redpanda.api.console.v1alpha1.LicenseService/SetLicense"
-	LicenseService_ListEnterpriseFeatures_FullMethodName = "/redpanda.api.console.v1alpha1.LicenseService/ListEnterpriseFeatures"
+	LicenseService_ListLicenses_FullMethodName           = "/redpanda.api.kconsole.v1alpha1.LicenseService/ListLicenses"
+	LicenseService_SetLicense_FullMethodName             = "/redpanda.api.kconsole.v1alpha1.LicenseService/SetLicense"
+	LicenseService_ListEnterpriseFeatures_FullMethodName = "/redpanda.api.kconsole.v1alpha1.LicenseService/ListEnterpriseFeatures"
 )
 
 // LicenseServiceClient is the client API for LicenseService service.
@@ -187,7 +187,7 @@ func _LicenseService_ListEnterpriseFeatures_Handler(srv interface{}, ctx context
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var LicenseService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "redpanda.api.console.v1alpha1.LicenseService",
+	ServiceName: "redpanda.api.kconsole.v1alpha1.LicenseService",
 	HandlerType: (*LicenseServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -204,5 +204,5 @@ var LicenseService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "redpanda/api/console/v1alpha1/license.proto",
+	Metadata: "redpanda/api/kconsole/v1alpha1/license.proto",
 }

@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: redpanda/api/console/v1alpha1/security.proto
+// source: redpanda/api/kconsole/v1alpha1/security.proto
 
 package consolev1alpha1
 
@@ -20,12 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SecurityService_ListRoles_FullMethodName            = "/redpanda.api.console.v1alpha1.SecurityService/ListRoles"
-	SecurityService_CreateRole_FullMethodName           = "/redpanda.api.console.v1alpha1.SecurityService/CreateRole"
-	SecurityService_GetRole_FullMethodName              = "/redpanda.api.console.v1alpha1.SecurityService/GetRole"
-	SecurityService_DeleteRole_FullMethodName           = "/redpanda.api.console.v1alpha1.SecurityService/DeleteRole"
-	SecurityService_ListRoleMembers_FullMethodName      = "/redpanda.api.console.v1alpha1.SecurityService/ListRoleMembers"
-	SecurityService_UpdateRoleMembership_FullMethodName = "/redpanda.api.console.v1alpha1.SecurityService/UpdateRoleMembership"
+	SecurityService_ListRoles_FullMethodName            = "/redpanda.api.kconsole.v1alpha1.SecurityService/ListRoles"
+	SecurityService_CreateRole_FullMethodName           = "/redpanda.api.kconsole.v1alpha1.SecurityService/CreateRole"
+	SecurityService_GetRole_FullMethodName              = "/redpanda.api.kconsole.v1alpha1.SecurityService/GetRole"
+	SecurityService_DeleteRole_FullMethodName           = "/redpanda.api.kconsole.v1alpha1.SecurityService/DeleteRole"
+	SecurityService_ListRoleMembers_FullMethodName      = "/redpanda.api.kconsole.v1alpha1.SecurityService/ListRoleMembers"
+	SecurityService_UpdateRoleMembership_FullMethodName = "/redpanda.api.kconsole.v1alpha1.SecurityService/UpdateRoleMembership"
 )
 
 // SecurityServiceClient is the client API for SecurityService service.
@@ -297,7 +297,7 @@ func _SecurityService_UpdateRoleMembership_Handler(srv interface{}, ctx context.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SecurityService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "redpanda.api.console.v1alpha1.SecurityService",
+	ServiceName: "redpanda.api.kconsole.v1alpha1.SecurityService",
 	HandlerType: (*SecurityServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -326,5 +326,5 @@ var SecurityService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "redpanda/api/console/v1alpha1/security.proto",
+	Metadata: "redpanda/api/kconsole/v1alpha1/security.proto",
 }

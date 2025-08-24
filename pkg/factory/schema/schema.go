@@ -57,7 +57,7 @@ func NewSingleClientProvider(cfg *config.Config) (ClientFactory, error) {
 
 	opts := []sr.ClientOpt{
 		sr.URLs(schemaCfg.URLs...),
-		sr.UserAgent("redpanda-console"),
+		sr.UserAgent("redpanda-kconsole"),
 		sr.DialTLSConfig(tlsCfg),
 	}
 

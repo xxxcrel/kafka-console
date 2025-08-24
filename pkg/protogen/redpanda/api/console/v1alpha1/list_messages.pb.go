@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/list_messages.proto
+// source: redpanda/api/kconsole/v1alpha1/list_messages.proto
 
 package consolev1alpha1
 
@@ -34,8 +34,8 @@ type ListMessagesRequest struct {
 	Enterprise                []byte                 `protobuf:"bytes,7,opt,name=enterprise,proto3" json:"enterprise,omitempty"`                                                                                                   // Enterprise may only be set in the Enterprise mode. The JSON deserialization is deferred.
 	Troubleshoot              bool                   `protobuf:"varint,8,opt,name=troubleshoot,proto3" json:"troubleshoot,omitempty"`                                                                                              // Optionally include troubleshooting data in the response.
 	IncludeOriginalRawPayload bool                   `protobuf:"varint,9,opt,name=include_original_raw_payload,json=includeOriginalRawPayload,proto3" json:"include_original_raw_payload,omitempty"`                               // Optionally include original raw payload.
-	KeyDeserializer           *PayloadEncoding       `protobuf:"varint,10,opt,name=key_deserializer,json=keyDeserializer,proto3,enum=redpanda.api.console.v1alpha1.PayloadEncoding,oneof" json:"key_deserializer,omitempty"`       // Optionally specify key payload deserialization strategy to use.
-	ValueDeserializer         *PayloadEncoding       `protobuf:"varint,11,opt,name=value_deserializer,json=valueDeserializer,proto3,enum=redpanda.api.console.v1alpha1.PayloadEncoding,oneof" json:"value_deserializer,omitempty"` // Optionally specify value payload deserialization strategy to use.
+	KeyDeserializer           *PayloadEncoding       `protobuf:"varint,10,opt,name=key_deserializer,json=keyDeserializer,proto3,enum=redpanda.api.kconsole.v1alpha1.PayloadEncoding,oneof" json:"key_deserializer,omitempty"`       // Optionally specify key payload deserialization strategy to use.
+	ValueDeserializer         *PayloadEncoding       `protobuf:"varint,11,opt,name=value_deserializer,json=valueDeserializer,proto3,enum=redpanda.api.kconsole.v1alpha1.PayloadEncoding,oneof" json:"value_deserializer,omitempty"` // Optionally specify value payload deserialization strategy to use.
 	IgnoreMaxSizeLimit        bool                   `protobuf:"varint,12,opt,name=ignore_max_size_limit,json=ignoreMaxSizeLimit,proto3" json:"ignore_max_size_limit,omitempty"`                                                   // Optionally ignore configured maximum payload size limit.
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
@@ -293,7 +293,7 @@ type KafkaRecordPayload struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	OriginalPayload    []byte                 `protobuf:"bytes,1,opt,name=original_payload,json=originalPayload,proto3,oneof" json:"original_payload,omitempty"`          // Original raw binary payload.
 	NormalizedPayload  []byte                 `protobuf:"bytes,2,opt,name=normalized_payload,json=normalizedPayload,proto3,oneof" json:"normalized_payload,omitempty"`    // Normalized user friendly representation of the payload.
-	Encoding           PayloadEncoding        `protobuf:"varint,3,opt,name=encoding,proto3,enum=redpanda.api.console.v1alpha1.PayloadEncoding" json:"encoding,omitempty"` // Payload encoding if we have been able to detect.
+	Encoding           PayloadEncoding        `protobuf:"varint,3,opt,name=encoding,proto3,enum=redpanda.api.kconsole.v1alpha1.PayloadEncoding" json:"encoding,omitempty"` // Payload encoding if we have been able to detect.
 	SchemaId           *int32                 `protobuf:"varint,4,opt,name=schema_id,json=schemaId,proto3,oneof" json:"schema_id,omitempty"`                              // Optionally, the schema ID used to deserialized the message.
 	PayloadSize        int32                  `protobuf:"varint,5,opt,name=payload_size,json=payloadSize,proto3" json:"payload_size,omitempty"`                           // Payload size in bytes.
 	IsPayloadTooLarge  bool                   `protobuf:"varint,6,opt,name=is_payload_too_large,json=isPayloadTooLarge,proto3" json:"is_payload_too_large,omitempty"`     // If payload is too large for deserialization.
@@ -387,7 +387,7 @@ type ListMessagesResponse_DataMessage struct {
 	PartitionId     int32                  `protobuf:"varint,1,opt,name=partition_id,json=partitionId,proto3" json:"partition_id,omitempty"`
 	Offset          int64                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
 	Timestamp       int64                  `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Compression     CompressionType        `protobuf:"varint,4,opt,name=compression,proto3,enum=redpanda.api.console.v1alpha1.CompressionType" json:"compression,omitempty"`
+	Compression     CompressionType        `protobuf:"varint,4,opt,name=compression,proto3,enum=redpanda.api.kconsole.v1alpha1.CompressionType" json:"compression,omitempty"`
 	IsTransactional bool                   `protobuf:"varint,5,opt,name=is_transactional,json=isTransactional,proto3" json:"is_transactional,omitempty"`
 	Headers         []*KafkaRecordHeader   `protobuf:"bytes,6,rep,name=headers,proto3" json:"headers,omitempty"` // Kafka record headers.
 	Key             *KafkaRecordPayload    `protobuf:"bytes,7,opt,name=key,proto3" json:"key,omitempty"`         // Kafka key of the payload record.
@@ -901,33 +901,33 @@ func file_redpanda_api_console_v1alpha1_list_messages_proto_rawDescGZIP() []byte
 
 var file_redpanda_api_console_v1alpha1_list_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_redpanda_api_console_v1alpha1_list_messages_proto_goTypes = []any{
-	(*ListMessagesRequest)(nil),                         // 0: redpanda.api.console.v1alpha1.ListMessagesRequest
-	(*ListMessagesResponse)(nil),                        // 1: redpanda.api.console.v1alpha1.ListMessagesResponse
-	(*KafkaRecordPayload)(nil),                          // 2: redpanda.api.console.v1alpha1.KafkaRecordPayload
-	(*ListMessagesResponse_DataMessage)(nil),            // 3: redpanda.api.console.v1alpha1.ListMessagesResponse.DataMessage
-	(*ListMessagesResponse_PhaseMessage)(nil),           // 4: redpanda.api.console.v1alpha1.ListMessagesResponse.PhaseMessage
-	(*ListMessagesResponse_ProgressMessage)(nil),        // 5: redpanda.api.console.v1alpha1.ListMessagesResponse.ProgressMessage
-	(*ListMessagesResponse_StreamCompletedMessage)(nil), // 6: redpanda.api.console.v1alpha1.ListMessagesResponse.StreamCompletedMessage
-	(*ListMessagesResponse_ErrorMessage)(nil),           // 7: redpanda.api.console.v1alpha1.ListMessagesResponse.ErrorMessage
-	(PayloadEncoding)(0),                                // 8: redpanda.api.console.v1alpha1.PayloadEncoding
-	(*TroubleshootReport)(nil),                          // 9: redpanda.api.console.v1alpha1.TroubleshootReport
-	(CompressionType)(0),                                // 10: redpanda.api.console.v1alpha1.CompressionType
-	(*KafkaRecordHeader)(nil),                           // 11: redpanda.api.console.v1alpha1.KafkaRecordHeader
+	(*ListMessagesRequest)(nil),                         // 0: redpanda.api.kconsole.v1alpha1.ListMessagesRequest
+	(*ListMessagesResponse)(nil),                        // 1: redpanda.api.kconsole.v1alpha1.ListMessagesResponse
+	(*KafkaRecordPayload)(nil),                          // 2: redpanda.api.kconsole.v1alpha1.KafkaRecordPayload
+	(*ListMessagesResponse_DataMessage)(nil),            // 3: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.DataMessage
+	(*ListMessagesResponse_PhaseMessage)(nil),           // 4: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.PhaseMessage
+	(*ListMessagesResponse_ProgressMessage)(nil),        // 5: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.ProgressMessage
+	(*ListMessagesResponse_StreamCompletedMessage)(nil), // 6: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.StreamCompletedMessage
+	(*ListMessagesResponse_ErrorMessage)(nil),           // 7: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.ErrorMessage
+	(PayloadEncoding)(0),                                // 8: redpanda.api.kconsole.v1alpha1.PayloadEncoding
+	(*TroubleshootReport)(nil),                          // 9: redpanda.api.kconsole.v1alpha1.TroubleshootReport
+	(CompressionType)(0),                                // 10: redpanda.api.kconsole.v1alpha1.CompressionType
+	(*KafkaRecordHeader)(nil),                           // 11: redpanda.api.kconsole.v1alpha1.KafkaRecordHeader
 }
 var file_redpanda_api_console_v1alpha1_list_messages_proto_depIdxs = []int32{
-	8,  // 0: redpanda.api.console.v1alpha1.ListMessagesRequest.key_deserializer:type_name -> redpanda.api.console.v1alpha1.PayloadEncoding
-	8,  // 1: redpanda.api.console.v1alpha1.ListMessagesRequest.value_deserializer:type_name -> redpanda.api.console.v1alpha1.PayloadEncoding
-	3,  // 2: redpanda.api.console.v1alpha1.ListMessagesResponse.data:type_name -> redpanda.api.console.v1alpha1.ListMessagesResponse.DataMessage
-	4,  // 3: redpanda.api.console.v1alpha1.ListMessagesResponse.phase:type_name -> redpanda.api.console.v1alpha1.ListMessagesResponse.PhaseMessage
-	5,  // 4: redpanda.api.console.v1alpha1.ListMessagesResponse.progress:type_name -> redpanda.api.console.v1alpha1.ListMessagesResponse.ProgressMessage
-	6,  // 5: redpanda.api.console.v1alpha1.ListMessagesResponse.done:type_name -> redpanda.api.console.v1alpha1.ListMessagesResponse.StreamCompletedMessage
-	7,  // 6: redpanda.api.console.v1alpha1.ListMessagesResponse.error:type_name -> redpanda.api.console.v1alpha1.ListMessagesResponse.ErrorMessage
-	8,  // 7: redpanda.api.console.v1alpha1.KafkaRecordPayload.encoding:type_name -> redpanda.api.console.v1alpha1.PayloadEncoding
-	9,  // 8: redpanda.api.console.v1alpha1.KafkaRecordPayload.troubleshoot_report:type_name -> redpanda.api.console.v1alpha1.TroubleshootReport
-	10, // 9: redpanda.api.console.v1alpha1.ListMessagesResponse.DataMessage.compression:type_name -> redpanda.api.console.v1alpha1.CompressionType
-	11, // 10: redpanda.api.console.v1alpha1.ListMessagesResponse.DataMessage.headers:type_name -> redpanda.api.console.v1alpha1.KafkaRecordHeader
-	2,  // 11: redpanda.api.console.v1alpha1.ListMessagesResponse.DataMessage.key:type_name -> redpanda.api.console.v1alpha1.KafkaRecordPayload
-	2,  // 12: redpanda.api.console.v1alpha1.ListMessagesResponse.DataMessage.value:type_name -> redpanda.api.console.v1alpha1.KafkaRecordPayload
+	8,  // 0: redpanda.api.kconsole.v1alpha1.ListMessagesRequest.key_deserializer:type_name -> redpanda.api.kconsole.v1alpha1.PayloadEncoding
+	8,  // 1: redpanda.api.kconsole.v1alpha1.ListMessagesRequest.value_deserializer:type_name -> redpanda.api.kconsole.v1alpha1.PayloadEncoding
+	3,  // 2: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.data:type_name -> redpanda.api.kconsole.v1alpha1.ListMessagesResponse.DataMessage
+	4,  // 3: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.phase:type_name -> redpanda.api.kconsole.v1alpha1.ListMessagesResponse.PhaseMessage
+	5,  // 4: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.progress:type_name -> redpanda.api.kconsole.v1alpha1.ListMessagesResponse.ProgressMessage
+	6,  // 5: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.done:type_name -> redpanda.api.kconsole.v1alpha1.ListMessagesResponse.StreamCompletedMessage
+	7,  // 6: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.error:type_name -> redpanda.api.kconsole.v1alpha1.ListMessagesResponse.ErrorMessage
+	8,  // 7: redpanda.api.kconsole.v1alpha1.KafkaRecordPayload.encoding:type_name -> redpanda.api.kconsole.v1alpha1.PayloadEncoding
+	9,  // 8: redpanda.api.kconsole.v1alpha1.KafkaRecordPayload.troubleshoot_report:type_name -> redpanda.api.kconsole.v1alpha1.TroubleshootReport
+	10, // 9: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.DataMessage.compression:type_name -> redpanda.api.kconsole.v1alpha1.CompressionType
+	11, // 10: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.DataMessage.headers:type_name -> redpanda.api.kconsole.v1alpha1.KafkaRecordHeader
+	2,  // 11: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.DataMessage.key:type_name -> redpanda.api.kconsole.v1alpha1.KafkaRecordPayload
+	2,  // 12: redpanda.api.kconsole.v1alpha1.ListMessagesResponse.DataMessage.value:type_name -> redpanda.api.kconsole.v1alpha1.KafkaRecordPayload
 	13, // [13:13] is the sub-list for method output_type
 	13, // [13:13] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name

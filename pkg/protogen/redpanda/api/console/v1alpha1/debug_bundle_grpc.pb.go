@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: redpanda/api/console/v1alpha1/debug_bundle.proto
+// source: redpanda/api/kconsole/v1alpha1/debug_bundle.proto
 
 package consolev1alpha1
 
@@ -20,11 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	DebugBundleService_GetClusterHealth_FullMethodName         = "/redpanda.api.console.v1alpha1.DebugBundleService/GetClusterHealth"
-	DebugBundleService_CreateDebugBundle_FullMethodName        = "/redpanda.api.console.v1alpha1.DebugBundleService/CreateDebugBundle"
-	DebugBundleService_GetDebugBundleStatus_FullMethodName     = "/redpanda.api.console.v1alpha1.DebugBundleService/GetDebugBundleStatus"
-	DebugBundleService_CancelDebugBundleProcess_FullMethodName = "/redpanda.api.console.v1alpha1.DebugBundleService/CancelDebugBundleProcess"
-	DebugBundleService_DeleteDebugBundleFile_FullMethodName    = "/redpanda.api.console.v1alpha1.DebugBundleService/DeleteDebugBundleFile"
+	DebugBundleService_GetClusterHealth_FullMethodName         = "/redpanda.api.kconsole.v1alpha1.DebugBundleService/GetClusterHealth"
+	DebugBundleService_CreateDebugBundle_FullMethodName        = "/redpanda.api.kconsole.v1alpha1.DebugBundleService/CreateDebugBundle"
+	DebugBundleService_GetDebugBundleStatus_FullMethodName     = "/redpanda.api.kconsole.v1alpha1.DebugBundleService/GetDebugBundleStatus"
+	DebugBundleService_CancelDebugBundleProcess_FullMethodName = "/redpanda.api.kconsole.v1alpha1.DebugBundleService/CancelDebugBundleProcess"
+	DebugBundleService_DeleteDebugBundleFile_FullMethodName    = "/redpanda.api.kconsole.v1alpha1.DebugBundleService/DeleteDebugBundleFile"
 )
 
 // DebugBundleServiceClient is the client API for DebugBundleService service.
@@ -245,7 +245,7 @@ func _DebugBundleService_DeleteDebugBundleFile_Handler(srv interface{}, ctx cont
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var DebugBundleService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "redpanda.api.console.v1alpha1.DebugBundleService",
+	ServiceName: "redpanda.api.kconsole.v1alpha1.DebugBundleService",
 	HandlerType: (*DebugBundleServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -270,5 +270,5 @@ var DebugBundleService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "redpanda/api/console/v1alpha1/debug_bundle.proto",
+	Metadata: "redpanda/api/kconsole/v1alpha1/debug_bundle.proto",
 }

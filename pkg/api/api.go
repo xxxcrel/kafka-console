@@ -20,21 +20,18 @@ import (
 	"time"
 
 	"github.com/cloudhut/common/rest"
-	"go.uber.org/zap"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
-
 	"github.com/xxxcrel/kafka-console/pkg/config"
 	"github.com/xxxcrel/kafka-console/pkg/connect"
-	"github.com/xxxcrel/kafka-console/pkg/console"
 	"github.com/xxxcrel/kafka-console/pkg/embed"
 	kafkafactory "github.com/xxxcrel/kafka-console/pkg/factory/kafka"
 	redpandafactory "github.com/xxxcrel/kafka-console/pkg/factory/redpanda"
 	schemafactory "github.com/xxxcrel/kafka-console/pkg/factory/schema"
 	"github.com/xxxcrel/kafka-console/pkg/git"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 	"github.com/xxxcrel/kafka-console/pkg/license"
 	"github.com/xxxcrel/kafka-console/pkg/logging"
 	"github.com/xxxcrel/kafka-console/pkg/version"
+	"go.uber.org/zap"
 )
 
 // API represents the server and all it's dependencies to serve incoming user requests
@@ -42,7 +39,7 @@ type API struct {
 	Cfg *config.Config
 
 	Logger     *zap.Logger
-	ConsoleSvc console.Servicer
+	ConsoleSvc kconsole.Servicer
 	ConnectSvc *connect.Service
 	GitSvc     *git.Service
 
@@ -111,7 +108,7 @@ func New(cfg *config.Config, inputOpts ...Option) *API {
 		logger.Fatal("failed to create Kafka connect service", zap.Error(err))
 	}
 
-	consoleSvc, err := console.NewService(
+	consoleSvc, err := kconsole.NewService(
 		cfg,
 		logger,
 		opts.kafkaClientProvider,
@@ -121,7 +118,7 @@ func New(cfg *config.Config, inputOpts ...Option) *API {
 		connectSvc,
 	)
 	if err != nil {
-		logger.Fatal("failed to create console service", zap.Error(err))
+		logger.Fatal("failed to create kconsole service", zap.Error(err))
 	}
 
 	year := 24 * time.Hour * 365
@@ -181,24 +178,24 @@ func (api *API) Start() {
 
 	err := api.ConsoleSvc.Start(startCtx)
 	if err != nil {
-		api.Logger.Fatal("failed to start console service", zap.Error(err))
+		api.Logger.Fatal("failed to start kconsole service", zap.Error(err))
 	}
 
-	mux := api.routes()
+	//mux := api.routes()
 
 	// Server
-	api.server, err = rest.NewServer(&api.Cfg.REST.Config, api.Logger, mux)
-	if err != nil {
-		api.Logger.Fatal("failed to create HTTP server", zap.Error(err))
-	}
+	//api.server, err = rest.NewServer(&api.Cfg.REST.Config, api.Logger, mux)
+	//if err != nil {
+	//	api.Logger.Fatal("failed to create HTTP server", zap.Error(err))
+	//}
 
 	// need this to make gRPC protocol work
-	api.server.Server.Handler = h2c.NewHandler(mux, &http2.Server{})
+	//api.server.Server.Handler = h2c.NewHandler(mux, &http2.Server{})
 
-	err = api.server.Start()
-	if err != nil {
-		api.Logger.Fatal("REST Server returned an error", zap.Error(err))
-	}
+	//err = api.server.Start()
+	//if err != nil {
+	//	api.Logger.Fatal("REST Server returned an error", zap.Error(err))
+	//}
 }
 
 // Stop gracefully stops the API.

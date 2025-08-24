@@ -69,7 +69,7 @@ export function getBuildDate(): Date | undefined {
 }
 
 //
-// Print all env vars to console
+// Print all env vars to kconsole
 const envVarDebugObj = {} as any;
 const envVarDebugAr: { name: string; value: string }[] = [];
 

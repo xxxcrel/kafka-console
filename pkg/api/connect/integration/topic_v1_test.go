@@ -37,7 +37,7 @@ func (s *APISuite) TestListTopics_v1() {
 	ctx, cancel := context.WithTimeout(context.Background(), 9*time.Second)
 	t.Cleanup(cancel)
 
-	topicPrefix := "console-integration-test-list-topics-"
+	topicPrefix := "kconsole-integration-test-list-topics-"
 	topicsToCreate := 5
 
 	createdTopics := make(map[string]struct{})
@@ -214,7 +214,7 @@ func (s *APISuite) TestCreateTopic_v1() {
 		defer cancel()
 
 		// 1. Create Topic via Connect API call
-		topicName := "console-integration-test-valid-request-connect-go"
+		topicName := "kconsole-integration-test-valid-request-connect-go"
 		partitionCount := int32(2)
 		client := v1connect.NewTopicServiceClient(http.DefaultClient, s.httpAddress())
 		createReq := &v1.CreateTopicRequest{
@@ -280,7 +280,7 @@ func (s *APISuite) TestCreateTopic_v1() {
 		defer cancel()
 
 		// Try tp create Topic via Connect API call
-		topicName := "console-integration-test-bad-topic-name!"
+		topicName := "kconsole-integration-test-bad-topic-name!"
 		client := v1connect.NewTopicServiceClient(http.DefaultClient, s.httpAddress())
 		createReq := &v1.CreateTopicRequest{
 			Topic: &v1.CreateTopicRequest_Topic{
@@ -299,7 +299,7 @@ func (s *APISuite) TestCreateTopic_v1() {
 		defer cancel()
 
 		// 1. Start dry-run of create topic via Connect API call
-		topicName := "console-integration-test-dry-run-request-connect-go"
+		topicName := "kconsole-integration-test-dry-run-request-connect-go"
 		partitionCount := int32(2)
 		client := v1connect.NewTopicServiceClient(http.DefaultClient, s.httpAddress())
 		createReq := &v1.CreateTopicRequest{
@@ -347,7 +347,7 @@ func (s *APISuite) TestCreateTopic_v1() {
 			} `json:"replica_assignments"`
 		}
 
-		topicName := "console-integration-test-valid-request-rest"
+		topicName := "kconsole-integration-test-valid-request-rest"
 		partitionCount := 2
 		httpReq := createTopicRequest{
 			Name:              topicName,
@@ -502,7 +502,7 @@ func (s *APISuite) TestDeleteTopic_v1() {
 		defer cancel()
 
 		// 1. Create one Topic via Kafka API
-		topicName := "console-integration-test-delete-topic-connect-go"
+		topicName := "kconsole-integration-test-delete-topic-connect-go"
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
 
@@ -539,7 +539,7 @@ func (s *APISuite) TestDeleteTopic_v1() {
 		defer cancel()
 
 		// 1. Create one Topic via Kafka API
-		topicName := "console.integration_test-delete-topic-http1" // Dot, underscore, dash are allowed special chars
+		topicName := "kconsole.integration_test-delete-topic-http1" // Dot, underscore, dash are allowed special chars
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
 
@@ -660,7 +660,7 @@ func (s *APISuite) TestGetTopicConfiguration_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-get-topic-config-valid-connect-go"
+		topicName := "kconsole-integration-test-get-topic-config-valid-connect-go"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":  kmsg.StringPtr("delete"),
 			"retention.bytes": kmsg.StringPtr("1000"),
@@ -737,7 +737,7 @@ func (s *APISuite) TestGetTopicConfiguration_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-get-topic-config-valid-http"
+		topicName := "kconsole-integration-test-get-topic-config-valid-http"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":  kmsg.StringPtr("delete"),
 			"retention.bytes": kmsg.StringPtr("1000"),
@@ -807,7 +807,7 @@ func (s *APISuite) TestUpdateTopicConfiguration_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-valid-connect-go"
+		topicName := "kconsole-integration-test-update-topic-config-valid-connect-go"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -881,7 +881,7 @@ func (s *APISuite) TestUpdateTopicConfiguration_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-valid-http"
+		topicName := "kconsole-integration-test-update-topic-config-valid-http"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -983,7 +983,7 @@ func (s *APISuite) TestUpdateTopicConfiguration_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-invalid-connect-go"
+		topicName := "kconsole-integration-test-update-topic-config-invalid-connect-go"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -1065,7 +1065,7 @@ func (s *APISuite) TestUpdateTopicConfiguration_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-empty-payload-http"
+		topicName := "kconsole-integration-test-update-topic-config-empty-payload-http"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -1108,7 +1108,7 @@ func (s *APISuite) TestSetTopicConfiguration_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-valid-connect-go"
+		topicName := "kconsole-integration-test-update-topic-config-valid-connect-go"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -1179,7 +1179,7 @@ func (s *APISuite) TestSetTopicConfiguration_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-valid-http"
+		topicName := "kconsole-integration-test-update-topic-config-valid-http"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -1278,7 +1278,7 @@ func (s *APISuite) TestSetTopicConfiguration_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-invalid-connect-go"
+		topicName := "kconsole-integration-test-update-topic-config-invalid-connect-go"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -1381,7 +1381,7 @@ func (s *APISuite) TestAddTopicPartitions_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-add-topic-partitions-valid-connect-go"
+		topicName := "kconsole-integration-test-add-topic-partitions-valid-connect-go"
 
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
@@ -1422,7 +1422,7 @@ func (s *APISuite) TestAddTopicPartitions_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-add-topic-partitions-valid-http"
+		topicName := "kconsole-integration-test-add-topic-partitions-valid-http"
 
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
@@ -1475,7 +1475,7 @@ func (s *APISuite) TestAddTopicPartitions_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-invalid-add-topic-partitions-http"
+		topicName := "kconsole-integration-test-invalid-add-topic-partitions-http"
 
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
@@ -1530,7 +1530,7 @@ func (s *APISuite) TestAddTopicPartitions_v1() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		topicName := "console-integration-test-invalid-topic-name-partitions-http-123"
+		topicName := "kconsole-integration-test-invalid-topic-name-partitions-http-123"
 
 		// 1. Do not create topic
 
@@ -1573,7 +1573,7 @@ func (s *APISuite) TestAddTopicPartitions_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-validate-add-topic-partitions-valid-connect-go"
+		topicName := "kconsole-integration-test-validate-add-topic-partitions-valid-connect-go"
 
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
@@ -1615,7 +1615,7 @@ func (s *APISuite) TestAddTopicPartitions_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-validate-invalid-add-topic-partitions-valid-connect-go"
+		topicName := "kconsole-integration-test-validate-invalid-add-topic-partitions-valid-connect-go"
 
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
@@ -1657,7 +1657,7 @@ func (s *APISuite) TestAddTopicPartitions_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-validate-invalid-add-topic-partitions-http"
+		topicName := "kconsole-integration-test-validate-invalid-add-topic-partitions-http"
 
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
@@ -1712,7 +1712,7 @@ func (s *APISuite) TestSetTopicPartitions_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-set-topic-partitions-valid-connect-go"
+		topicName := "kconsole-integration-test-set-topic-partitions-valid-connect-go"
 
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
@@ -1753,7 +1753,7 @@ func (s *APISuite) TestSetTopicPartitions_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-set-topic-partitions-valid-http"
+		topicName := "kconsole-integration-test-set-topic-partitions-valid-http"
 
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
@@ -1806,7 +1806,7 @@ func (s *APISuite) TestSetTopicPartitions_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-invalid-set-topic-partitions-http"
+		topicName := "kconsole-integration-test-invalid-set-topic-partitions-http"
 
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
@@ -1861,7 +1861,7 @@ func (s *APISuite) TestSetTopicPartitions_v1() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		topicName := "console-integration-test-invalid-topic-name-partitions-http-321"
+		topicName := "kconsole-integration-test-invalid-topic-name-partitions-http-321"
 
 		// 1. Do not create topic
 
@@ -1908,9 +1908,9 @@ func (s *APISuite) TestAddPartitionsToTopics_v1() {
 		defer cancel()
 
 		// 1. Create new topics
-		topicName0 := "console-integration-test-add-topic-partitions-valid-0-connect-go"
-		topicName1 := "console-integration-test-add-topic-partitions-valid-1-connect-go"
-		topicName2 := "console-integration-test-add-topic-partitions-valid-2-connect-go"
+		topicName0 := "kconsole-integration-test-add-topic-partitions-valid-0-connect-go"
+		topicName1 := "kconsole-integration-test-add-topic-partitions-valid-1-connect-go"
+		topicName2 := "kconsole-integration-test-add-topic-partitions-valid-2-connect-go"
 
 		_, err := s.kafkaAdminClient.CreateTopics(ctx, 1, 1, nil, topicName0, topicName1, topicName2)
 		require.NoError(err)
@@ -1955,9 +1955,9 @@ func (s *APISuite) TestAddPartitionsToTopics_v1() {
 		defer cancel()
 
 		// 1. Create new topics
-		topicName0 := "console-integration-test-add-topic-partitions-valid-0-http"
-		topicName1 := "console-integration-test-add-topic-partitions-valid-1-http"
-		topicName2 := "console-integration-test-add-topic-partitions-valid-2-http"
+		topicName0 := "kconsole-integration-test-add-topic-partitions-valid-0-http"
+		topicName1 := "kconsole-integration-test-add-topic-partitions-valid-1-http"
+		topicName2 := "kconsole-integration-test-add-topic-partitions-valid-2-http"
 
 		_, err := s.kafkaAdminClient.CreateTopics(ctx, 1, 1, nil, topicName0, topicName1, topicName2)
 		require.NoError(err)
@@ -2033,9 +2033,9 @@ func (s *APISuite) TestAddPartitionsToTopics_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName0 := "console-integration-test-add-partitions-invalid-topic-0-http"
-		topicName1 := "console-integration-test-add-partitions-invalid-topic-1-http-123" // not created
-		topicName2 := "console-integration-test-add-partitions-invalid-topic-2-http"
+		topicName0 := "kconsole-integration-test-add-partitions-invalid-topic-0-http"
+		topicName1 := "kconsole-integration-test-add-partitions-invalid-topic-1-http-123" // not created
+		topicName2 := "kconsole-integration-test-add-partitions-invalid-topic-2-http"
 
 		_, err := s.kafkaAdminClient.CreateTopics(ctx, 1, 1, nil, topicName0, topicName2)
 		require.NoError(err)
@@ -2116,9 +2116,9 @@ func (s *APISuite) TestAddPartitionsToTopics_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName0 := "console-integration-test-add-partitions-invalid-topic-0-http"
-		topicName1 := "console-integration-test-add-partitions-invalid-topic-1-http-123" // not created
-		topicName2 := "console-integration-test-add-partitions-invalid-topic-2-http"
+		topicName0 := "kconsole-integration-test-add-partitions-invalid-topic-0-http"
+		topicName1 := "kconsole-integration-test-add-partitions-invalid-topic-1-http-123" // not created
+		topicName2 := "kconsole-integration-test-add-partitions-invalid-topic-2-http"
 
 		_, err := s.kafkaAdminClient.CreateTopics(ctx, 1, 1, nil, topicName0, topicName2)
 		require.NoError(err)
@@ -2203,9 +2203,9 @@ func (s *APISuite) TestSetPartitionsToTopics_v1() {
 		defer cancel()
 
 		// 1. Create new topics
-		topicName0 := "console-integration-test-set-topic-partitions-valid-0-connect-go"
-		topicName1 := "console-integration-test-set-topic-partitions-valid-1-connect-go"
-		topicName2 := "console-integration-test-set-topic-partitions-valid-2-connect-go"
+		topicName0 := "kconsole-integration-test-set-topic-partitions-valid-0-connect-go"
+		topicName1 := "kconsole-integration-test-set-topic-partitions-valid-1-connect-go"
+		topicName2 := "kconsole-integration-test-set-topic-partitions-valid-2-connect-go"
 
 		_, err := s.kafkaAdminClient.CreateTopics(ctx, 1, 1, nil, topicName0, topicName1, topicName2)
 		require.NoError(err)
@@ -2250,9 +2250,9 @@ func (s *APISuite) TestSetPartitionsToTopics_v1() {
 		defer cancel()
 
 		// 1. Create new topics
-		topicName0 := "console-integration-test-set-topic-partitions-valid-0-http"
-		topicName1 := "console-integration-test-set-topic-partitions-valid-1-http"
-		topicName2 := "console-integration-test-set-topic-partitions-valid-2-http"
+		topicName0 := "kconsole-integration-test-set-topic-partitions-valid-0-http"
+		topicName1 := "kconsole-integration-test-set-topic-partitions-valid-1-http"
+		topicName2 := "kconsole-integration-test-set-topic-partitions-valid-2-http"
 
 		_, err := s.kafkaAdminClient.CreateTopics(ctx, 1, 1, nil, topicName0, topicName1, topicName2)
 		require.NoError(err)
@@ -2328,9 +2328,9 @@ func (s *APISuite) TestSetPartitionsToTopics_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName0 := "console-integration-test-set-partitions-invalid-topic-0-http"
-		topicName1 := "console-integration-test-set-partitions-invalid-topic-1-http-123" // not created
-		topicName2 := "console-integration-test-set-partitions-invalid-topic-2-http"
+		topicName0 := "kconsole-integration-test-set-partitions-invalid-topic-0-http"
+		topicName1 := "kconsole-integration-test-set-partitions-invalid-topic-1-http-123" // not created
+		topicName2 := "kconsole-integration-test-set-partitions-invalid-topic-2-http"
 
 		_, err := s.kafkaAdminClient.CreateTopics(ctx, 1, 1, nil, topicName0, topicName2)
 		require.NoError(err)
@@ -2411,9 +2411,9 @@ func (s *APISuite) TestSetPartitionsToTopics_v1() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName0 := "console-integration-test-set-partitions-invalid-topic-0-http"
-		topicName1 := "console-integration-test-set-partitions-invalid-topic-1-http-123" // not created
-		topicName2 := "console-integration-test-set-partitions-invalid-topic-2-http"
+		topicName0 := "kconsole-integration-test-set-partitions-invalid-topic-0-http"
+		topicName1 := "kconsole-integration-test-set-partitions-invalid-topic-1-http-123" // not created
+		topicName2 := "kconsole-integration-test-set-partitions-invalid-topic-2-http"
 
 		_, err := s.kafkaAdminClient.CreateTopics(ctx, 1, 1, nil, topicName0, topicName2)
 		require.NoError(err)

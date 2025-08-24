@@ -60,7 +60,7 @@ jobs:
   push-to-registry:
     if: |
       github.event_name == 'push' &&
-      github.repository == 'redpanda-data/console'
+      github.repository == 'redpanda-data/kconsole'
     needs: validate  # Only run after validation passes
     runs-on: ubuntu-latest
     steps:
@@ -94,7 +94,7 @@ jobs:
   archive-label:
     if: |
       github.event_name == 'delete' &&
-      github.repository == 'redpanda-data/console'
+      github.repository == 'redpanda-data/kconsole'
     runs-on: ubuntu-latest
     steps:
       - uses: aws-actions/configure-aws-credentials@v4

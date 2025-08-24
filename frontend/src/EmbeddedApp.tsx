@@ -48,7 +48,7 @@ export interface EmbeddedProps extends SetConfigArguments {
   basePath?: string;
   /**
    * We want to get explicit confirmation from the Cloud UI (our parent) so that
-   * we don't prematurely render console if the higher-order-component Console.tsx might rerender.
+   * we don't prematurely render kconsole if the higher-order-component Console.tsx might rerender.
    * In the future we might decide to use memo() as well
    */
   isConsoleReadyToMount?: boolean;

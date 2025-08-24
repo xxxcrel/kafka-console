@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: redpanda/api/console/v1alpha1/secret.proto
+// source: redpanda/api/kconsole/v1alpha1/secret.proto
 
 package consolev1alpha1
 
@@ -20,12 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SecretService_GetSecret_FullMethodName        = "/redpanda.api.console.v1alpha1.SecretService/GetSecret"
-	SecretService_ListSecrets_FullMethodName      = "/redpanda.api.console.v1alpha1.SecretService/ListSecrets"
-	SecretService_CreateSecret_FullMethodName     = "/redpanda.api.console.v1alpha1.SecretService/CreateSecret"
-	SecretService_UpdateSecret_FullMethodName     = "/redpanda.api.console.v1alpha1.SecretService/UpdateSecret"
-	SecretService_DeleteSecret_FullMethodName     = "/redpanda.api.console.v1alpha1.SecretService/DeleteSecret"
-	SecretService_ListSecretScopes_FullMethodName = "/redpanda.api.console.v1alpha1.SecretService/ListSecretScopes"
+	SecretService_GetSecret_FullMethodName        = "/redpanda.api.kconsole.v1alpha1.SecretService/GetSecret"
+	SecretService_ListSecrets_FullMethodName      = "/redpanda.api.kconsole.v1alpha1.SecretService/ListSecrets"
+	SecretService_CreateSecret_FullMethodName     = "/redpanda.api.kconsole.v1alpha1.SecretService/CreateSecret"
+	SecretService_UpdateSecret_FullMethodName     = "/redpanda.api.kconsole.v1alpha1.SecretService/UpdateSecret"
+	SecretService_DeleteSecret_FullMethodName     = "/redpanda.api.kconsole.v1alpha1.SecretService/DeleteSecret"
+	SecretService_ListSecretScopes_FullMethodName = "/redpanda.api.kconsole.v1alpha1.SecretService/ListSecretScopes"
 )
 
 // SecretServiceClient is the client API for SecretService service.
@@ -279,7 +279,7 @@ func _SecretService_ListSecretScopes_Handler(srv interface{}, ctx context.Contex
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SecretService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "redpanda.api.console.v1alpha1.SecretService",
+	ServiceName: "redpanda.api.kconsole.v1alpha1.SecretService",
 	HandlerType: (*SecretServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -308,5 +308,5 @@ var SecretService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "redpanda/api/console/v1alpha1/secret.proto",
+	Metadata: "redpanda/api/kconsole/v1alpha1/secret.proto",
 }

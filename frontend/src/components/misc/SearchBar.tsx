@@ -114,9 +114,9 @@ class SearchBar<TItem> extends Component<{
   computeFilterSummary(): { identity: string; node: React.ReactNode } | null {
     const source = this.props.dataSource();
     if (!source || source.length === 0) {
-      // console.log('filter summary:');
-      // console.dir(source);
-      // console.dir(this.filteredSource.filterText);
+      // kconsole.log('filter summary:');
+      // kconsole.dir(source);
+      // kconsole.dir(this.filteredSource.filterText);
       return null;
     }
 

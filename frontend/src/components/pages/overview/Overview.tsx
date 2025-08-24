@@ -71,7 +71,7 @@ class Overview extends PageComponent {
   }
 
   refreshData(force: boolean) {
-    api.refreshCluster(force);
+    api.refreshCluster();
     void api.refreshClusterOverview();
 
     api.refreshBrokers(force);

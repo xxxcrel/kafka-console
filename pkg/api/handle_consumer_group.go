@@ -18,12 +18,12 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 // GetConsumerGroupsResponse represents the data which is returned for listing topics
 type GetConsumerGroupsResponse struct {
-	ConsumerGroups []console.ConsumerGroupOverview `json:"consumerGroups"`
+	ConsumerGroups []kconsole.ConsumerGroupOverview `json:"consumerGroups"`
 }
 
 func (api *API) handleGetConsumerGroups() http.HandlerFunc {
@@ -43,7 +43,7 @@ func (api *API) handleGetConsumerGroups() http.HandlerFunc {
 
 func (api *API) handleGetConsumerGroup() http.HandlerFunc {
 	type response struct {
-		ConsumerGroup console.ConsumerGroupOverview `json:"consumerGroup"`
+		ConsumerGroup kconsole.ConsumerGroupOverview `json:"consumerGroup"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		groupID := rest.GetURLParam(r, "groupId")
@@ -98,7 +98,7 @@ func (p *patchConsumerGroupRequest) OK() error {
 
 func (api *API) handlePatchConsumerGroup() http.HandlerFunc {
 	type response struct {
-		*console.EditConsumerGroupOffsetsResponse
+		*kconsole.EditConsumerGroupOffsetsResponse
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 1. Parse and validate request
@@ -164,7 +164,7 @@ func (p *deleteConsumerGroupRequest) OK() error {
 
 func (api *API) handleDeleteConsumerGroupOffsets() http.HandlerFunc {
 	type response struct {
-		Topics []console.DeleteConsumerGroupOffsetsResponseTopic `json:"topics"`
+		Topics []kconsole.DeleteConsumerGroupOffsetsResponseTopic `json:"topics"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 1. Parse and validate request

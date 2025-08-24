@@ -54,8 +54,8 @@ func (s *APISuite) TestListUsers_v1alpha2() {
 			assert.NoError(err)
 		}
 
-		username1 := "console-integration-test-list-users-1"
-		username2 := "console-integration-test-list-users-2"
+		username1 := "kconsole-integration-test-list-users-1"
+		username2 := "kconsole-integration-test-list-users-2"
 		createUser(username1)
 		createUser(username2)
 		defer deleteUser(username1)
@@ -105,8 +105,8 @@ func (s *APISuite) TestListUsers_v1alpha2() {
 			assert.NoError(err)
 		}
 
-		username1 := "console-integration-test-list-users-1"
-		username2 := "console-integration-test-list-users-2"
+		username1 := "kconsole-integration-test-list-users-1"
+		username2 := "kconsole-integration-test-list-users-2"
 		createUser(username1)
 		createUser(username2)
 		defer deleteUser(username1)
@@ -170,11 +170,11 @@ func (s *APISuite) TestListUsers_v1alpha2() {
 		}
 
 		users := []string{
-			"console-integration-test-list-users-1",
-			"console-integration-test-list-users-2",
-			"console-integration-test-list-users-3",
-			"console-integration-test-list-users-4",
-			"console-integration-test-different-name-1",
+			"kconsole-integration-test-list-users-1",
+			"kconsole-integration-test-list-users-2",
+			"kconsole-integration-test-list-users-3",
+			"kconsole-integration-test-list-users-4",
+			"kconsole-integration-test-different-name-1",
 		}
 		for _, user := range users {
 			createUser(user)
@@ -196,7 +196,7 @@ func (s *APISuite) TestListUsers_v1alpha2() {
 		require.Equal(1, len(res.Msg.Users))
 
 		foundUser := res.Msg.Users[0]
-		assert.Equal("console-integration-test-different-name-1", foundUser.Name)
+		assert.Equal("kconsole-integration-test-different-name-1", foundUser.Name)
 
 		// 3. List users with name contains that should yield exactly 4 users
 		res, err = client.ListUsers(ctx, connect.NewRequest(&v1alpha2.ListUsersRequest{
@@ -210,11 +210,11 @@ func (s *APISuite) TestListUsers_v1alpha2() {
 		// 3. List users with exact name match that should yield one user
 		res, err = client.ListUsers(ctx, connect.NewRequest(&v1alpha2.ListUsersRequest{
 			Filter: &v1alpha2.ListUsersRequest_Filter{
-				Name: "console-integration-test-list-users-3",
+				Name: "kconsole-integration-test-list-users-3",
 			},
 		}))
 		require.NoError(err)
 		require.Equal(1, len(res.Msg.Users))
-		require.Equal("console-integration-test-list-users-3", res.Msg.Users[0].Name)
+		require.Equal("kconsole-integration-test-list-users-3", res.Msg.Users[0].Name)
 	})
 }

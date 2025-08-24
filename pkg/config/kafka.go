@@ -56,7 +56,7 @@ func (c *Kafka) Validate() error {
 
 // SetDefaults for Kafka config
 func (c *Kafka) SetDefaults() {
-	c.ClientID = "redpanda-console"
+	c.ClientID = "redpanda-kconsole"
 
 	c.SASL.SetDefaults()
 	c.Startup.SetDefaults()

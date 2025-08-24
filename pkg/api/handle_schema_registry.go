@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 func (api *API) handleSchemaRegistryNotConfigured() http.HandlerFunc {
@@ -273,12 +273,12 @@ func (api *API) handleGetSchemaSubjectDetails() http.HandlerFunc {
 		// 2. Parse and validate version input
 		version := rest.GetURLParam(r, "version")
 		switch version {
-		case console.SchemaVersionsAll, console.SchemaVersionsLatest:
+		case kconsole.SchemaVersionsAll, kconsole.SchemaVersionsLatest:
 		default:
 			// Must be number or it's invalid input
 			_, err := strconv.Atoi(version)
 			if err != nil {
-				descriptiveErr := fmt.Errorf("version %q is not valid. Must be %q, %q or a positive integer", version, console.SchemaVersionsLatest, console.SchemaVersionsAll)
+				descriptiveErr := fmt.Errorf("version %q is not valid. Must be %q, %q or a positive integer", version, kconsole.SchemaVersionsLatest, kconsole.SchemaVersionsAll)
 				rest.SendRESTError(w, r, api.Logger, &rest.Error{
 					Err:      descriptiveErr,
 					Status:   http.StatusBadRequest,
@@ -411,14 +411,14 @@ func (api *API) handleDeleteSubject() http.HandlerFunc {
 }
 
 func parseVersionStr(versionStr string) (int, *rest.Error) {
-	if versionStr == console.SchemaVersionsLatest {
+	if versionStr == kconsole.SchemaVersionsLatest {
 		return -1, nil
 	}
 
 	// Must be number or it's invalid input
 	version, err := strconv.Atoi(versionStr)
 	if err != nil {
-		descriptiveErr := fmt.Errorf("version %q is not valid. Must be %q or a positive integer", version, console.SchemaVersionsLatest)
+		descriptiveErr := fmt.Errorf("version %q is not valid. Must be %q or a positive integer", version, kconsole.SchemaVersionsLatest)
 		return 0, &rest.Error{
 			Err:      descriptiveErr,
 			Status:   http.StatusBadRequest,

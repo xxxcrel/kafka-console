@@ -35,7 +35,7 @@ type Config struct {
 	MetricsNamespace       string `yaml:"metricsNamespace"`
 	ServeFrontend          bool   `yaml:"serveFrontend"` // useful for local development where we want the frontend from 'npm run start'
 
-	Console        Console      `yaml:"console"`
+	Console        Console      `yaml:"kconsole"`
 	Redpanda       Redpanda     `yaml:"redpanda"`
 	KafkaConnect   KafkaConnect `yaml:"kafkaConnect"`
 	REST           Server       `yaml:"server"`
@@ -101,7 +101,7 @@ func (c *Config) Validate() error {
 // SetDefaults for all root and child config structs
 func (c *Config) SetDefaults() {
 	c.ServeFrontend = true
-	c.MetricsNamespace = "console"
+	c.MetricsNamespace = "kconsole"
 	c.StrictConfigValidation = true
 
 	c.Logger.SetDefaults()
@@ -181,9 +181,9 @@ func LoadConfig(logger *zap.Logger) (Config, error) {
 	// Lowercase the keys that are stored internally within Koanf and reload them. This is a workaround because
 	// internally keys are stored case sensitive. This causes the problem that environment variables can't match
 	// the exact key and therefore will not be unmarshalled as expected anymore. Example:
-	// YAML path: console.topicDocumentation.git.basicAuth.password
-	// ENV path: CONSOLE_TOPICDOCUMENTATION_GIT_BASICAUTH_PASSWORD => console.topicdocumentation.git.basicauth.password
-	// Internal key: console.topicDocumentation.git.basicAuth.password
+	// YAML path: kconsole.topicDocumentation.git.basicAuth.password
+	// ENV path: CONSOLE_TOPICDOCUMENTATION_GIT_BASICAUTH_PASSWORD => kconsole.topicdocumentation.git.basicauth.password
+	// Internal key: kconsole.topicDocumentation.git.basicAuth.password
 	// See issue: https://github.com/cloudhut/kowl/issues/305
 	keys := make(map[string]any, len(k.Keys()))
 	for _, key := range k.Keys() {

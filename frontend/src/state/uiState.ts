@@ -69,7 +69,7 @@ class UIState {
     this._currentTopicName = topicName;
     if (topicName) {
       if (!uiSettings.perTopicSettings.any((s) => s.topicName === topicName)) {
-        // console.log('creating details for topic: ' + topicName);
+        // kconsole.log('creating details for topic: ' + topicName);
         const topicSettings = new TopicSettings();
         topicSettings.topicName = topicName;
         uiSettings.perTopicSettings.push(topicSettings);

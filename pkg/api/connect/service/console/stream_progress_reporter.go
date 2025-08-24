@@ -18,14 +18,14 @@ import (
 	"connectrpc.com/connect"
 	"go.uber.org/zap"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 	v1alpha "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1"
 )
 
 // streamProgressReporter is in charge of sending status updates and messages regularly to the frontend.
 type streamProgressReporter struct {
 	logger  *zap.Logger
-	request *console.ListMessageRequest
+	request *kconsole.ListMessageRequest
 	stream  *connect.ServerStream[v1alpha.ListMessagesResponse]
 
 	messagesConsumed atomic.Int64
@@ -114,7 +114,7 @@ func (p *streamProgressReporter) OnMessageConsumed(size int64) {
 	p.bytesConsumed.Add(size)
 }
 
-func (p *streamProgressReporter) OnMessage(message *console.TopicMessage) {
+func (p *streamProgressReporter) OnMessage(message *kconsole.TopicMessage) {
 	if message == nil {
 		return
 	}

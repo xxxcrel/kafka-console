@@ -395,7 +395,7 @@ autorun(
   () => {
     const json = JSON.stringify(uiSettings);
     localStorage.setItem(settingsName, json);
-    //console.log('settings: ' + json);
+    //kconsole.log('settings: ' + json);
   },
   { delay: 2000 },
 );

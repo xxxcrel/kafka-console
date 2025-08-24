@@ -26,7 +26,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kmsg"
 	"go.uber.org/zap"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 	"github.com/xxxcrel/kafka-console/pkg/testutil"
 )
 
@@ -63,7 +63,7 @@ func (s *APIIntegrationTestSuite) TestHandleCreateTopic() {
 			s.kafkaAdminClient.DeleteTopics(ctx, topicName)
 		}()
 
-		createTopicRes := console.CreateTopicResponse{}
+		createTopicRes := kconsole.CreateTopicResponse{}
 
 		err := json.Unmarshal(body, &createTopicRes)
 		require.NoError(err)
@@ -113,7 +113,7 @@ func (s *APIIntegrationTestSuite) TestHandleCreateTopic() {
 			s.kafkaAdminClient.DeleteTopics(ctx, topicName)
 		}()
 
-		createTopicRes := console.CreateTopicResponse{}
+		createTopicRes := kconsole.CreateTopicResponse{}
 
 		err := json.Unmarshal(body, &createTopicRes)
 		require.NoError(err)
@@ -235,7 +235,7 @@ func (s *APIIntegrationTestSuite) TestHandleCreateTopic() {
 
 		newConfig.MetricsNamespace = "create_topic_fail"
 
-		// new console service
+		// new kconsole service
 		newApi := New(newConfig)
 
 		// save old

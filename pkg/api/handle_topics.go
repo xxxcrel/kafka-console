@@ -20,12 +20,12 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 func (api *API) handleGetTopics() http.HandlerFunc {
 	type response struct {
-		Topics []*console.TopicSummary `json:"topics"`
+		Topics []*kconsole.TopicSummary `json:"topics"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -51,8 +51,8 @@ func (api *API) handleGetTopics() http.HandlerFunc {
 // handleGetPartitions returns an overview of all partitions and their watermarks in the given topic
 func (api *API) handleGetPartitions() http.HandlerFunc {
 	type response struct {
-		TopicName  string                          `json:"topicName"`
-		Partitions []console.TopicPartitionDetails `json:"partitions"`
+		TopicName  string                           `json:"topicName"`
+		Partitions []kconsole.TopicPartitionDetails `json:"partitions"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +87,7 @@ func (api *API) handleGetPartitions() http.HandlerFunc {
 // handleGetTopicConfig returns all set configuration options for a specific topic
 func (api *API) handleGetTopicConfig() http.HandlerFunc {
 	type response struct {
-		TopicDescription *console.TopicConfig `json:"topicDescription"`
+		TopicDescription *kconsole.TopicConfig `json:"topicDescription"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -277,7 +277,7 @@ func (api *API) handleEditTopicConfig() http.HandlerFunc {
 // handleGetTopicsConfigs returns all set configuration options for one or more topics
 func (api *API) handleGetTopicsConfigs() http.HandlerFunc {
 	type response struct {
-		TopicDescriptions []*console.TopicConfig `json:"topicDescriptions"`
+		TopicDescriptions []*kconsole.TopicConfig `json:"topicDescriptions"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -324,7 +324,7 @@ func (api *API) handleGetTopicsConfigs() http.HandlerFunc {
 			rest.SendRESTError(w, r, logger, restErr)
 			return
 		}
-		result := make([]*console.TopicConfig, 0, len(descriptions))
+		result := make([]*kconsole.TopicConfig, 0, len(descriptions))
 		for _, description := range descriptions {
 			result = append(result, description)
 		}
@@ -339,8 +339,8 @@ func (api *API) handleGetTopicsConfigs() http.HandlerFunc {
 // handleGetTopicConsumers returns all consumers along with their summed lag which consume the given topic
 func (api *API) handleGetTopicConsumers() http.HandlerFunc {
 	type response struct {
-		TopicName string                        `json:"topicName"`
-		Consumers []*console.TopicConsumerGroup `json:"topicConsumers"`
+		TopicName string                         `json:"topicName"`
+		Consumers []*kconsole.TopicConsumerGroup `json:"topicConsumers"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -369,7 +369,7 @@ func (api *API) handleGetTopicConsumers() http.HandlerFunc {
 
 func (api *API) handleGetTopicsOffsets() http.HandlerFunc {
 	type response struct {
-		TopicOffsets []console.TopicOffset `json:"topicOffsets"`
+		TopicOffsets []kconsole.TopicOffset `json:"topicOffsets"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {

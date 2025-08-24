@@ -56,14 +56,14 @@ const authenticationApi = observable({
   methodsErrorResponse: null as ConnectError | null,
 
   async refreshAuthenticationMethods(): Promise<void> {
-    const client = appConfig.authenticationClient;
-    if (!client) throw new Error('security client is not initialized');
+    // const client = appConfig.authenticationClient;
+    // if (!client) throw new Error('security client is not initialized');
 
-    const { methods } = await client.listAuthenticationMethods({}).catch((e) => {
-      this.methodsErrorResponse = e;
-      return { methods: [] };
-    });
-    this.methods = methods;
+    // const { methods } = await client.listAuthenticationMethods({}).catch((e) => {
+    //   this.methodsErrorResponse = e;
+    //   return { methods: [] };
+    // });
+    this.methods = [AuthenticationMethod.NONE];
   },
 
   async loginWithUsername({

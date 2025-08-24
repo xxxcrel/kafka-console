@@ -25,7 +25,7 @@ import (
 
 // handleFrontendIndex takes care of delivering the index.html file from the SPA. It has some
 // special handling because we have a feature for URL rewrite (e.g. reverse proxy that wants to
-// serve RP console under a different URL).
+// serve RP kconsole under a different URL).
 //
 // This handler is called for all frontend resources that would return 404, so that an
 // index.html file is served if an unknown URL is entered in the browser. All API requests

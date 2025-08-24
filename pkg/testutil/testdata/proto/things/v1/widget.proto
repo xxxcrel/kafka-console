@@ -4,7 +4,7 @@ package testutil.things.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/xxxcrel/kafka-console/pkg/testutil/testdata/proto/gen/things/v1";
+option go_package = "github.com/xxxcrel/kafka-kconsole/pkg/testutil/testdata/proto/gen/things/v1";
 
 message Widget {
   string id = 1;

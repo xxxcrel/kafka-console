@@ -15,14 +15,14 @@ import (
 	"github.com/cloudhut/common/rest"
 	"go.uber.org/zap"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 // handleGetTopicDocumentation returns the respective topic documentation from the git repository
 func (api *API) handleGetTopicDocumentation() http.HandlerFunc {
 	type response struct {
-		TopicName     string                      `json:"topicName"`
-		Documentation *console.TopicDocumentation `json:"documentation"`
+		TopicName     string                       `json:"topicName"`
+		Documentation *kconsole.TopicDocumentation `json:"documentation"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -109,7 +109,7 @@ var (
 // Deprecated: do not use.
 type KafkaConnectServiceClient interface {
 	// ListConnectClusters implements the list clusters method, list connect
-	// clusters available in the console configuration
+	// clusters available in the kconsole configuration
 	//
 	// Deprecated: do not use.
 	ListConnectClusters(context.Context, *connect.Request[v1alpha1.ListConnectClustersRequest]) (*connect.Response[v1alpha1.ListConnectClustersResponse], error)
@@ -422,7 +422,7 @@ func (c *kafkaConnectServiceClient) ResetConnectorTopics(ctx context.Context, re
 // Deprecated: do not use.
 type KafkaConnectServiceHandler interface {
 	// ListConnectClusters implements the list clusters method, list connect
-	// clusters available in the console configuration
+	// clusters available in the kconsole configuration
 	//
 	// Deprecated: do not use.
 	ListConnectClusters(context.Context, *connect.Request[v1alpha1.ListConnectClustersRequest]) (*connect.Response[v1alpha1.ListConnectClustersResponse], error)

@@ -31,7 +31,7 @@ kafka:
   schemaRegistry:
     enabled: true
     urls: ["https://my-schema-registry.com"]
-    username: console
+    username: kconsole
     password: redacted # Or set via flags/env variable
   protobuf:
     enabled: true

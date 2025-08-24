@@ -17,7 +17,7 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/twmb/franz-go/pkg/kmsg"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 type getAclsOverviewRequest struct {
@@ -59,7 +59,7 @@ func (g *getAclsOverviewRequest) ToKafkaRequest() kmsg.DescribeACLsRequest {
 func (api *API) handleGetACLsOverview() http.HandlerFunc {
 	// response represents the data which is returned for listing ACLs
 	type response struct {
-		*console.ACLOverview
+		*kconsole.ACLOverview
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {

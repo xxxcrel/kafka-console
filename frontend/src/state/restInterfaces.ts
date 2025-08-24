@@ -463,22 +463,22 @@ export interface GetConsumerGroupResponse {
   consumerGroup: GroupDescription;
 }
 
-export interface ClusterInfoResponse {
-  clusterInfo: ClusterInfo;
-}
-export interface ClusterInfo {
-  controllerId: number;
-  brokers: Broker[];
-  kafkaVersion: string;
-}
-export interface Broker {
-  brokerId: number;
-  logDirSize: number; // bytes of the whole directory
-  address: string;
-  rack: string | null;
-
-  config: BrokerConfig;
-}
+// export interface ClusterInfoResponse {
+//   clusterInfo: ClusterInfo;
+// }
+// export interface ClusterInfo {
+//   controllerId: number;
+//   brokers: Broker[];
+//   kafkaVersion: string;
+// }
+// export interface Broker {
+//   brokerId: number;
+//   logDirSize: number; // bytes of the whole directory
+//   address: string;
+//   rack: string | null;
+//
+//   config: BrokerConfig;
+// }
 export interface BrokerConfig {
   configs: ConfigEntry[] | undefined;
   error: string | undefined;
@@ -1400,7 +1400,7 @@ export interface OverviewStatus {
 }
 
 // GET /api/brokers
-// from pkg/console/brokers.go
+// from pkg/kconsole/brokers.go
 export interface BrokerWithConfigAndStorage {
   brokerId: number;
   isController: boolean;

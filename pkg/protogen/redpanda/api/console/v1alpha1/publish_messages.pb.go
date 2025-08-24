@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/publish_messages.proto
+// source: redpanda/api/kconsole/v1alpha1/publish_messages.proto
 
 package consolev1alpha1
 
@@ -27,7 +27,7 @@ type PublishMessageRequest struct {
 	state           protoimpl.MessageState        `protogen:"open.v1"`
 	Topic           string                        `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`                                                                 // The topics to publish to.
 	PartitionId     int32                         `protobuf:"varint,2,opt,name=partition_id,json=partitionId,proto3" json:"partition_id,omitempty"`                                 // -1 for automatic partition assignment.
-	Compression     CompressionType               `protobuf:"varint,3,opt,name=compression,proto3,enum=redpanda.api.console.v1alpha1.CompressionType" json:"compression,omitempty"` // The compression to be used.
+	Compression     CompressionType               `protobuf:"varint,3,opt,name=compression,proto3,enum=redpanda.api.kconsole.v1alpha1.CompressionType" json:"compression,omitempty"` // The compression to be used.
 	UseTransactions bool                          `protobuf:"varint,4,opt,name=use_transactions,json=useTransactions,proto3" json:"use_transactions,omitempty"`                     // Use transactions.
 	Headers         []*KafkaRecordHeader          `protobuf:"bytes,5,rep,name=headers,proto3" json:"headers,omitempty"`                                                             // Kafka record headers.
 	Key             *PublishMessagePayloadOptions `protobuf:"bytes,6,opt,name=key,proto3" json:"key,omitempty"`
@@ -117,7 +117,7 @@ func (x *PublishMessageRequest) GetValue() *PublishMessagePayloadOptions {
 
 type PublishMessagePayloadOptions struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Encoding      PayloadEncoding        `protobuf:"varint,1,opt,name=encoding,proto3,enum=redpanda.api.console.v1alpha1.PayloadEncoding" json:"encoding,omitempty"` // Payload encoding to use.
+	Encoding      PayloadEncoding        `protobuf:"varint,1,opt,name=encoding,proto3,enum=redpanda.api.kconsole.v1alpha1.PayloadEncoding" json:"encoding,omitempty"` // Payload encoding to use.
 	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`                                                             // Data.
 	SchemaId      *int32                 `protobuf:"varint,9,opt,name=schema_id,json=schemaId,proto3,oneof" json:"schema_id,omitempty"`                              // Optional schema ID.
 	Index         *int32                 `protobuf:"varint,10,opt,name=index,proto3,oneof" json:"index,omitempty"`                                                   // Optional index. Useful for Protobuf messages.
@@ -344,19 +344,19 @@ func file_redpanda_api_console_v1alpha1_publish_messages_proto_rawDescGZIP() []b
 
 var file_redpanda_api_console_v1alpha1_publish_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_redpanda_api_console_v1alpha1_publish_messages_proto_goTypes = []any{
-	(*PublishMessageRequest)(nil),        // 0: redpanda.api.console.v1alpha1.PublishMessageRequest
-	(*PublishMessagePayloadOptions)(nil), // 1: redpanda.api.console.v1alpha1.PublishMessagePayloadOptions
-	(*PublishMessageResponse)(nil),       // 2: redpanda.api.console.v1alpha1.PublishMessageResponse
-	(CompressionType)(0),                 // 3: redpanda.api.console.v1alpha1.CompressionType
-	(*KafkaRecordHeader)(nil),            // 4: redpanda.api.console.v1alpha1.KafkaRecordHeader
-	(PayloadEncoding)(0),                 // 5: redpanda.api.console.v1alpha1.PayloadEncoding
+	(*PublishMessageRequest)(nil),        // 0: redpanda.api.kconsole.v1alpha1.PublishMessageRequest
+	(*PublishMessagePayloadOptions)(nil), // 1: redpanda.api.kconsole.v1alpha1.PublishMessagePayloadOptions
+	(*PublishMessageResponse)(nil),       // 2: redpanda.api.kconsole.v1alpha1.PublishMessageResponse
+	(CompressionType)(0),                 // 3: redpanda.api.kconsole.v1alpha1.CompressionType
+	(*KafkaRecordHeader)(nil),            // 4: redpanda.api.kconsole.v1alpha1.KafkaRecordHeader
+	(PayloadEncoding)(0),                 // 5: redpanda.api.kconsole.v1alpha1.PayloadEncoding
 }
 var file_redpanda_api_console_v1alpha1_publish_messages_proto_depIdxs = []int32{
-	3, // 0: redpanda.api.console.v1alpha1.PublishMessageRequest.compression:type_name -> redpanda.api.console.v1alpha1.CompressionType
-	4, // 1: redpanda.api.console.v1alpha1.PublishMessageRequest.headers:type_name -> redpanda.api.console.v1alpha1.KafkaRecordHeader
-	1, // 2: redpanda.api.console.v1alpha1.PublishMessageRequest.key:type_name -> redpanda.api.console.v1alpha1.PublishMessagePayloadOptions
-	1, // 3: redpanda.api.console.v1alpha1.PublishMessageRequest.value:type_name -> redpanda.api.console.v1alpha1.PublishMessagePayloadOptions
-	5, // 4: redpanda.api.console.v1alpha1.PublishMessagePayloadOptions.encoding:type_name -> redpanda.api.console.v1alpha1.PayloadEncoding
+	3, // 0: redpanda.api.kconsole.v1alpha1.PublishMessageRequest.compression:type_name -> redpanda.api.kconsole.v1alpha1.CompressionType
+	4, // 1: redpanda.api.kconsole.v1alpha1.PublishMessageRequest.headers:type_name -> redpanda.api.kconsole.v1alpha1.KafkaRecordHeader
+	1, // 2: redpanda.api.kconsole.v1alpha1.PublishMessageRequest.key:type_name -> redpanda.api.kconsole.v1alpha1.PublishMessagePayloadOptions
+	1, // 3: redpanda.api.kconsole.v1alpha1.PublishMessageRequest.value:type_name -> redpanda.api.kconsole.v1alpha1.PublishMessagePayloadOptions
+	5, // 4: redpanda.api.kconsole.v1alpha1.PublishMessagePayloadOptions.encoding:type_name -> redpanda.api.kconsole.v1alpha1.PayloadEncoding
 	5, // [5:5] is the sub-list for method output_type
 	5, // [5:5] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name

@@ -260,7 +260,7 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
     // unpack query parameters (if any)
     const searchParams = uiState.topicSettings.searchParams;
     const query = new URLSearchParams(window.location.search);
-    // console.debug("parsing query: " + toJson(query));
+    // kconsole.debug("parsing query: " + toJson(query));
     if (query.has('p')) searchParams.partitionID = Number(query.get('p'));
     if (query.has('s')) searchParams.maxResults = Number(query.get('s'));
     if (query.has('o')) {
@@ -1108,7 +1108,7 @@ export class TopicMessageView extends Component<TopicMessageViewProps> {
     } as MessageSearchRequest;
 
     // if (typeof searchParams.startTimestamp != 'number' || searchParams.startTimestamp == 0)
-    //     console.error("startTimestamp is not valid", { request: request, searchParams: searchParams });
+    //     kconsole.error("startTimestamp is not valid", { request: request, searchParams: searchParams });
 
     return transaction(async () => {
       try {
@@ -1340,12 +1340,12 @@ class StartOffsetDateTimePicker extends Component {
   constructor(p: any) {
     super(p);
     const searchParams = uiState.topicSettings.searchParams;
-    // console.log('time picker 1', { setByUser: searchParams.startTimestampWasSetByUser, startTimestamp: searchParams.startTimestamp, format: new Date(searchParams.startTimestamp).toLocaleDateString() })
+    // kconsole.log('time picker 1', { setByUser: searchParams.startTimestampWasSetByUser, startTimestamp: searchParams.startTimestamp, format: new Date(searchParams.startTimestamp).toLocaleDateString() })
     if (!searchParams.startTimestampWasSetByUser) {
       // so far, the user did not change the startTimestamp, so we set it to 'now'
       searchParams.startTimestamp = new Date().getTime();
     }
-    // console.log('time picker 2', { setByUser: searchParams.startTimestampWasSetByUser, startTimestamp: searchParams.startTimestamp, format: new Date(searchParams.startTimestamp).toLocaleDateString() })
+    // kconsole.log('time picker 2', { setByUser: searchParams.startTimestampWasSetByUser, startTimestamp: searchParams.startTimestamp, format: new Date(searchParams.startTimestamp).toLocaleDateString() })
   }
 
   render() {

@@ -88,7 +88,7 @@ describe('licenseUtils', () => {
       expect(prettyLicenseType(mockLicenseEnterprise)).toBe('Enterprise');
     });
 
-    test('should return detailed version with source when showSource is true, console license', () => {
+    test('should return detailed version with source when showSource is true, kconsole license', () => {
       expect(prettyLicenseType(mockLicenseEnterprise, true)).toBe('Redpanda Enterprise');
     });
   });

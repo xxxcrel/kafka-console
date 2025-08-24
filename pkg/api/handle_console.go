@@ -16,7 +16,7 @@ import (
 	"github.com/cloudhut/common/rest"
 	"golang.org/x/exp/maps"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 const (
@@ -32,8 +32,8 @@ const (
 
 func (api *API) handleGetEndpoints() http.HandlerFunc {
 	type response struct {
-		Distribution          string                        `json:"distribution"`
-		EndpointCompatibility console.EndpointCompatibility `json:"endpointCompatibility"`
+		Distribution          string                         `json:"distribution"`
+		EndpointCompatibility kconsole.EndpointCompatibility `json:"endpointCompatibility"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -71,12 +71,12 @@ func (api *API) handleGetEndpoints() http.HandlerFunc {
 
 // mergeCompatibilityEndpoints merges the reported compatible/enabled endpoints from b into a. We will overwrite
 // existing endpoints if a 2-tuple of <endpoint, method> already exists in the given slice.
-func mergeCompatibilityEndpoints(a, b []console.EndpointCompatibilityEndpoint) []console.EndpointCompatibilityEndpoint {
-	keyFromEndpoint := func(e console.EndpointCompatibilityEndpoint) string {
+func mergeCompatibilityEndpoints(a, b []kconsole.EndpointCompatibilityEndpoint) []kconsole.EndpointCompatibilityEndpoint {
+	keyFromEndpoint := func(e kconsole.EndpointCompatibilityEndpoint) string {
 		return fmt.Sprintf("%v-%v", e.Method, e.Endpoint)
 	}
 
-	distinctEndpoints := make(map[string]console.EndpointCompatibilityEndpoint)
+	distinctEndpoints := make(map[string]kconsole.EndpointCompatibilityEndpoint)
 	for _, entry := range a {
 		key := keyFromEndpoint(entry)
 		distinctEndpoints[key] = entry

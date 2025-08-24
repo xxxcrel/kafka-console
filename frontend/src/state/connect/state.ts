@@ -65,7 +65,7 @@ export class SecretCreationError extends CustomError {}
  * if (p.definition.type == DataType.Boolean) {
  *     // Boolean
  *     // convert 'false' | 'true' to actual boolean values
- *     console.log(name, initialValue);
+ *     kconsole.log(name, initialValue);
  *     if (typeof defaultValue == 'string')
  *         if (defaultValue.toLowerCase() == 'false') defaultValue = p.definition.default_value = false as any;
  *         else if (defaultValue.toLowerCase() == 'true') defaultValue = p.definition.default_value = true as any;

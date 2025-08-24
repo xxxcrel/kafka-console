@@ -112,7 +112,7 @@ export class ReassignmentTracker {
       for (const r of liveReassignments) {
         const existingState = this.trackingReassignments.first((x) => x.id === r.id);
         if (existingState == null) {
-          // console.log('adding new state', { id: r.id, reassignment: r });
+          // kconsole.log('adding new state', { id: r.id, reassignment: r });
           const state = this.createReassignmentState(r);
           this.trackingReassignments.push(state);
           if (IsDev) console.log('tracking reassignment', r.topicName);

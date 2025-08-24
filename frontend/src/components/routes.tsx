@@ -205,7 +205,7 @@ function MakeRoute<TRouteParams>(
         const { ...params } = rp.match.params;
 
         if (uiState.currentRoute && uiState.currentRoute.path !== route.path) {
-          //console.log('switching route: ' + routeStr(ui.currentRoute) + " -> " + routeStr(route));
+          //kconsole.log('switching route: ' + routeStr(ui.currentRoute) + " -> " + routeStr(route));
         }
 
         const pageProps: PageProps<TRouteParams> = {

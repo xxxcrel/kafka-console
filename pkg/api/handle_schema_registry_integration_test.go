@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/sr"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 func (s *APIIntegrationTestSuite) TestValidateSchema() {
@@ -45,7 +45,7 @@ func (s *APIIntegrationTestSuite) TestValidateSchema() {
 		res, body := s.apiRequest(ctx, http.MethodPost, "/api/schema-registry/subjects/new-schema/versions/latest/validate", req)
 		require.Equal(200, res.StatusCode)
 
-		validationResponse := console.SchemaRegistrySchemaValidation{}
+		validationResponse := kconsole.SchemaRegistrySchemaValidation{}
 		err := json.Unmarshal(body, &validationResponse)
 		require.NoError(err)
 
@@ -68,7 +68,7 @@ func (s *APIIntegrationTestSuite) TestValidateSchema() {
 		res, body := s.apiRequest(ctx, http.MethodPost, "/api/schema-registry/subjects/new-schema/versions/latest/validate", req)
 		require.Equal(200, res.StatusCode)
 
-		validationResponse := console.SchemaRegistrySchemaValidation{}
+		validationResponse := kconsole.SchemaRegistrySchemaValidation{}
 		err := json.Unmarshal(body, &validationResponse)
 		require.NoError(err)
 
@@ -92,7 +92,7 @@ func (s *APIIntegrationTestSuite) TestValidateSchema() {
 		res, body := s.apiRequest(ctx, http.MethodPost, "/api/schema-registry/subjects/new-schema/versions/latest/validate", req)
 		require.Equal(200, res.StatusCode)
 
-		validationResponse := console.SchemaRegistrySchemaValidation{}
+		validationResponse := kconsole.SchemaRegistrySchemaValidation{}
 		err := json.Unmarshal(body, &validationResponse)
 		require.NoError(err)
 
@@ -116,7 +116,7 @@ func (s *APIIntegrationTestSuite) TestValidateSchema() {
 		res, body := s.apiRequest(ctx, http.MethodPost, "/api/schema-registry/subjects/new-schema/versions/latest/validate", req)
 		require.Equal(200, res.StatusCode)
 
-		validationResponse := console.SchemaRegistrySchemaValidation{}
+		validationResponse := kconsole.SchemaRegistrySchemaValidation{}
 		err := json.Unmarshal(body, &validationResponse)
 		require.NoError(err)
 

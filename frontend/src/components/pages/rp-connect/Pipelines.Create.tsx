@@ -371,7 +371,7 @@ export const PipelineEditor = observer(
  * }`;
  *
  * const result = isKafkaConnectPipeline(configString);
- * console.log(result); // Output: true
+ * kconsole.log(result); // Output: true
  * ```
  */
 const isKafkaConnectPipeline = (value: string | undefined): boolean => {

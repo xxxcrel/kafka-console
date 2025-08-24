@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/transform.proto
+// source: redpanda/api/kconsole/v1alpha1/transform.proto
 
 package consolev1alpha1
 
@@ -403,12 +403,12 @@ func file_redpanda_api_console_v1alpha1_transform_proto_rawDescGZIP() []byte {
 
 var file_redpanda_api_console_v1alpha1_transform_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_redpanda_api_console_v1alpha1_transform_proto_goTypes = []any{
-	(*ListTransformsRequest)(nil),      // 0: redpanda.api.console.v1alpha1.ListTransformsRequest
-	(*ListTransformsResponse)(nil),     // 1: redpanda.api.console.v1alpha1.ListTransformsResponse
-	(*GetTransformRequest)(nil),        // 2: redpanda.api.console.v1alpha1.GetTransformRequest
-	(*GetTransformResponse)(nil),       // 3: redpanda.api.console.v1alpha1.GetTransformResponse
-	(*DeleteTransformRequest)(nil),     // 4: redpanda.api.console.v1alpha1.DeleteTransformRequest
-	(*DeleteTransformResponse)(nil),    // 5: redpanda.api.console.v1alpha1.DeleteTransformResponse
+	(*ListTransformsRequest)(nil),      // 0: redpanda.api.kconsole.v1alpha1.ListTransformsRequest
+	(*ListTransformsResponse)(nil),     // 1: redpanda.api.kconsole.v1alpha1.ListTransformsResponse
+	(*GetTransformRequest)(nil),        // 2: redpanda.api.kconsole.v1alpha1.GetTransformRequest
+	(*GetTransformResponse)(nil),       // 3: redpanda.api.kconsole.v1alpha1.GetTransformResponse
+	(*DeleteTransformRequest)(nil),     // 4: redpanda.api.kconsole.v1alpha1.DeleteTransformRequest
+	(*DeleteTransformResponse)(nil),    // 5: redpanda.api.kconsole.v1alpha1.DeleteTransformResponse
 	(*v1.ListTransformsRequest)(nil),   // 6: redpanda.api.dataplane.v1.ListTransformsRequest
 	(*v1.ListTransformsResponse)(nil),  // 7: redpanda.api.dataplane.v1.ListTransformsResponse
 	(*v1.GetTransformRequest)(nil),     // 8: redpanda.api.dataplane.v1.GetTransformRequest
@@ -417,18 +417,18 @@ var file_redpanda_api_console_v1alpha1_transform_proto_goTypes = []any{
 	(*v1.DeleteTransformResponse)(nil), // 11: redpanda.api.dataplane.v1.DeleteTransformResponse
 }
 var file_redpanda_api_console_v1alpha1_transform_proto_depIdxs = []int32{
-	6,  // 0: redpanda.api.console.v1alpha1.ListTransformsRequest.request:type_name -> redpanda.api.dataplane.v1.ListTransformsRequest
-	7,  // 1: redpanda.api.console.v1alpha1.ListTransformsResponse.response:type_name -> redpanda.api.dataplane.v1.ListTransformsResponse
-	8,  // 2: redpanda.api.console.v1alpha1.GetTransformRequest.request:type_name -> redpanda.api.dataplane.v1.GetTransformRequest
-	9,  // 3: redpanda.api.console.v1alpha1.GetTransformResponse.response:type_name -> redpanda.api.dataplane.v1.GetTransformResponse
-	10, // 4: redpanda.api.console.v1alpha1.DeleteTransformRequest.request:type_name -> redpanda.api.dataplane.v1.DeleteTransformRequest
-	11, // 5: redpanda.api.console.v1alpha1.DeleteTransformResponse.response:type_name -> redpanda.api.dataplane.v1.DeleteTransformResponse
-	0,  // 6: redpanda.api.console.v1alpha1.TransformService.ListTransforms:input_type -> redpanda.api.console.v1alpha1.ListTransformsRequest
-	2,  // 7: redpanda.api.console.v1alpha1.TransformService.GetTransform:input_type -> redpanda.api.console.v1alpha1.GetTransformRequest
-	4,  // 8: redpanda.api.console.v1alpha1.TransformService.DeleteTransform:input_type -> redpanda.api.console.v1alpha1.DeleteTransformRequest
-	1,  // 9: redpanda.api.console.v1alpha1.TransformService.ListTransforms:output_type -> redpanda.api.console.v1alpha1.ListTransformsResponse
-	3,  // 10: redpanda.api.console.v1alpha1.TransformService.GetTransform:output_type -> redpanda.api.console.v1alpha1.GetTransformResponse
-	5,  // 11: redpanda.api.console.v1alpha1.TransformService.DeleteTransform:output_type -> redpanda.api.console.v1alpha1.DeleteTransformResponse
+	6,  // 0: redpanda.api.kconsole.v1alpha1.ListTransformsRequest.request:type_name -> redpanda.api.dataplane.v1.ListTransformsRequest
+	7,  // 1: redpanda.api.kconsole.v1alpha1.ListTransformsResponse.response:type_name -> redpanda.api.dataplane.v1.ListTransformsResponse
+	8,  // 2: redpanda.api.kconsole.v1alpha1.GetTransformRequest.request:type_name -> redpanda.api.dataplane.v1.GetTransformRequest
+	9,  // 3: redpanda.api.kconsole.v1alpha1.GetTransformResponse.response:type_name -> redpanda.api.dataplane.v1.GetTransformResponse
+	10, // 4: redpanda.api.kconsole.v1alpha1.DeleteTransformRequest.request:type_name -> redpanda.api.dataplane.v1.DeleteTransformRequest
+	11, // 5: redpanda.api.kconsole.v1alpha1.DeleteTransformResponse.response:type_name -> redpanda.api.dataplane.v1.DeleteTransformResponse
+	0,  // 6: redpanda.api.kconsole.v1alpha1.TransformService.ListTransforms:input_type -> redpanda.api.kconsole.v1alpha1.ListTransformsRequest
+	2,  // 7: redpanda.api.kconsole.v1alpha1.TransformService.GetTransform:input_type -> redpanda.api.kconsole.v1alpha1.GetTransformRequest
+	4,  // 8: redpanda.api.kconsole.v1alpha1.TransformService.DeleteTransform:input_type -> redpanda.api.kconsole.v1alpha1.DeleteTransformRequest
+	1,  // 9: redpanda.api.kconsole.v1alpha1.TransformService.ListTransforms:output_type -> redpanda.api.kconsole.v1alpha1.ListTransformsResponse
+	3,  // 10: redpanda.api.kconsole.v1alpha1.TransformService.GetTransform:output_type -> redpanda.api.kconsole.v1alpha1.GetTransformResponse
+	5,  // 11: redpanda.api.kconsole.v1alpha1.TransformService.DeleteTransform:output_type -> redpanda.api.kconsole.v1alpha1.DeleteTransformResponse
 	9,  // [9:12] is the sub-list for method output_type
 	6,  // [6:9] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name

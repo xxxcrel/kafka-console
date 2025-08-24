@@ -648,7 +648,7 @@ export function IconButton(p: {
 export const navigatorClipboardErrorHandler = (e: DOMException) => {
   toast({
     status: 'error',
-    description: 'Unable to copy settings to clipboard. See console for more information.',
+    description: 'Unable to copy settings to clipboard. See kconsole for more information.',
   });
   console.error('unable to copy settings to clipboard', { error: e });
 };

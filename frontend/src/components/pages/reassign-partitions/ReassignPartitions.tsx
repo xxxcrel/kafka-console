@@ -532,7 +532,7 @@ class ReassignPartitions extends PageComponent {
         } catch (err) {
           toast({
             status: 'error',
-            description: 'Error starting partition reassignment.\nSee console for more information.',
+            description: 'Error starting partition reassignment.\nSee kconsole for more information.',
             duration: 3000,
           });
           console.error('error starting partition reassignment', { error: err });
@@ -749,7 +749,7 @@ class ReassignPartitions extends PageComponent {
       // @ts-ignore perhaps this is needed later on?
       const _changes = this.topicsWithThrottle.updateWith(newThrottledTopics);
       // if (changes.added || changes.removed)
-      //     if (IsDev) console.log('refreshTopicConfigs updated', changes);
+      //     if (IsDev) kconsole.log('refreshTopicConfigs updated', changes);
     } catch (err) {
       console.error('error while refreshing topic configs, stopping auto refresh', { error: err });
       this.stopRefreshingTopicConfigs();

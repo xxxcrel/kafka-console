@@ -21,7 +21,7 @@ export const KafkaConnectService = {
   methods: {
     /**
      * ListConnectClusters implements the list clusters method, list connect
-     * clusters available in the console configuration
+     * clusters available in the kconsole configuration
      *
      * @generated from rpc redpanda.api.dataplane.v1alpha1.KafkaConnectService.ListConnectClusters
      * @deprecated

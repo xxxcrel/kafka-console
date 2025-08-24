@@ -42,12 +42,12 @@ export default defineConfig({
 
     {
       name: 'Console Enterprise',
-      testMatch: 'tests/console-enterprise/**/*',
+      testMatch: 'tests/kconsole-enterprise/**/*',
       use: {
         ...devices['Desktop Chrome'],
         // Use prepared auth state.
         storageState: 'playwright/.auth/user.json',
-        // baseURL: '// console console-enterprise URL'
+        // baseURL: '// kconsole kconsole-enterprise URL'
       },
       dependencies: ['authenticate'],
     },
@@ -56,10 +56,10 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: [
     {
-      cwd: process.env.CI ? '../../backend/cmd' : '../../console-enterprise/backend/cmd',
+      cwd: process.env.CI ? '../../backend/cmd' : '../../kconsole-enterprise/backend/cmd',
       command: process.env.CI
-        ? 'go run . --config.filepath=../../console-oss/frontend/tests/config/console.enterprise.config.yaml'
-        : 'go run . --config.filepath=../../../console/frontend/tests/config/console.enterprise.config.yaml',
+        ? 'go run . --config.filepath=../../kconsole-oss/frontend/tests/config/kconsole.enterprise.config.yaml'
+        : 'go run . --config.filepath=../../../kconsole/frontend/tests/config/kconsole.enterprise.config.yaml',
       url: 'http://localhost:9090/admin/startup',
       reuseExistingServer: !process.env.CI,
       stdout: 'pipe',

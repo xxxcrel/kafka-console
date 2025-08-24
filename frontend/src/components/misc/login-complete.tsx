@@ -44,7 +44,7 @@ class LoginCompletePage extends Component<{ provider: string; match: match<any> 
       const response = await fetchWithTimeout(url, 10 * 1000, { method: 'GET', cache: 'no-cache', mode: 'no-cors' });
       const text = await response.text();
       const obj = JSON.parse(text);
-      // console.log('complete login response: ' + text);
+      // kconsole.log('complete login response: ' + text);
       if (response.ok) {
         api.userData = obj as UserData;
       } else {
@@ -58,7 +58,7 @@ class LoginCompletePage extends Component<{ provider: string; match: match<any> 
       return;
     }
 
-    // console.log('login complete, user: ' + JSON.stringify(api.userData));
+    // kconsole.log('login complete, user: ' + JSON.stringify(api.userData));
 
     // const targetUrl = store.urlBeforeLogin;
     // store.urlBeforeLogin = null;

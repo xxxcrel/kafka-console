@@ -14,12 +14,12 @@ import (
 
 	"github.com/cloudhut/common/rest"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 func (api *API) handleGetAPIVersions() http.HandlerFunc {
 	type response struct {
-		APIVersions []console.APIVersion `json:"apiVersions"`
+		APIVersions []kconsole.APIVersion `json:"apiVersions"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -218,7 +218,7 @@ const ImportExportTab: FC = observer(() => {
               } catch (e) {
                 toast({
                   status: 'error',
-                  description: 'Unable to import settings. See console for more information.',
+                  description: 'Unable to import settings. See kconsole for more information.',
                 });
                 console.error('unable to import settings', { error: e });
               }

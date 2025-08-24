@@ -261,7 +261,7 @@ func MetricNameForTest(testName string) string {
 func TopicNameForTest(testName string) string {
 	testName = testName[strings.LastIndex(testName, "/")+1:]
 
-	return "test.redpanda.console." + testName
+	return "test.redpanda.kconsole." + testName
 }
 
 // GetMappedHostPort gets the mapped host port for the container.

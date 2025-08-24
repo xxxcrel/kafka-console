@@ -41,7 +41,7 @@ console:
       repository:
         url: https://github.com/redpanda-data/redpanda-examples
         branch: main
-        baseDirectory: console/topic-documentation 
+        baseDirectory: kconsole/topic-documentation 
       # How often Console shall pull the repository to look for new files. Set 0 to disable periodic pulls
       refreshInterval: 1m
       # Basic Auth

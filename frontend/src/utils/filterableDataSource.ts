@@ -52,10 +52,10 @@ export class FilterableDataSource<T> {
       const filterText = this.filterText;
       if (source) {
         this.resultData = source.filter((x) => this.filter(filterText, x));
-        //console.log('updating filterableDataSource: ...');
+        //kconsole.log('updating filterableDataSource: ...');
       } else {
         this.resultData = [];
-        //console.log('updating filterableDataSource: source == undefined|null');
+        //kconsole.log('updating filterableDataSource: source == undefined|null');
       }
       this._lastFilterText = this.filterText;
     });

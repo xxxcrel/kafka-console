@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/console_service.proto
+// source: redpanda/api/kconsole/v1alpha1/console_service.proto
 
 package consolev1alpha1
 
@@ -81,16 +81,16 @@ var file_redpanda_api_console_v1alpha1_console_service_proto_rawDesc = []byte{
 }
 
 var file_redpanda_api_console_v1alpha1_console_service_proto_goTypes = []any{
-	(*ListMessagesRequest)(nil),    // 0: redpanda.api.console.v1alpha1.ListMessagesRequest
-	(*PublishMessageRequest)(nil),  // 1: redpanda.api.console.v1alpha1.PublishMessageRequest
-	(*ListMessagesResponse)(nil),   // 2: redpanda.api.console.v1alpha1.ListMessagesResponse
-	(*PublishMessageResponse)(nil), // 3: redpanda.api.console.v1alpha1.PublishMessageResponse
+	(*ListMessagesRequest)(nil),    // 0: redpanda.api.kconsole.v1alpha1.ListMessagesRequest
+	(*PublishMessageRequest)(nil),  // 1: redpanda.api.kconsole.v1alpha1.PublishMessageRequest
+	(*ListMessagesResponse)(nil),   // 2: redpanda.api.kconsole.v1alpha1.ListMessagesResponse
+	(*PublishMessageResponse)(nil), // 3: redpanda.api.kconsole.v1alpha1.PublishMessageResponse
 }
 var file_redpanda_api_console_v1alpha1_console_service_proto_depIdxs = []int32{
-	0, // 0: redpanda.api.console.v1alpha1.ConsoleService.ListMessages:input_type -> redpanda.api.console.v1alpha1.ListMessagesRequest
-	1, // 1: redpanda.api.console.v1alpha1.ConsoleService.PublishMessage:input_type -> redpanda.api.console.v1alpha1.PublishMessageRequest
-	2, // 2: redpanda.api.console.v1alpha1.ConsoleService.ListMessages:output_type -> redpanda.api.console.v1alpha1.ListMessagesResponse
-	3, // 3: redpanda.api.console.v1alpha1.ConsoleService.PublishMessage:output_type -> redpanda.api.console.v1alpha1.PublishMessageResponse
+	0, // 0: redpanda.api.kconsole.v1alpha1.ConsoleService.ListMessages:input_type -> redpanda.api.kconsole.v1alpha1.ListMessagesRequest
+	1, // 1: redpanda.api.kconsole.v1alpha1.ConsoleService.PublishMessage:input_type -> redpanda.api.kconsole.v1alpha1.PublishMessageRequest
+	2, // 2: redpanda.api.kconsole.v1alpha1.ConsoleService.ListMessages:output_type -> redpanda.api.kconsole.v1alpha1.ListMessagesResponse
+	3, // 3: redpanda.api.kconsole.v1alpha1.ConsoleService.PublishMessage:output_type -> redpanda.api.kconsole.v1alpha1.PublishMessageResponse
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

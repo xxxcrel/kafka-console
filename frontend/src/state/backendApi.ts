@@ -11,16 +11,16 @@
 
 /*eslint block-scoped-var: "error"*/
 
-import { createStandaloneToast, redpandaTheme, redpandaToastOptions } from '@redpanda-data/ui';
-import { comparer, computed, observable, runInAction, transaction } from 'mobx';
-import { config as appConfig, isEmbedded } from '../config';
-import { LazyMap } from '../utils/LazyMap';
-import { getBasePath } from '../utils/env';
+import {createStandaloneToast, redpandaTheme, redpandaToastOptions} from '@redpanda-data/ui';
+import {comparer, computed, observable, runInAction, transaction} from 'mobx';
+import {config as appConfig, isEmbedded} from '../config';
+import {LazyMap} from '../utils/LazyMap';
+import {getBasePath} from '../utils/env';
 import fetchWithTimeout from '../utils/fetchWithTimeout';
-import { toJson } from '../utils/jsonUtils';
-import { ObjToKv } from '../utils/tsxUtils';
-import { TimeSince, decodeBase64, getOidcSubject } from '../utils/utils';
-import { appGlobal } from './appGlobal';
+import {toJson} from '../utils/jsonUtils';
+import {ObjToKv} from '../utils/tsxUtils';
+import {decodeBase64, getOidcSubject, TimeSince} from '../utils/utils';
+import {appGlobal} from './appGlobal';
 import {
   AclRequestDefault,
   type AclResource,
@@ -28,16 +28,10 @@ import {
   AlterConfigOperation,
   type AlterPartitionReassignmentsResponse,
   type ApiError,
-  type Broker,
-  type BrokerConfigResponse,
-  type BrokerWithConfigAndStorage,
   type ClusterAdditionalInfo,
   type ClusterConnectors,
-  type ClusterInfo,
-  type ClusterInfoResponse,
   type ClusterOverview,
   CompressionType,
-  type ConfigEntry,
   ConfigResourceType,
   type ConnectorValidationResult,
   type CreateACLRequest,
@@ -56,7 +50,6 @@ import {
   type EditConsumerGroupOffsetsResponseTopic,
   type EditConsumerGroupOffsetsTopic,
   type EndpointCompatibility,
-  type EndpointCompatibilityResponse,
   type GetAclOverviewResponse,
   type GetAclsRequest,
   type GetAllPartitionsResponse,
@@ -68,6 +61,7 @@ import {
   type GetTopicsResponse,
   type GetUsersResponse,
   type GroupDescription,
+  isApiError,
   type KafkaConnectors,
   type PartialTopicConfigsResponse,
   type Partition,
@@ -107,68 +101,35 @@ import {
   type TopicPermissions,
   type UserData,
   WrappedApiError,
-  isApiError,
 } from './restInterfaces';
-import { uiState } from './uiState';
+import {uiState} from './uiState';
 
-import { proto3 } from '@bufbuild/protobuf';
-import type { ConnectError } from '@connectrpc/connect';
-import { Code } from '@connectrpc/connect';
-import {
-  AuthenticationMethod,
-  type GetIdentityResponse,
-  KafkaAclOperation,
-  RedpandaCapability,
-  SchemaRegistryCapability,
-} from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
-import { KafkaDistribution } from '../protogen/redpanda/api/console/v1alpha1/cluster_status_pb';
-import {
-  PayloadEncoding,
-  CompressionType as ProtoCompressionType,
-} from '../protogen/redpanda/api/console/v1alpha1/common_pb';
-import {
-  type CreateDebugBundleRequest,
-  type CreateDebugBundleResponse,
-  type DebugBundleStatus,
-  DebugBundleStatus_Status,
-  type GetClusterHealthResponse,
-  type GetDebugBundleStatusResponse_DebugBundleBrokerStatus,
-} from '../protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
-import type {
-  License,
-  ListEnterpriseFeaturesResponse_Feature,
-  SetLicenseRequest,
-  SetLicenseResponse,
-} from '../protogen/redpanda/api/console/v1alpha1/license_pb';
-import { ListMessagesRequest } from '../protogen/redpanda/api/console/v1alpha1/list_messages_pb';
-import type {
-  PublishMessageRequest,
-  PublishMessageResponse,
-} from '../protogen/redpanda/api/console/v1alpha1/publish_messages_pb';
-import type { ListTransformsResponse } from '../protogen/redpanda/api/console/v1alpha1/transform_pb';
-import {
-  GetPipelinesBySecretsRequest,
-  type Pipeline,
-  type PipelineCreate,
-  type PipelineUpdate,
-} from '../protogen/redpanda/api/dataplane/v1/pipeline_pb';
-import {
-  type CreateSecretRequest,
-  type DeleteSecretRequest,
-  type ListSecretScopesRequest,
-  ListSecretsRequest,
-  Scope,
-  type Secret,
-  type UpdateSecretRequest,
-} from '../protogen/redpanda/api/dataplane/v1/secret_pb';
-import type { TransformMetadata } from '../protogen/redpanda/api/dataplane/v1alpha2/transform_pb';
-import { Features } from './supportedFeatures';
-import { PartitionOffsetOrigin } from './ui';
+import {proto3} from '@bufbuild/protobuf';
+import type {ConnectError} from '@connectrpc/connect';
+import {Code} from '@connectrpc/connect';
+import {AuthenticationMethod, type GetIdentityResponse, KafkaAclOperation, RedpandaCapability, SchemaRegistryCapability,} from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
+import {KafkaDistribution} from '../protogen/redpanda/api/console/v1alpha1/cluster_status_pb';
+import {CompressionType as ProtoCompressionType, PayloadEncoding,} from '../protogen/redpanda/api/console/v1alpha1/common_pb';
+import {type CreateDebugBundleRequest, type CreateDebugBundleResponse, type DebugBundleStatus, DebugBundleStatus_Status, type GetClusterHealthResponse, type GetDebugBundleStatusResponse_DebugBundleBrokerStatus,} from '../protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
+import type {License, ListEnterpriseFeaturesResponse_Feature, SetLicenseRequest, SetLicenseResponse,} from '../protogen/redpanda/api/console/v1alpha1/license_pb';
+import {ListMessagesRequest} from '../protogen/redpanda/api/console/v1alpha1/list_messages_pb';
+import type {PublishMessageRequest, PublishMessageResponse,} from '../protogen/redpanda/api/console/v1alpha1/publish_messages_pb';
+import type {ListTransformsResponse} from '../protogen/redpanda/api/console/v1alpha1/transform_pb';
+import {GetPipelinesBySecretsRequest, type Pipeline, type PipelineCreate, type PipelineUpdate,} from '../protogen/redpanda/api/dataplane/v1/pipeline_pb';
+import {type CreateSecretRequest, type DeleteSecretRequest, type ListSecretScopesRequest, ListSecretsRequest, Scope, type Secret, type UpdateSecretRequest,} from '../protogen/redpanda/api/dataplane/v1/secret_pb';
+import type {TransformMetadata} from '../protogen/redpanda/api/dataplane/v1alpha2/transform_pb';
+import {Features} from './supportedFeatures';
+import {PartitionOffsetOrigin} from './ui';
+import {GetBrokerConfig, GetBrokersWithLogDirs, GetClusterInfo, GetEndpointCompatibility} from "../../wailsjs/go/main/App";
+import {kconsole} from "../../wailsjs/go/models";
+import BrokerConfigEntry = kconsole.BrokerConfigEntry;
+import ClusterInfo = kconsole.ClusterInfo;
+import BrokerWithLogDirs = kconsole.BrokerWithLogDirs;
 
 const REST_TIMEOUT_SEC = 25;
 export const REST_CACHE_DURATION_SEC = 20;
 
-const { toast } = createStandaloneToast({
+const {toast} = createStandaloneToast({
   theme: redpandaTheme,
   defaultOptions: redpandaToastOptions.defaultOptions,
 });
@@ -248,10 +209,12 @@ function processVersionInfo(headers: Headers) {
 
       return;
     }
-  } catch {} // Catch malformed json (old versions where info is not sent as json yet)
+  } catch {
+  } // Catch malformed json (old versions where info is not sent as json yet)
 }
 
 const cache = new LazyMap<string, CacheEntry>((u) => new CacheEntry(u));
+
 class CacheEntry {
   url: string;
 
@@ -262,9 +225,11 @@ class CacheEntry {
   }
 
   private promise: Promise<any>;
+
   get lastPromise() {
     return this.promise;
   }
+
   setPromise<T>(promise: Promise<T>) {
     this.timeSinceRequestStarted.reset();
 
@@ -372,12 +337,12 @@ const apiStore = {
   endpointCompatibility: null as EndpointCompatibility | null,
 
   clusterOverview: null as ClusterOverview | null,
-  brokers: null as BrokerWithConfigAndStorage[] | null,
+  brokers: null as BrokerWithLogDirs[] | null,
 
   clusters: ['A', 'B', 'C'],
   clusterInfo: null as ClusterInfo | null,
 
-  brokerConfigs: new Map<number, ConfigEntry[] | string>(), // config entries, or error string
+  brokerConfigs: new Map<number, BrokerConfigEntry[] | string>(), // config entries, or error string
 
   adminInfo: undefined as AdminInfo | undefined | null,
 
@@ -621,7 +586,7 @@ const apiStore = {
   },
 
   async deleteTopic(topicName: string) {
-    return rest(`${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}`, { method: 'DELETE' }).catch(
+    return rest(`${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}`, {method: 'DELETE'}).catch(
       addError,
     );
   },
@@ -629,8 +594,8 @@ const apiStore = {
   async deleteTopicRecords(topicName: string, offset: number, partitionId?: number) {
     const partitions =
       partitionId !== undefined
-        ? [{ partitionId, offset }]
-        : this.topicPartitions?.get(topicName)?.map((partition) => ({ partitionId: partition.id, offset }));
+        ? [{partitionId, offset}]
+        : this.topicPartitions?.get(topicName)?.map((partition) => ({partitionId: partition.id, offset}));
 
     if (!partitions || partitions.length === 0) {
       addError(new Error(`Topic ${topicName} doesn't have partitions.`));
@@ -641,7 +606,7 @@ const apiStore = {
   },
 
   async deleteTopicRecordsFromAllPartitionsHighWatermark(topicName: string) {
-    const partitions = this.topicPartitions?.get(topicName)?.map(({ waterMarkHigh, id }) => ({
+    const partitions = this.topicPartitions?.get(topicName)?.map(({waterMarkHigh, id}) => ({
       partitionId: id,
       offset: waterMarkHigh,
     }));
@@ -663,7 +628,7 @@ const apiStore = {
       {
         method: 'DELETE',
         headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify({ partitions: pairs }),
+        body: JSON.stringify({partitions: pairs}),
       },
     ).catch(addError);
   },
@@ -689,7 +654,7 @@ const apiStore = {
 
         for (const t of response.topics) {
           if (t.error != null) {
-            // console.error(`refreshAllTopicPartitions: error for topic ${t.topicName}: ${t.error}`);
+            // kconsole.error(`refreshAllTopicPartitions: error for topic ${t.topicName}: ${t.error}`);
             continue;
           }
 
@@ -702,11 +667,11 @@ const apiStore = {
 
             let partitionHasError = false;
             if (p.partitionError) {
-              partitionErrors.push({ partitionId: p.id, error: p.partitionError });
+              partitionErrors.push({partitionId: p.id, error: p.partitionError});
               partitionHasError = true;
             }
             if (p.waterMarksError) {
-              waterMarkErrors.push({ partitionId: p.id, error: p.waterMarksError });
+              waterMarkErrors.push({partitionId: p.id, error: p.waterMarksError});
               partitionHasError = true;
             }
             if (partitionHasError) {
@@ -734,7 +699,7 @@ const apiStore = {
         }
 
         // if (errors.length > 0)
-        //     console.error('refreshAllTopicPartitions: response had errors', errors);
+        //     kconsole.error('refreshAllTopicPartitions: response had errors', errors);
       });
     }, addError);
   },
@@ -753,8 +718,8 @@ const apiStore = {
           // topicName
           p.topicName = topicName;
 
-          if (p.partitionError) partitionErrors.push({ id: p.id, partitionError: p.partitionError });
-          if (p.waterMarksError) waterMarksErrors.push({ id: p.id, waterMarksError: p.waterMarksError });
+          if (p.partitionError) partitionErrors.push({id: p.id, partitionError: p.partitionError});
+          if (p.waterMarksError) waterMarksErrors.push({id: p.id, waterMarksError: p.waterMarksError});
           if (partitionErrors.length || waterMarksErrors.length) continue;
 
           // replicaSize
@@ -868,11 +833,10 @@ const apiStore = {
     );
   },
 
-  async refreshSupportedEndpoints(): Promise<EndpointCompatibilityResponse | null> {
-    const r = await rest<EndpointCompatibilityResponse>(`${appConfig.restBasePath}/console/endpoints`);
+  async refreshSupportedEndpoints() {
+    const r = await GetEndpointCompatibility();
     if (!r) return null;
-    this.endpointCompatibility = r.endpointCompatibility;
-    return r;
+    this.endpointCompatibility = r;
   },
 
   async refreshClusterOverview() {
@@ -944,26 +908,27 @@ const apiStore = {
     return this.clusterOverview?.redpanda !== null;
   },
 
-  refreshBrokers(force?: boolean) {
-    cachedApiRequest<BrokerWithConfigAndStorage[]>(`${appConfig.restBasePath}/brokers`, force).then((v) => {
-      this.brokers = v;
-    }, addError);
+  refreshBrokers() {
+    GetBrokersWithLogDirs()
+      .then((v) => {
+        this.brokers = v;
+      }, addError);
   },
 
-  refreshCluster(force?: boolean) {
-    cachedApiRequest<ClusterInfoResponse>(`${appConfig.restBasePath}/cluster`, force).then((v) => {
-      if (v?.clusterInfo != null) {
+  refreshCluster() {
+    GetClusterInfo().then((clusterInfo) => {
+      if (clusterInfo != null) {
         transaction(() => {
           // add 'type' to each synonym entry
-          for (const broker of v.clusterInfo.brokers)
+          for (const broker of clusterInfo.brokers)
             if (broker.config && !broker.config.error) prepareSynonyms(broker.config.configs ?? []);
 
           // don't assign if the value didn't change
           // we'd re-trigger all observers!
           // TODO: it would probably be easier to just annotate 'clusterInfo' with a structural comparer
-          if (!comparer.structural(this.clusterInfo, v.clusterInfo)) this.clusterInfo = v.clusterInfo;
+          if (!comparer.structural(this.clusterInfo, clusterInfo)) this.clusterInfo = clusterInfo;
 
-          for (const b of v.clusterInfo.brokers)
+          for (const b of clusterInfo.brokers)
             if (b.config.error) this.brokerConfigs.set(b.brokerId, b.config.error);
             else this.brokerConfigs.set(b.brokerId, b.config.configs ?? []);
         });
@@ -971,11 +936,13 @@ const apiStore = {
     }, addError);
   },
 
-  refreshBrokerConfig(brokerId: number, force?: boolean) {
-    cachedApiRequest<BrokerConfigResponse>(`${appConfig.restBasePath}/brokers/${brokerId}/config`, force)
-      .then((v) => {
-        prepareSynonyms(v.brokerConfigs);
-        this.brokerConfigs.set(brokerId, v.brokerConfigs);
+  refreshBrokerConfig(brokerId: number) {
+    GetBrokerConfig(brokerId)
+      .then(brokerConfigs => {
+        if (brokerConfigs instanceof Array) {
+          prepareSynonyms(brokerConfigs);
+          this.brokerConfigs.set(brokerId, brokerConfigs);
+        }
       })
       .catch((err) => {
         this.brokerConfigs.set(brokerId, String(err));
@@ -1237,11 +1204,13 @@ const apiStore = {
 
         subjectVersions?.set(version, cleanedReferences);
       })
-      .catch(() => {});
+      .catch(() => {
+      });
   },
 
   async refreshSchemaUsagesById(schemaId: number, force?: boolean): Promise<void> {
     type SchemaNotConfiguredType = { isConfigured: false };
+
     function isSchemaVersionArray(r: SchemaVersion[] | SchemaNotConfiguredType): r is SchemaVersion[] {
       return Array.isArray(r);
     }
@@ -1274,7 +1243,7 @@ const apiStore = {
     const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/config`, {
       method: 'PUT',
       headers: [['Content-Type', 'application/json']],
-      body: JSON.stringify({ compatibility: mode } as SchemaRegistrySetCompatibilityModeRequest),
+      body: JSON.stringify({compatibility: mode} as SchemaRegistrySetCompatibilityModeRequest),
     });
     return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
   },
@@ -1297,7 +1266,7 @@ const apiStore = {
       {
         method: 'PUT',
         headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify({ compatibility: mode } as SchemaRegistrySetCompatibilityModeRequest),
+        body: JSON.stringify({compatibility: mode} as SchemaRegistrySetCompatibilityModeRequest),
       },
     );
     return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
@@ -1383,14 +1352,14 @@ const apiStore = {
   async setReplicationThrottleRate(brokerIds: number[], maxBytesPerSecond: number): Promise<PatchConfigsResponse> {
     maxBytesPerSecond = Math.ceil(maxBytesPerSecond);
 
-    const configRequest: PatchConfigsRequest = { resources: [] };
+    const configRequest: PatchConfigsRequest = {resources: []};
 
     for (const b of brokerIds) {
       configRequest.resources.push({
         resourceType: ConfigResourceType.Broker,
         resourceName: String(b),
         configs: [
-          { name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Set, value: String(maxBytesPerSecond) },
+          {name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Set, value: String(maxBytesPerSecond)},
           {
             name: 'follower.replication.throttled.rate',
             op: AlterConfigOperation.Set,
@@ -1410,7 +1379,7 @@ const apiStore = {
       followerReplicas: { brokerId: number; partitionId: number }[];
     }[],
   ): Promise<PatchConfigsResponse> {
-    const configRequest: PatchConfigsRequest = { resources: [] };
+    const configRequest: PatchConfigsRequest = {resources: []};
 
     for (const t of topicReplicas) {
       const res: ResourceConfig = {
@@ -1441,7 +1410,7 @@ const apiStore = {
   },
 
   async resetThrottledReplicas(topicNames: string[]): Promise<PatchConfigsResponse> {
-    const configRequest: PatchConfigsRequest = { resources: [] };
+    const configRequest: PatchConfigsRequest = {resources: []};
 
     // reset throttled replicas for those topics
     for (const t of topicNames) {
@@ -1449,8 +1418,8 @@ const apiStore = {
         resourceType: ConfigResourceType.Topic,
         resourceName: t,
         configs: [
-          { name: 'leader.replication.throttled.replicas', op: AlterConfigOperation.Delete },
-          { name: 'follower.replication.throttled.replicas', op: AlterConfigOperation.Delete },
+          {name: 'leader.replication.throttled.replicas', op: AlterConfigOperation.Delete},
+          {name: 'follower.replication.throttled.replicas', op: AlterConfigOperation.Delete},
         ],
       });
     }
@@ -1459,7 +1428,7 @@ const apiStore = {
   },
 
   async resetReplicationThrottleRate(brokerIds: number[]): Promise<PatchConfigsResponse> {
-    const configRequest: PatchConfigsRequest = { resources: [] };
+    const configRequest: PatchConfigsRequest = {resources: []};
 
     // We currently only set replication throttle on each broker, instead of cluster-wide (same effect, but different kind of 'ConfigSource')
     // So we don't remove the cluster-wide setting, only the ones we've set (the per-broker) settings
@@ -1480,8 +1449,8 @@ const apiStore = {
         resourceType: ConfigResourceType.Broker,
         resourceName: String(b),
         configs: [
-          { name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Delete },
-          { name: 'follower.replication.throttled.rate', op: AlterConfigOperation.Delete },
+          {name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Delete},
+          {name: 'follower.replication.throttled.rate', op: AlterConfigOperation.Delete},
         ],
       });
     }
@@ -1540,7 +1509,7 @@ const apiStore = {
     const response = await appConfig.fetch(url, {
       method: 'PATCH',
       headers: [['Content-Type', 'application/json']],
-      body: toJson({ configs }),
+      body: toJson({configs}),
     });
     await parseOrUnwrap<void>(response, null);
   },
@@ -1682,7 +1651,7 @@ const apiStore = {
       {
         method: 'PUT',
         headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify({ config: config }),
+        body: JSON.stringify({config: config}),
       },
     );
     return parseOrUnwrap<void>(response, null);
@@ -2013,7 +1982,7 @@ const apiStore = {
     });
   },
 
-  async cancelDebugBundleProcess({ jobId }: { jobId: string }) {
+  async cancelDebugBundleProcess({jobId}: { jobId: string }) {
     // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
     const client = appConfig.debugBundleClient!;
     if (!client) {
@@ -2063,7 +2032,7 @@ export const rolesApi = observable({
     if (Features.rolesApi) {
       let nextPageToken = '';
       while (true) {
-        const res = await client.listRoles({ pageSize: 500, pageToken: nextPageToken }).catch((error) => {
+        const res = await client.listRoles({pageSize: 500, pageToken: nextPageToken}).catch((error) => {
           this.rolesError = error;
           return null;
         });
@@ -2092,7 +2061,7 @@ export const rolesApi = observable({
 
     if (Features.rolesApi) {
       for (const role of this.roles) {
-        rolePromises.push(client.getRole({ roleName: role }));
+        rolePromises.push(client.getRole({roleName: role}));
       }
     }
 
@@ -2109,17 +2078,17 @@ export const rolesApi = observable({
         .map((x) => {
           const principalParts = x.principal.split(':');
           if (principalParts.length !== 2) {
-            console.error('failed to split principal of role', { roleName, principal: x.principal });
+            console.error('failed to split principal of role', {roleName, principal: x.principal});
             return null;
           }
           const principalType = principalParts[0];
           const name = principalParts[1];
 
           if (principalType !== 'User') {
-            console.error('unexpected principal type in refreshRoleMembers', { roleName, principal: x.principal });
+            console.error('unexpected principal type in refreshRoleMembers', {roleName, principal: x.principal});
           }
 
-          return { principalType, name } as RolePrincipal;
+          return {principalType, name} as RolePrincipal;
         })
         .filterNull();
 
@@ -2132,7 +2101,7 @@ export const rolesApi = observable({
     if (!client) throw new Error('security client is not initialized');
 
     if (Features.rolesApi) {
-      await client.createRole({ role: { name } });
+      await client.createRole({role: {name}});
     }
   },
 
@@ -2141,7 +2110,7 @@ export const rolesApi = observable({
     if (!client) throw new Error('security client is not initialized');
 
     if (Features.rolesApi) {
-      await client.deleteRole({ roleName: name, deleteAcls });
+      await client.deleteRole({roleName: name, deleteAcls});
     }
   },
 
@@ -2151,8 +2120,8 @@ export const rolesApi = observable({
 
     return await client.updateRoleMembership({
       roleName: roleName,
-      add: addUsers.map((u) => ({ principal: `User:${u}` })),
-      remove: removeUsers.map((u) => ({ principal: `User:${u}` })),
+      add: addUsers.map((u) => ({principal: `User:${u}`})),
+      remove: removeUsers.map((u) => ({principal: `User:${u}`})),
       create,
     });
   },
@@ -2180,7 +2149,7 @@ export const pipelinesApi = observable({
     let nextPageToken = '';
     while (true) {
       const res = await client
-        .listPipelines({ request: { pageSize: 500, pageToken: nextPageToken } })
+        .listPipelines({request: {pageSize: 500, pageToken: nextPageToken}})
         .catch((error: ConnectError) => {
           this.pipelinesError = error;
         });
@@ -2200,13 +2169,13 @@ export const pipelinesApi = observable({
     const client = appConfig.pipelinesClient;
     if (!client) throw new Error('pipelines client is not initialized');
 
-    await client.deletePipeline({ request: { id: id } });
+    await client.deletePipeline({request: {id: id}});
   },
   async createPipeline(pipeline: PipelineCreate) {
     const client = appConfig.pipelinesClient;
     if (!client) throw new Error('pipelines client is not initialized');
 
-    await client.createPipeline({ request: { pipeline } });
+    await client.createPipeline({request: {pipeline}});
   },
   async updatePipeline(id: string, pipelineUpdate: PipelineUpdate) {
     const client = appConfig.pipelinesClient;
@@ -2223,13 +2192,13 @@ export const pipelinesApi = observable({
     const client = appConfig.pipelinesClient;
     if (!client) throw new Error('pipelines client is not initialized');
 
-    await client.startPipeline({ request: { id } });
+    await client.startPipeline({request: {id}});
   },
   async stopPipeline(id: string) {
     const client = appConfig.pipelinesClient;
     if (!client) throw new Error('pipelines client is not initialized');
 
-    await client.stopPipeline({ request: { id } });
+    await client.stopPipeline({request: {id}});
   },
 });
 
@@ -2272,25 +2241,25 @@ export const rpcnSecretManagerApi = observable({
     const client = appConfig.rpcnSecretsClient;
     if (!client) throw new Error('redpanda connect secret client is not initialized');
 
-    await client.deleteSecret({ request: secret });
+    await client.deleteSecret({request: secret});
   },
   async create(secret: CreateSecretRequest) {
     const client = appConfig.rpcnSecretsClient;
     if (!client) throw new Error('redpanda connect secret client is not initialized');
 
-    await client.createSecret({ request: secret });
+    await client.createSecret({request: secret});
   },
   async update(_id: string, updateSecretRequest: UpdateSecretRequest) {
     const client = appConfig.rpcnSecretsClient;
     if (!client) throw new Error('redpanda connect secret client is not initialized');
 
-    await client.updateSecret({ request: updateSecretRequest });
+    await client.updateSecret({request: updateSecretRequest});
   },
   async checkScope(listSecretScopesRequest: ListSecretScopesRequest) {
     const client = appConfig.rpcnSecretsClient;
     if (!client) throw new Error('redpanda connect secret client is not initialized');
 
-    const res = await client.listSecretScopes({ request: listSecretScopesRequest });
+    const res = await client.listSecretScopes({request: listSecretScopesRequest});
 
     if (!res.response) {
       this.isEnable = false;
@@ -2305,8 +2274,8 @@ export const rpcnSecretManagerApi = observable({
     const client = appConfig.pipelinesClientV2;
     if (!client) throw new Error('redpanda connect dataplane pipeline is not initialized');
 
-    const pipelinesBySecrets = await client.getPipelinesBySecrets({ request: new GetPipelinesBySecretsRequest() });
-    return pipelinesBySecrets.response?.pipelinesForSecret.map(({ secretId, pipelines }) => {
+    const pipelinesBySecrets = await client.getPipelinesBySecrets({request: new GetPipelinesBySecretsRequest()});
+    return pipelinesBySecrets.response?.pipelinesForSecret.map(({secretId, pipelines}) => {
       return {
         secretId: secretId,
         pipelines: pipelines,
@@ -2327,7 +2296,7 @@ export const transformsApi = observable({
     while (true) {
       let res: ListTransformsResponse;
       try {
-        res = await client.listTransforms({ request: { pageSize: 500, pageToken: nextPageToken } });
+        res = await client.listTransforms({request: {pageSize: 500, pageToken: nextPageToken}});
       } catch (err) {
         break;
       }
@@ -2351,7 +2320,7 @@ export const transformsApi = observable({
     const client = appConfig.transformsClient;
     if (!client) throw new Error('transforms client is not initialized');
 
-    const res = await client.getTransform({ request: { name } });
+    const res = await client.getTransform({request: {name}});
     const r = res.response;
     if (!r) throw new Error('got empty response from getTransform');
 
@@ -2364,7 +2333,7 @@ export const transformsApi = observable({
     const client = appConfig.transformsClient;
     if (!client) throw new Error('transforms client is not initialized');
 
-    await client.deleteTransform({ request: { name } });
+    await client.deleteTransform({request: {name}});
   },
 });
 
@@ -2383,7 +2352,7 @@ export function createMessageSearch() {
     abortController: null as AbortController | null,
 
     // Live view of messages, gets updated as new messages arrive
-    messages: observable([] as TopicMessage[], { deep: false }),
+    messages: observable([] as TopicMessage[], {deep: false}),
 
     async startSearch(_searchRequest: MessageSearchRequest): Promise<TopicMessage[]> {
       // https://connectrpc.com/docs/web/using-clients
@@ -2393,7 +2362,7 @@ export function createMessageSearch() {
 
       if (!client) {
         // this shouldn't happen but better to explicitly throw
-        throw new Error('No console client configured');
+        throw new Error('No kconsole client configured');
       }
 
       if (this.searchPhase) {
@@ -2405,12 +2374,12 @@ export function createMessageSearch() {
         ..._searchRequest,
         ...(appConfig.jwt
           ? {
-              enterprise: {
-                redpandaCloud: {
-                  accessToken: appConfig.jwt,
-                },
+            enterprise: {
+              redpandaCloud: {
+                accessToken: appConfig.jwt,
               },
-            }
+            },
+          }
           : {}),
       };
       this.searchRequest = searchRequest;
@@ -2444,7 +2413,7 @@ export function createMessageSearch() {
       }
 
       try {
-        for await (const res of client.listMessages(req, { signal: messageSearchAbortController.signal, timeoutMs })) {
+        for await (const res of client.listMessages(req, {signal: messageSearchAbortController.signal, timeoutMs})) {
           if (messageSearchAbortController.signal.aborted) break;
 
           try {
@@ -2583,7 +2552,8 @@ export function createMessageSearch() {
 
                 try {
                   m.key.payload = JSON.parse(keyPayload);
-                } catch {}
+                } catch {
+                }
 
                 m.key.troubleshootReport = key?.troubleshootReport;
                 m.key.schemaId = key?.schemaId ?? 0;
@@ -2591,7 +2561,7 @@ export function createMessageSearch() {
                 m.key.size = Number(key?.payloadSize);
                 m.key.isPayloadTooLarge = key?.isPayloadTooLarge;
 
-                // console.log(m.keyJson)
+                // kconsole.log(m.keyJson)
 
                 // value
                 const val = res.controlMessage.value.value;
@@ -2661,7 +2631,8 @@ export function createMessageSearch() {
 
                 try {
                   m.value.payload = JSON.parse(valuePayload);
-                } catch {}
+                } catch {
+                }
 
                 m.valueJson = JSON.stringify(m.value.payload);
                 m.value.size = Number(val?.payloadSize);
@@ -2671,7 +2642,7 @@ export function createMessageSearch() {
               }
             }
           } catch (e) {
-            console.error('error in listMessages loop', { error: e });
+            console.error('error in listMessages loop', {error: e});
           }
         }
       } catch (e) {
@@ -2684,7 +2655,7 @@ export function createMessageSearch() {
         if (messageSearchAbortController.signal.aborted) {
           // Do not throw, this is a user cancellation
         } else {
-          console.error('startMessageSearchNew: error in await loop of client.listMessages', { error: e });
+          console.error('startMessageSearchNew: error in await loop of client.listMessages', {error: e});
           throw e;
         }
       }
@@ -2711,6 +2682,7 @@ export function createMessageSearch() {
 
   return observable(messageSearch);
 }
+
 export type MessageSearch = ReturnType<typeof createMessageSearch>;
 
 function addFrontendFieldsForConnectCluster(cluster: ClusterConnectors) {
@@ -2746,17 +2718,17 @@ export const brokerMap = computed(
     const brokers = api.clusterInfo?.brokers;
     if (brokers == null) return null;
 
-    const map = new Map<number, Broker>();
+    const map = new Map<number, kconsole.Broker>();
     for (const b of brokers) map.set(b.brokerId, b);
 
     return map;
   },
-  { name: 'brokerMap', equals: comparer.structural },
+  {name: 'brokerMap', equals: comparer.structural},
 );
 
 // 1. add 'type' to each synonym, so when expanding a config entry (to view its synonyms), we can still see the type
 // 2. remove redundant synonym entries (those that have the same source as the root config entry)
-function prepareSynonyms(configEntries: ConfigEntry[]) {
+function prepareSynonyms(configEntries: BrokerConfigEntry[]) {
   if (!Array.isArray(configEntries)) return;
 
   for (const e of configEntries) {
@@ -2851,7 +2823,8 @@ async function parseOrUnwrap<T>(response: Response, text: string | null): Promis
   }
   try {
     obj = JSON.parse(text);
-  } catch {}
+  } catch {
+  }
 
   // api error?
   if (isApiError(obj)) throw new WrappedApiError(response, obj);

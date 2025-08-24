@@ -17,12 +17,12 @@ import (
 	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kmsg"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 func (api *API) handleGetAllTopicDetails() http.HandlerFunc {
 	type response struct {
-		Topics []console.TopicDetails `json:"topics"`
+		Topics []kconsole.TopicDetails `json:"topics"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +47,7 @@ func (api *API) handleGetAllTopicDetails() http.HandlerFunc {
 
 func (api *API) handleGetPartitionReassignments() http.HandlerFunc {
 	type response struct {
-		Topics []console.PartitionReassignments `json:"topics"`
+		Topics []kconsole.PartitionReassignments `json:"topics"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +102,7 @@ func (p *patchPartitionsRequest) OK() error {
 
 func (api *API) handlePatchPartitionAssignments() http.HandlerFunc {
 	type response struct {
-		ReassignPartitionsResponse []console.AlterPartitionReassignmentsResponse `json:"reassignPartitionsResponses"`
+		ReassignPartitionsResponse []kconsole.AlterPartitionReassignmentsResponse `json:"reassignPartitionsResponses"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -234,7 +234,7 @@ func (p *patchConfigsRequestResourceConfig) OK() error {
 
 func (api *API) handlePatchConfigs() http.HandlerFunc {
 	type response struct {
-		PatchedConfigs []console.IncrementalAlterConfigsResourceResponse `json:"patchedConfigs"`
+		PatchedConfigs []kconsole.IncrementalAlterConfigsResourceResponse `json:"patchedConfigs"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {

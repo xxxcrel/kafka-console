@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: redpanda/api/console/v1alpha1/transform.proto
+// source: redpanda/api/kconsole/v1alpha1/transform.proto
 
 package consolev1alpha1
 
@@ -20,9 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TransformService_ListTransforms_FullMethodName  = "/redpanda.api.console.v1alpha1.TransformService/ListTransforms"
-	TransformService_GetTransform_FullMethodName    = "/redpanda.api.console.v1alpha1.TransformService/GetTransform"
-	TransformService_DeleteTransform_FullMethodName = "/redpanda.api.console.v1alpha1.TransformService/DeleteTransform"
+	TransformService_ListTransforms_FullMethodName  = "/redpanda.api.kconsole.v1alpha1.TransformService/ListTransforms"
+	TransformService_GetTransform_FullMethodName    = "/redpanda.api.kconsole.v1alpha1.TransformService/GetTransform"
+	TransformService_DeleteTransform_FullMethodName = "/redpanda.api.kconsole.v1alpha1.TransformService/DeleteTransform"
 )
 
 // TransformServiceClient is the client API for TransformService service.
@@ -177,7 +177,7 @@ func _TransformService_DeleteTransform_Handler(srv interface{}, ctx context.Cont
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var TransformService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "redpanda.api.console.v1alpha1.TransformService",
+	ServiceName: "redpanda.api.kconsole.v1alpha1.TransformService",
 	HandlerType: (*TransformServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -194,5 +194,5 @@ var TransformService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "redpanda/api/console/v1alpha1/transform.proto",
+	Metadata: "redpanda/api/kconsole/v1alpha1/transform.proto",
 }

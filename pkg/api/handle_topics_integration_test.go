@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 	"github.com/xxxcrel/kafka-console/pkg/testutil"
 )
 
@@ -63,7 +63,7 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 		assert.Equal(200, res.StatusCode)
 
 		type response struct {
-			Topics []*console.TopicSummary `json:"topics"`
+			Topics []*kconsole.TopicSummary `json:"topics"`
 		}
 
 		getRes := response{}
@@ -111,7 +111,7 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 
 		newConfig.MetricsNamespace = "get_metadata_fail"
 
-		// new console service
+		// new kconsole service
 		newApi := New(newConfig)
 
 		// save old
@@ -211,7 +211,7 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 
 		newConfig.MetricsNamespace = "describe_configs_fail"
 
-		// new console service
+		// new kconsole service
 		newApi := New(newConfig, WithLogger(log))
 		require.NoError(err)
 
@@ -282,7 +282,7 @@ func (s *APIIntegrationTestSuite) TestHandleGetTopics() {
 		assert.Equal(200, res.StatusCode)
 
 		type response struct {
-			Topics []*console.TopicSummary `json:"topics"`
+			Topics []*kconsole.TopicSummary `json:"topics"`
 		}
 
 		getRes := response{}

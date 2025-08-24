@@ -107,7 +107,7 @@ var (
 // service.
 type KafkaConnectServiceClient interface {
 	// ListConnectClusters implements the list clusters method, list connect
-	// clusters available in the console configuration
+	// clusters available in the kconsole configuration
 	ListConnectClusters(context.Context, *connect.Request[v1alpha2.ListConnectClustersRequest]) (*connect.Response[v1alpha2.ListConnectClustersResponse], error)
 	// GetConnectCluster implements the get cluster info method, exposes a Kafka
 	// Connect equivalent REST endpoint
@@ -360,7 +360,7 @@ func (c *kafkaConnectServiceClient) ResetConnectorTopics(ctx context.Context, re
 // redpanda.api.dataplane.v1alpha2.KafkaConnectService service.
 type KafkaConnectServiceHandler interface {
 	// ListConnectClusters implements the list clusters method, list connect
-	// clusters available in the console configuration
+	// clusters available in the kconsole configuration
 	ListConnectClusters(context.Context, *connect.Request[v1alpha2.ListConnectClustersRequest]) (*connect.Response[v1alpha2.ListConnectClustersResponse], error)
 	// GetConnectCluster implements the get cluster info method, exposes a Kafka
 	// Connect equivalent REST endpoint

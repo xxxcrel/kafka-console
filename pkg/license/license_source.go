@@ -16,7 +16,7 @@ type Source string
 
 const (
 	// SourceConsole represents a license set in Redpanda Console.
-	SourceConsole Source = "console"
+	SourceConsole Source = "kconsole"
 
 	// SourceRedpanda represents a license set in a Redpanda cluster.
 	SourceRedpanda Source = "cluster"

@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: redpanda/api/console/v1alpha1/pipeline.proto
+// source: redpanda/api/kconsole/v1alpha1/pipeline.proto
 
 package consolev1alpha1
 
@@ -20,16 +20,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PipelineService_CreatePipeline_FullMethodName                 = "/redpanda.api.console.v1alpha1.PipelineService/CreatePipeline"
-	PipelineService_GetPipeline_FullMethodName                    = "/redpanda.api.console.v1alpha1.PipelineService/GetPipeline"
-	PipelineService_DeletePipeline_FullMethodName                 = "/redpanda.api.console.v1alpha1.PipelineService/DeletePipeline"
-	PipelineService_ListPipelines_FullMethodName                  = "/redpanda.api.console.v1alpha1.PipelineService/ListPipelines"
-	PipelineService_UpdatePipeline_FullMethodName                 = "/redpanda.api.console.v1alpha1.PipelineService/UpdatePipeline"
-	PipelineService_StopPipeline_FullMethodName                   = "/redpanda.api.console.v1alpha1.PipelineService/StopPipeline"
-	PipelineService_StartPipeline_FullMethodName                  = "/redpanda.api.console.v1alpha1.PipelineService/StartPipeline"
-	PipelineService_GetPipelineServiceConfigSchema_FullMethodName = "/redpanda.api.console.v1alpha1.PipelineService/GetPipelineServiceConfigSchema"
-	PipelineService_GetPipelinesForSecret_FullMethodName          = "/redpanda.api.console.v1alpha1.PipelineService/GetPipelinesForSecret"
-	PipelineService_GetPipelinesBySecrets_FullMethodName          = "/redpanda.api.console.v1alpha1.PipelineService/GetPipelinesBySecrets"
+	PipelineService_CreatePipeline_FullMethodName                 = "/redpanda.api.kconsole.v1alpha1.PipelineService/CreatePipeline"
+	PipelineService_GetPipeline_FullMethodName                    = "/redpanda.api.kconsole.v1alpha1.PipelineService/GetPipeline"
+	PipelineService_DeletePipeline_FullMethodName                 = "/redpanda.api.kconsole.v1alpha1.PipelineService/DeletePipeline"
+	PipelineService_ListPipelines_FullMethodName                  = "/redpanda.api.kconsole.v1alpha1.PipelineService/ListPipelines"
+	PipelineService_UpdatePipeline_FullMethodName                 = "/redpanda.api.kconsole.v1alpha1.PipelineService/UpdatePipeline"
+	PipelineService_StopPipeline_FullMethodName                   = "/redpanda.api.kconsole.v1alpha1.PipelineService/StopPipeline"
+	PipelineService_StartPipeline_FullMethodName                  = "/redpanda.api.kconsole.v1alpha1.PipelineService/StartPipeline"
+	PipelineService_GetPipelineServiceConfigSchema_FullMethodName = "/redpanda.api.kconsole.v1alpha1.PipelineService/GetPipelineServiceConfigSchema"
+	PipelineService_GetPipelinesForSecret_FullMethodName          = "/redpanda.api.kconsole.v1alpha1.PipelineService/GetPipelinesForSecret"
+	PipelineService_GetPipelinesBySecrets_FullMethodName          = "/redpanda.api.kconsole.v1alpha1.PipelineService/GetPipelinesBySecrets"
 )
 
 // PipelineServiceClient is the client API for PipelineService service.
@@ -415,7 +415,7 @@ func _PipelineService_GetPipelinesBySecrets_Handler(srv interface{}, ctx context
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var PipelineService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "redpanda.api.console.v1alpha1.PipelineService",
+	ServiceName: "redpanda.api.kconsole.v1alpha1.PipelineService",
 	HandlerType: (*PipelineServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -460,5 +460,5 @@ var PipelineService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "redpanda/api/console/v1alpha1/pipeline.proto",
+	Metadata: "redpanda/api/kconsole/v1alpha1/pipeline.proto",
 }

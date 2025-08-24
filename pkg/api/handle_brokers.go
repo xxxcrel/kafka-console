@@ -16,7 +16,7 @@ import (
 
 	"github.com/cloudhut/common/rest"
 
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 func (api *API) handleGetBrokers() http.HandlerFunc {
@@ -39,7 +39,7 @@ func (api *API) handleGetBrokers() http.HandlerFunc {
 
 func (api *API) handleBrokerConfig() http.HandlerFunc {
 	type response struct {
-		BrokerConfigs []console.BrokerConfigEntry `json:"brokerConfigs"`
+		BrokerConfigs []kconsole.BrokerConfigEntry `json:"brokerConfigs"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {

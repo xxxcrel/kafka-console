@@ -4,7 +4,7 @@ package shop.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/xxxcrel/kafka-console/pkg/console/testdata/proto_update/gen/shop/v1_2;v1_2";
+option go_package = "github.com/xxxcrel/kafka-kconsole/pkg/kconsole/testdata/proto_update/gen/shop/v1_2;v1_2";
 
 message Order {
   int32 version = 1;

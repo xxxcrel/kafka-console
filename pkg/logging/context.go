@@ -31,7 +31,7 @@ func FromContext(ctx context.Context) *zap.Logger {
 	}
 
 	// Use pre-initialized (or default) zapcore config.
-	core := getZapCore(zap.NewAtomicLevelAt(zap.InfoLevel), "console")
+	core := getZapCore(zap.NewAtomicLevelAt(zap.InfoLevel), "kconsole")
 
 	return zap.New(core)
 }

@@ -35,7 +35,7 @@ To install the Helm repository and chart, run:
 ```bash
 helm repo add redpanda 'https://charts.redpanda.com/' 
 helm repo update
-helm install redpanda/console -f myvalues.yaml
+helm install redpanda/kconsole -f myvalues.yaml
 ```
 
 We maintain a [Helm chart](https://github.com/redpanda-data/helm-charts/tree/main/charts/console) which makes 

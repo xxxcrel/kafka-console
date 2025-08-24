@@ -49,7 +49,7 @@ const (
 // documentation and configuration
 type KafkaConnectServiceClient interface {
 	// ListConnectClusters implements the list clusters method, list connect
-	// clusters available in the console configuration
+	// clusters available in the kconsole configuration
 	ListConnectClusters(ctx context.Context, in *ListConnectClustersRequest, opts ...grpc.CallOption) (*ListConnectClustersResponse, error)
 	// GetConnectCluster implements the get cluster info method, exposes a Kafka
 	// Connect equivalent REST endpoint
@@ -266,7 +266,7 @@ func (c *kafkaConnectServiceClient) ResetConnectorTopics(ctx context.Context, in
 // documentation and configuration
 type KafkaConnectServiceServer interface {
 	// ListConnectClusters implements the list clusters method, list connect
-	// clusters available in the console configuration
+	// clusters available in the kconsole configuration
 	ListConnectClusters(context.Context, *ListConnectClustersRequest) (*ListConnectClustersResponse, error)
 	// GetConnectCluster implements the get cluster info method, exposes a Kafka
 	// Connect equivalent REST endpoint

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/secret.proto
+// source: redpanda/api/kconsole/v1alpha1/secret.proto
 
 package consolev1alpha1
 
@@ -725,18 +725,18 @@ func file_redpanda_api_console_v1alpha1_secret_proto_rawDescGZIP() []byte {
 
 var file_redpanda_api_console_v1alpha1_secret_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_redpanda_api_console_v1alpha1_secret_proto_goTypes = []any{
-	(*GetSecretRequest)(nil),            // 0: redpanda.api.console.v1alpha1.GetSecretRequest
-	(*GetSecretResponse)(nil),           // 1: redpanda.api.console.v1alpha1.GetSecretResponse
-	(*ListSecretsRequest)(nil),          // 2: redpanda.api.console.v1alpha1.ListSecretsRequest
-	(*ListSecretsResponse)(nil),         // 3: redpanda.api.console.v1alpha1.ListSecretsResponse
-	(*CreateSecretRequest)(nil),         // 4: redpanda.api.console.v1alpha1.CreateSecretRequest
-	(*CreateSecretResponse)(nil),        // 5: redpanda.api.console.v1alpha1.CreateSecretResponse
-	(*UpdateSecretRequest)(nil),         // 6: redpanda.api.console.v1alpha1.UpdateSecretRequest
-	(*UpdateSecretResponse)(nil),        // 7: redpanda.api.console.v1alpha1.UpdateSecretResponse
-	(*DeleteSecretRequest)(nil),         // 8: redpanda.api.console.v1alpha1.DeleteSecretRequest
-	(*DeleteSecretResponse)(nil),        // 9: redpanda.api.console.v1alpha1.DeleteSecretResponse
-	(*ListSecretScopesRequest)(nil),     // 10: redpanda.api.console.v1alpha1.ListSecretScopesRequest
-	(*ListSecretScopesResponse)(nil),    // 11: redpanda.api.console.v1alpha1.ListSecretScopesResponse
+	(*GetSecretRequest)(nil),            // 0: redpanda.api.kconsole.v1alpha1.GetSecretRequest
+	(*GetSecretResponse)(nil),           // 1: redpanda.api.kconsole.v1alpha1.GetSecretResponse
+	(*ListSecretsRequest)(nil),          // 2: redpanda.api.kconsole.v1alpha1.ListSecretsRequest
+	(*ListSecretsResponse)(nil),         // 3: redpanda.api.kconsole.v1alpha1.ListSecretsResponse
+	(*CreateSecretRequest)(nil),         // 4: redpanda.api.kconsole.v1alpha1.CreateSecretRequest
+	(*CreateSecretResponse)(nil),        // 5: redpanda.api.kconsole.v1alpha1.CreateSecretResponse
+	(*UpdateSecretRequest)(nil),         // 6: redpanda.api.kconsole.v1alpha1.UpdateSecretRequest
+	(*UpdateSecretResponse)(nil),        // 7: redpanda.api.kconsole.v1alpha1.UpdateSecretResponse
+	(*DeleteSecretRequest)(nil),         // 8: redpanda.api.kconsole.v1alpha1.DeleteSecretRequest
+	(*DeleteSecretResponse)(nil),        // 9: redpanda.api.kconsole.v1alpha1.DeleteSecretResponse
+	(*ListSecretScopesRequest)(nil),     // 10: redpanda.api.kconsole.v1alpha1.ListSecretScopesRequest
+	(*ListSecretScopesResponse)(nil),    // 11: redpanda.api.kconsole.v1alpha1.ListSecretScopesResponse
 	(*v1.GetSecretRequest)(nil),         // 12: redpanda.api.dataplane.v1.GetSecretRequest
 	(*v1.GetSecretResponse)(nil),        // 13: redpanda.api.dataplane.v1.GetSecretResponse
 	(*v1.ListSecretsRequest)(nil),       // 14: redpanda.api.dataplane.v1.ListSecretsRequest
@@ -751,30 +751,30 @@ var file_redpanda_api_console_v1alpha1_secret_proto_goTypes = []any{
 	(*v1.ListSecretScopesResponse)(nil), // 23: redpanda.api.dataplane.v1.ListSecretScopesResponse
 }
 var file_redpanda_api_console_v1alpha1_secret_proto_depIdxs = []int32{
-	12, // 0: redpanda.api.console.v1alpha1.GetSecretRequest.request:type_name -> redpanda.api.dataplane.v1.GetSecretRequest
-	13, // 1: redpanda.api.console.v1alpha1.GetSecretResponse.response:type_name -> redpanda.api.dataplane.v1.GetSecretResponse
-	14, // 2: redpanda.api.console.v1alpha1.ListSecretsRequest.request:type_name -> redpanda.api.dataplane.v1.ListSecretsRequest
-	15, // 3: redpanda.api.console.v1alpha1.ListSecretsResponse.response:type_name -> redpanda.api.dataplane.v1.ListSecretsResponse
-	16, // 4: redpanda.api.console.v1alpha1.CreateSecretRequest.request:type_name -> redpanda.api.dataplane.v1.CreateSecretRequest
-	17, // 5: redpanda.api.console.v1alpha1.CreateSecretResponse.response:type_name -> redpanda.api.dataplane.v1.CreateSecretResponse
-	18, // 6: redpanda.api.console.v1alpha1.UpdateSecretRequest.request:type_name -> redpanda.api.dataplane.v1.UpdateSecretRequest
-	19, // 7: redpanda.api.console.v1alpha1.UpdateSecretResponse.response:type_name -> redpanda.api.dataplane.v1.UpdateSecretResponse
-	20, // 8: redpanda.api.console.v1alpha1.DeleteSecretRequest.request:type_name -> redpanda.api.dataplane.v1.DeleteSecretRequest
-	21, // 9: redpanda.api.console.v1alpha1.DeleteSecretResponse.response:type_name -> redpanda.api.dataplane.v1.DeleteSecretResponse
-	22, // 10: redpanda.api.console.v1alpha1.ListSecretScopesRequest.request:type_name -> redpanda.api.dataplane.v1.ListSecretScopesRequest
-	23, // 11: redpanda.api.console.v1alpha1.ListSecretScopesResponse.response:type_name -> redpanda.api.dataplane.v1.ListSecretScopesResponse
-	0,  // 12: redpanda.api.console.v1alpha1.SecretService.GetSecret:input_type -> redpanda.api.console.v1alpha1.GetSecretRequest
-	2,  // 13: redpanda.api.console.v1alpha1.SecretService.ListSecrets:input_type -> redpanda.api.console.v1alpha1.ListSecretsRequest
-	4,  // 14: redpanda.api.console.v1alpha1.SecretService.CreateSecret:input_type -> redpanda.api.console.v1alpha1.CreateSecretRequest
-	6,  // 15: redpanda.api.console.v1alpha1.SecretService.UpdateSecret:input_type -> redpanda.api.console.v1alpha1.UpdateSecretRequest
-	8,  // 16: redpanda.api.console.v1alpha1.SecretService.DeleteSecret:input_type -> redpanda.api.console.v1alpha1.DeleteSecretRequest
-	10, // 17: redpanda.api.console.v1alpha1.SecretService.ListSecretScopes:input_type -> redpanda.api.console.v1alpha1.ListSecretScopesRequest
-	1,  // 18: redpanda.api.console.v1alpha1.SecretService.GetSecret:output_type -> redpanda.api.console.v1alpha1.GetSecretResponse
-	3,  // 19: redpanda.api.console.v1alpha1.SecretService.ListSecrets:output_type -> redpanda.api.console.v1alpha1.ListSecretsResponse
-	5,  // 20: redpanda.api.console.v1alpha1.SecretService.CreateSecret:output_type -> redpanda.api.console.v1alpha1.CreateSecretResponse
-	7,  // 21: redpanda.api.console.v1alpha1.SecretService.UpdateSecret:output_type -> redpanda.api.console.v1alpha1.UpdateSecretResponse
-	9,  // 22: redpanda.api.console.v1alpha1.SecretService.DeleteSecret:output_type -> redpanda.api.console.v1alpha1.DeleteSecretResponse
-	11, // 23: redpanda.api.console.v1alpha1.SecretService.ListSecretScopes:output_type -> redpanda.api.console.v1alpha1.ListSecretScopesResponse
+	12, // 0: redpanda.api.kconsole.v1alpha1.GetSecretRequest.request:type_name -> redpanda.api.dataplane.v1.GetSecretRequest
+	13, // 1: redpanda.api.kconsole.v1alpha1.GetSecretResponse.response:type_name -> redpanda.api.dataplane.v1.GetSecretResponse
+	14, // 2: redpanda.api.kconsole.v1alpha1.ListSecretsRequest.request:type_name -> redpanda.api.dataplane.v1.ListSecretsRequest
+	15, // 3: redpanda.api.kconsole.v1alpha1.ListSecretsResponse.response:type_name -> redpanda.api.dataplane.v1.ListSecretsResponse
+	16, // 4: redpanda.api.kconsole.v1alpha1.CreateSecretRequest.request:type_name -> redpanda.api.dataplane.v1.CreateSecretRequest
+	17, // 5: redpanda.api.kconsole.v1alpha1.CreateSecretResponse.response:type_name -> redpanda.api.dataplane.v1.CreateSecretResponse
+	18, // 6: redpanda.api.kconsole.v1alpha1.UpdateSecretRequest.request:type_name -> redpanda.api.dataplane.v1.UpdateSecretRequest
+	19, // 7: redpanda.api.kconsole.v1alpha1.UpdateSecretResponse.response:type_name -> redpanda.api.dataplane.v1.UpdateSecretResponse
+	20, // 8: redpanda.api.kconsole.v1alpha1.DeleteSecretRequest.request:type_name -> redpanda.api.dataplane.v1.DeleteSecretRequest
+	21, // 9: redpanda.api.kconsole.v1alpha1.DeleteSecretResponse.response:type_name -> redpanda.api.dataplane.v1.DeleteSecretResponse
+	22, // 10: redpanda.api.kconsole.v1alpha1.ListSecretScopesRequest.request:type_name -> redpanda.api.dataplane.v1.ListSecretScopesRequest
+	23, // 11: redpanda.api.kconsole.v1alpha1.ListSecretScopesResponse.response:type_name -> redpanda.api.dataplane.v1.ListSecretScopesResponse
+	0,  // 12: redpanda.api.kconsole.v1alpha1.SecretService.GetSecret:input_type -> redpanda.api.kconsole.v1alpha1.GetSecretRequest
+	2,  // 13: redpanda.api.kconsole.v1alpha1.SecretService.ListSecrets:input_type -> redpanda.api.kconsole.v1alpha1.ListSecretsRequest
+	4,  // 14: redpanda.api.kconsole.v1alpha1.SecretService.CreateSecret:input_type -> redpanda.api.kconsole.v1alpha1.CreateSecretRequest
+	6,  // 15: redpanda.api.kconsole.v1alpha1.SecretService.UpdateSecret:input_type -> redpanda.api.kconsole.v1alpha1.UpdateSecretRequest
+	8,  // 16: redpanda.api.kconsole.v1alpha1.SecretService.DeleteSecret:input_type -> redpanda.api.kconsole.v1alpha1.DeleteSecretRequest
+	10, // 17: redpanda.api.kconsole.v1alpha1.SecretService.ListSecretScopes:input_type -> redpanda.api.kconsole.v1alpha1.ListSecretScopesRequest
+	1,  // 18: redpanda.api.kconsole.v1alpha1.SecretService.GetSecret:output_type -> redpanda.api.kconsole.v1alpha1.GetSecretResponse
+	3,  // 19: redpanda.api.kconsole.v1alpha1.SecretService.ListSecrets:output_type -> redpanda.api.kconsole.v1alpha1.ListSecretsResponse
+	5,  // 20: redpanda.api.kconsole.v1alpha1.SecretService.CreateSecret:output_type -> redpanda.api.kconsole.v1alpha1.CreateSecretResponse
+	7,  // 21: redpanda.api.kconsole.v1alpha1.SecretService.UpdateSecret:output_type -> redpanda.api.kconsole.v1alpha1.UpdateSecretResponse
+	9,  // 22: redpanda.api.kconsole.v1alpha1.SecretService.DeleteSecret:output_type -> redpanda.api.kconsole.v1alpha1.DeleteSecretResponse
+	11, // 23: redpanda.api.kconsole.v1alpha1.SecretService.ListSecretScopes:output_type -> redpanda.api.kconsole.v1alpha1.ListSecretScopesResponse
 	18, // [18:24] is the sub-list for method output_type
 	12, // [12:18] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name

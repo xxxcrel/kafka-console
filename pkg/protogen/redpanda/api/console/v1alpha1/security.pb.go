@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/security.proto
+// source: redpanda/api/kconsole/v1alpha1/security.proto
 
 package consolev1alpha1
 
@@ -1134,48 +1134,48 @@ func file_redpanda_api_console_v1alpha1_security_proto_rawDescGZIP() []byte {
 
 var file_redpanda_api_console_v1alpha1_security_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_redpanda_api_console_v1alpha1_security_proto_goTypes = []any{
-	(*Role)(nil),                          // 0: redpanda.api.console.v1alpha1.Role
-	(*ListRolesRequest)(nil),              // 1: redpanda.api.console.v1alpha1.ListRolesRequest
-	(*ListRolesResponse)(nil),             // 2: redpanda.api.console.v1alpha1.ListRolesResponse
-	(*CreateRoleRequest)(nil),             // 3: redpanda.api.console.v1alpha1.CreateRoleRequest
-	(*CreateRoleResponse)(nil),            // 4: redpanda.api.console.v1alpha1.CreateRoleResponse
-	(*GetRoleRequest)(nil),                // 5: redpanda.api.console.v1alpha1.GetRoleRequest
-	(*GetRoleResponse)(nil),               // 6: redpanda.api.console.v1alpha1.GetRoleResponse
-	(*DeleteRoleRequest)(nil),             // 7: redpanda.api.console.v1alpha1.DeleteRoleRequest
-	(*DeleteRoleResponse)(nil),            // 8: redpanda.api.console.v1alpha1.DeleteRoleResponse
-	(*ListRoleMembersRequest)(nil),        // 9: redpanda.api.console.v1alpha1.ListRoleMembersRequest
-	(*ListRoleMembersResponse)(nil),       // 10: redpanda.api.console.v1alpha1.ListRoleMembersResponse
-	(*RoleMembership)(nil),                // 11: redpanda.api.console.v1alpha1.RoleMembership
-	(*UpdateRoleMembershipRequest)(nil),   // 12: redpanda.api.console.v1alpha1.UpdateRoleMembershipRequest
-	(*UpdateRoleMembershipResponse)(nil),  // 13: redpanda.api.console.v1alpha1.UpdateRoleMembershipResponse
-	(*ListRolesRequest_Filter)(nil),       // 14: redpanda.api.console.v1alpha1.ListRolesRequest.Filter
-	(*ListRoleMembersRequest_Filter)(nil), // 15: redpanda.api.console.v1alpha1.ListRoleMembersRequest.Filter
+	(*Role)(nil),                          // 0: redpanda.api.kconsole.v1alpha1.Role
+	(*ListRolesRequest)(nil),              // 1: redpanda.api.kconsole.v1alpha1.ListRolesRequest
+	(*ListRolesResponse)(nil),             // 2: redpanda.api.kconsole.v1alpha1.ListRolesResponse
+	(*CreateRoleRequest)(nil),             // 3: redpanda.api.kconsole.v1alpha1.CreateRoleRequest
+	(*CreateRoleResponse)(nil),            // 4: redpanda.api.kconsole.v1alpha1.CreateRoleResponse
+	(*GetRoleRequest)(nil),                // 5: redpanda.api.kconsole.v1alpha1.GetRoleRequest
+	(*GetRoleResponse)(nil),               // 6: redpanda.api.kconsole.v1alpha1.GetRoleResponse
+	(*DeleteRoleRequest)(nil),             // 7: redpanda.api.kconsole.v1alpha1.DeleteRoleRequest
+	(*DeleteRoleResponse)(nil),            // 8: redpanda.api.kconsole.v1alpha1.DeleteRoleResponse
+	(*ListRoleMembersRequest)(nil),        // 9: redpanda.api.kconsole.v1alpha1.ListRoleMembersRequest
+	(*ListRoleMembersResponse)(nil),       // 10: redpanda.api.kconsole.v1alpha1.ListRoleMembersResponse
+	(*RoleMembership)(nil),                // 11: redpanda.api.kconsole.v1alpha1.RoleMembership
+	(*UpdateRoleMembershipRequest)(nil),   // 12: redpanda.api.kconsole.v1alpha1.UpdateRoleMembershipRequest
+	(*UpdateRoleMembershipResponse)(nil),  // 13: redpanda.api.kconsole.v1alpha1.UpdateRoleMembershipResponse
+	(*ListRolesRequest_Filter)(nil),       // 14: redpanda.api.kconsole.v1alpha1.ListRolesRequest.Filter
+	(*ListRoleMembersRequest_Filter)(nil), // 15: redpanda.api.kconsole.v1alpha1.ListRoleMembersRequest.Filter
 }
 var file_redpanda_api_console_v1alpha1_security_proto_depIdxs = []int32{
-	14, // 0: redpanda.api.console.v1alpha1.ListRolesRequest.filter:type_name -> redpanda.api.console.v1alpha1.ListRolesRequest.Filter
-	0,  // 1: redpanda.api.console.v1alpha1.ListRolesResponse.roles:type_name -> redpanda.api.console.v1alpha1.Role
-	0,  // 2: redpanda.api.console.v1alpha1.CreateRoleRequest.role:type_name -> redpanda.api.console.v1alpha1.Role
-	0,  // 3: redpanda.api.console.v1alpha1.CreateRoleResponse.role:type_name -> redpanda.api.console.v1alpha1.Role
-	0,  // 4: redpanda.api.console.v1alpha1.GetRoleResponse.role:type_name -> redpanda.api.console.v1alpha1.Role
-	11, // 5: redpanda.api.console.v1alpha1.GetRoleResponse.members:type_name -> redpanda.api.console.v1alpha1.RoleMembership
-	15, // 6: redpanda.api.console.v1alpha1.ListRoleMembersRequest.filter:type_name -> redpanda.api.console.v1alpha1.ListRoleMembersRequest.Filter
-	11, // 7: redpanda.api.console.v1alpha1.ListRoleMembersResponse.members:type_name -> redpanda.api.console.v1alpha1.RoleMembership
-	11, // 8: redpanda.api.console.v1alpha1.UpdateRoleMembershipRequest.add:type_name -> redpanda.api.console.v1alpha1.RoleMembership
-	11, // 9: redpanda.api.console.v1alpha1.UpdateRoleMembershipRequest.remove:type_name -> redpanda.api.console.v1alpha1.RoleMembership
-	11, // 10: redpanda.api.console.v1alpha1.UpdateRoleMembershipResponse.added:type_name -> redpanda.api.console.v1alpha1.RoleMembership
-	11, // 11: redpanda.api.console.v1alpha1.UpdateRoleMembershipResponse.removed:type_name -> redpanda.api.console.v1alpha1.RoleMembership
-	1,  // 12: redpanda.api.console.v1alpha1.SecurityService.ListRoles:input_type -> redpanda.api.console.v1alpha1.ListRolesRequest
-	3,  // 13: redpanda.api.console.v1alpha1.SecurityService.CreateRole:input_type -> redpanda.api.console.v1alpha1.CreateRoleRequest
-	5,  // 14: redpanda.api.console.v1alpha1.SecurityService.GetRole:input_type -> redpanda.api.console.v1alpha1.GetRoleRequest
-	7,  // 15: redpanda.api.console.v1alpha1.SecurityService.DeleteRole:input_type -> redpanda.api.console.v1alpha1.DeleteRoleRequest
-	9,  // 16: redpanda.api.console.v1alpha1.SecurityService.ListRoleMembers:input_type -> redpanda.api.console.v1alpha1.ListRoleMembersRequest
-	12, // 17: redpanda.api.console.v1alpha1.SecurityService.UpdateRoleMembership:input_type -> redpanda.api.console.v1alpha1.UpdateRoleMembershipRequest
-	2,  // 18: redpanda.api.console.v1alpha1.SecurityService.ListRoles:output_type -> redpanda.api.console.v1alpha1.ListRolesResponse
-	4,  // 19: redpanda.api.console.v1alpha1.SecurityService.CreateRole:output_type -> redpanda.api.console.v1alpha1.CreateRoleResponse
-	6,  // 20: redpanda.api.console.v1alpha1.SecurityService.GetRole:output_type -> redpanda.api.console.v1alpha1.GetRoleResponse
-	8,  // 21: redpanda.api.console.v1alpha1.SecurityService.DeleteRole:output_type -> redpanda.api.console.v1alpha1.DeleteRoleResponse
-	10, // 22: redpanda.api.console.v1alpha1.SecurityService.ListRoleMembers:output_type -> redpanda.api.console.v1alpha1.ListRoleMembersResponse
-	13, // 23: redpanda.api.console.v1alpha1.SecurityService.UpdateRoleMembership:output_type -> redpanda.api.console.v1alpha1.UpdateRoleMembershipResponse
+	14, // 0: redpanda.api.kconsole.v1alpha1.ListRolesRequest.filter:type_name -> redpanda.api.kconsole.v1alpha1.ListRolesRequest.Filter
+	0,  // 1: redpanda.api.kconsole.v1alpha1.ListRolesResponse.roles:type_name -> redpanda.api.kconsole.v1alpha1.Role
+	0,  // 2: redpanda.api.kconsole.v1alpha1.CreateRoleRequest.role:type_name -> redpanda.api.kconsole.v1alpha1.Role
+	0,  // 3: redpanda.api.kconsole.v1alpha1.CreateRoleResponse.role:type_name -> redpanda.api.kconsole.v1alpha1.Role
+	0,  // 4: redpanda.api.kconsole.v1alpha1.GetRoleResponse.role:type_name -> redpanda.api.kconsole.v1alpha1.Role
+	11, // 5: redpanda.api.kconsole.v1alpha1.GetRoleResponse.members:type_name -> redpanda.api.kconsole.v1alpha1.RoleMembership
+	15, // 6: redpanda.api.kconsole.v1alpha1.ListRoleMembersRequest.filter:type_name -> redpanda.api.kconsole.v1alpha1.ListRoleMembersRequest.Filter
+	11, // 7: redpanda.api.kconsole.v1alpha1.ListRoleMembersResponse.members:type_name -> redpanda.api.kconsole.v1alpha1.RoleMembership
+	11, // 8: redpanda.api.kconsole.v1alpha1.UpdateRoleMembershipRequest.add:type_name -> redpanda.api.kconsole.v1alpha1.RoleMembership
+	11, // 9: redpanda.api.kconsole.v1alpha1.UpdateRoleMembershipRequest.remove:type_name -> redpanda.api.kconsole.v1alpha1.RoleMembership
+	11, // 10: redpanda.api.kconsole.v1alpha1.UpdateRoleMembershipResponse.added:type_name -> redpanda.api.kconsole.v1alpha1.RoleMembership
+	11, // 11: redpanda.api.kconsole.v1alpha1.UpdateRoleMembershipResponse.removed:type_name -> redpanda.api.kconsole.v1alpha1.RoleMembership
+	1,  // 12: redpanda.api.kconsole.v1alpha1.SecurityService.ListRoles:input_type -> redpanda.api.kconsole.v1alpha1.ListRolesRequest
+	3,  // 13: redpanda.api.kconsole.v1alpha1.SecurityService.CreateRole:input_type -> redpanda.api.kconsole.v1alpha1.CreateRoleRequest
+	5,  // 14: redpanda.api.kconsole.v1alpha1.SecurityService.GetRole:input_type -> redpanda.api.kconsole.v1alpha1.GetRoleRequest
+	7,  // 15: redpanda.api.kconsole.v1alpha1.SecurityService.DeleteRole:input_type -> redpanda.api.kconsole.v1alpha1.DeleteRoleRequest
+	9,  // 16: redpanda.api.kconsole.v1alpha1.SecurityService.ListRoleMembers:input_type -> redpanda.api.kconsole.v1alpha1.ListRoleMembersRequest
+	12, // 17: redpanda.api.kconsole.v1alpha1.SecurityService.UpdateRoleMembership:input_type -> redpanda.api.kconsole.v1alpha1.UpdateRoleMembershipRequest
+	2,  // 18: redpanda.api.kconsole.v1alpha1.SecurityService.ListRoles:output_type -> redpanda.api.kconsole.v1alpha1.ListRolesResponse
+	4,  // 19: redpanda.api.kconsole.v1alpha1.SecurityService.CreateRole:output_type -> redpanda.api.kconsole.v1alpha1.CreateRoleResponse
+	6,  // 20: redpanda.api.kconsole.v1alpha1.SecurityService.GetRole:output_type -> redpanda.api.kconsole.v1alpha1.GetRoleResponse
+	8,  // 21: redpanda.api.kconsole.v1alpha1.SecurityService.DeleteRole:output_type -> redpanda.api.kconsole.v1alpha1.DeleteRoleResponse
+	10, // 22: redpanda.api.kconsole.v1alpha1.SecurityService.ListRoleMembers:output_type -> redpanda.api.kconsole.v1alpha1.ListRoleMembersResponse
+	13, // 23: redpanda.api.kconsole.v1alpha1.SecurityService.UpdateRoleMembership:output_type -> redpanda.api.kconsole.v1alpha1.UpdateRoleMembershipResponse
 	18, // [18:24] is the sub-list for method output_type
 	12, // [12:18] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name

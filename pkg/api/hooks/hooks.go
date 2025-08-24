@@ -19,7 +19,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 
 	pkgconnect "github.com/xxxcrel/kafka-console/pkg/connect"
-	"github.com/xxxcrel/kafka-console/pkg/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 	"github.com/xxxcrel/kafka-console/pkg/license"
 )
 
@@ -99,5 +99,5 @@ type ConsoleHooks interface {
 	// version and what features are supported by our upstream systems.
 	// The response of this hook will be merged into the response that was originally
 	// composed by Console.
-	EndpointCompatibility() []console.EndpointCompatibilityEndpoint
+	EndpointCompatibility() []kconsole.EndpointCompatibilityEndpoint
 }

@@ -38,7 +38,7 @@ export function editQuery(editFunction: (queryObject: Record<string, string | nu
   const newQuery = objToQuery(currentObj);
 
   if (window.location.search !== newQuery) {
-    //console.log(`changing search: (${window.location.search}) -> (${search})`);
+    //kconsole.log(`changing search: (${window.location.search}) -> (${search})`);
     appGlobal.history.location.search = newQuery;
     appGlobal.history.replace(appGlobal.history.location);
   }

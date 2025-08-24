@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: redpanda/api/console/v1alpha1/authentication.proto
+// source: redpanda/api/kconsole/v1alpha1/authentication.proto
 
 package consolev1alpha1
 
@@ -20,10 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthenticationService_LoginSaslScram_FullMethodName            = "/redpanda.api.console.v1alpha1.AuthenticationService/LoginSaslScram"
-	AuthenticationService_ListAuthenticationMethods_FullMethodName = "/redpanda.api.console.v1alpha1.AuthenticationService/ListAuthenticationMethods"
-	AuthenticationService_GetIdentity_FullMethodName               = "/redpanda.api.console.v1alpha1.AuthenticationService/GetIdentity"
-	AuthenticationService_ListConsoleUsers_FullMethodName          = "/redpanda.api.console.v1alpha1.AuthenticationService/ListConsoleUsers"
+	AuthenticationService_LoginSaslScram_FullMethodName            = "/redpanda.api.kconsole.v1alpha1.AuthenticationService/LoginSaslScram"
+	AuthenticationService_ListAuthenticationMethods_FullMethodName = "/redpanda.api.kconsole.v1alpha1.AuthenticationService/ListAuthenticationMethods"
+	AuthenticationService_GetIdentity_FullMethodName               = "/redpanda.api.kconsole.v1alpha1.AuthenticationService/GetIdentity"
+	AuthenticationService_ListConsoleUsers_FullMethodName          = "/redpanda.api.kconsole.v1alpha1.AuthenticationService/ListConsoleUsers"
 )
 
 // AuthenticationServiceClient is the client API for AuthenticationService service.
@@ -219,7 +219,7 @@ func _AuthenticationService_ListConsoleUsers_Handler(srv interface{}, ctx contex
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var AuthenticationService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "redpanda.api.console.v1alpha1.AuthenticationService",
+	ServiceName: "redpanda.api.kconsole.v1alpha1.AuthenticationService",
 	HandlerType: (*AuthenticationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -240,5 +240,5 @@ var AuthenticationService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "redpanda/api/console/v1alpha1/authentication.proto",
+	Metadata: "redpanda/api/kconsole/v1alpha1/authentication.proto",
 }

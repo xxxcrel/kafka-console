@@ -103,7 +103,7 @@ type DeepWriteable<T> = { -readonly [P in keyof T]: DeepWriteable<T[P]> };
 
 class MyClass {
     constructor(public name: string) { }
-    sayHi() { console.log('hi ' + this.name); }
+    sayHi() { kconsole.log('hi ' + this.name); }
 }
 
 class HelperContainer<TEvent extends EventNames, TData> extends CustomEvent<TData> {
@@ -138,7 +138,7 @@ declare global {
 }
 
 addEventListener('delete', ({ detail: e }) => {
-    console.log(`I heard the delete event!! with id ${e.id} in state ${e.state}`);
+    kconsole.log(`I heard the delete event!! with id ${e.id} in state ${e.state}`);
 });
 
 
@@ -146,7 +146,7 @@ addEventListener('delete', ({ detail: e }) => {
 // to optimize removing elements from list, so not every button in the list needs yet another handler with onClick={()=>...}
 function useEvent<TName extends EventNames>(name: TName, listener: (event: EventTypes<TName>) => void): void {
     const realListener = useCallback(() => {
-        console.log('creating the real listener (inside useCallback)');
+        kconsole.log('creating the real listener (inside useCallback)');
         return ((event: CustomEvent<EventTypes<TName>>) => {
             listener(event.detail);
         }) as EventListener;

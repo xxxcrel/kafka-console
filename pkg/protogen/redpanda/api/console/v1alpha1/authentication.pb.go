@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/authentication.proto
+// source: redpanda/api/kconsole/v1alpha1/authentication.proto
 
 package consolev1alpha1
 
@@ -337,7 +337,7 @@ type LoginSaslScramRequest struct {
 	// The password for the login request.
 	Password string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	// The SASL mechanism to be used for authentication.
-	Mechanism SASLMechanism `protobuf:"varint,3,opt,name=mechanism,proto3,enum=redpanda.api.console.v1alpha1.SASLMechanism" json:"mechanism,omitempty"`
+	Mechanism SASLMechanism `protobuf:"varint,3,opt,name=mechanism,proto3,enum=redpanda.api.kconsole.v1alpha1.SASLMechanism" json:"mechanism,omitempty"`
 	// Whether or not the session token should be returned in the body.
 	ReturnToken   bool `protobuf:"varint,4,opt,name=return_token,json=returnToken,proto3" json:"return_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -450,7 +450,7 @@ func (x *LoginSaslScramResponse) GetSessionToken() string {
 type UserIdentity struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DisplayName   string                 `protobuf:"bytes,1,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	AuthMethod    AuthenticationMethod   `protobuf:"varint,2,opt,name=auth_method,json=authMethod,proto3,enum=redpanda.api.console.v1alpha1.AuthenticationMethod" json:"auth_method,omitempty"`
+	AuthMethod    AuthenticationMethod   `protobuf:"varint,2,opt,name=auth_method,json=authMethod,proto3,enum=redpanda.api.kconsole.v1alpha1.AuthenticationMethod" json:"auth_method,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -538,7 +538,7 @@ func (*ListAuthenticationMethodsRequest) Descriptor() ([]byte, []int) {
 type ListAuthenticationMethodsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The list of available authentication methods.
-	Methods       []AuthenticationMethod `protobuf:"varint,1,rep,packed,name=methods,proto3,enum=redpanda.api.console.v1alpha1.AuthenticationMethod" json:"methods,omitempty"`
+	Methods       []AuthenticationMethod `protobuf:"varint,1,rep,packed,name=methods,proto3,enum=redpanda.api.kconsole.v1alpha1.AuthenticationMethod" json:"methods,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -619,7 +619,7 @@ func (*GetIdentityRequest) Descriptor() ([]byte, []int) {
 type GetIdentityResponse struct {
 	state                protoimpl.MessageState           `protogen:"open.v1"`
 	DisplayName          string                           `protobuf:"bytes,1,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	AuthenticationMethod AuthenticationMethod             `protobuf:"varint,2,opt,name=authentication_method,json=authenticationMethod,proto3,enum=redpanda.api.console.v1alpha1.AuthenticationMethod" json:"authentication_method,omitempty"`
+	AuthenticationMethod AuthenticationMethod             `protobuf:"varint,2,opt,name=authentication_method,json=authenticationMethod,proto3,enum=redpanda.api.kconsole.v1alpha1.AuthenticationMethod" json:"authentication_method,omitempty"`
 	AvatarUrl            string                           `protobuf:"bytes,3,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
 	Permissions          *GetIdentityResponse_Permissions `protobuf:"bytes,4,opt,name=permissions,proto3" json:"permissions,omitempty"`
 	unknownFields        protoimpl.UnknownFields
@@ -766,9 +766,9 @@ func (x *ListConsoleUsersResponse) GetUsers() []*ListConsoleUsersResponse_User {
 
 type GetIdentityResponse_Permissions struct {
 	state                  protoimpl.MessageState     `protogen:"open.v1"`
-	KafkaClusterOperations []KafkaAclOperation        `protobuf:"varint,4,rep,packed,name=kafka_cluster_operations,json=kafkaClusterOperations,proto3,enum=redpanda.api.console.v1alpha1.KafkaAclOperation" json:"kafka_cluster_operations,omitempty"`
-	SchemaRegistry         []SchemaRegistryCapability `protobuf:"varint,5,rep,packed,name=schema_registry,json=schemaRegistry,proto3,enum=redpanda.api.console.v1alpha1.SchemaRegistryCapability" json:"schema_registry,omitempty"`
-	Redpanda               []RedpandaCapability       `protobuf:"varint,6,rep,packed,name=redpanda,proto3,enum=redpanda.api.console.v1alpha1.RedpandaCapability" json:"redpanda,omitempty"`
+	KafkaClusterOperations []KafkaAclOperation        `protobuf:"varint,4,rep,packed,name=kafka_cluster_operations,json=kafkaClusterOperations,proto3,enum=redpanda.api.kconsole.v1alpha1.KafkaAclOperation" json:"kafka_cluster_operations,omitempty"`
+	SchemaRegistry         []SchemaRegistryCapability `protobuf:"varint,5,rep,packed,name=schema_registry,json=schemaRegistry,proto3,enum=redpanda.api.kconsole.v1alpha1.SchemaRegistryCapability" json:"schema_registry,omitempty"`
+	Redpanda               []RedpandaCapability       `protobuf:"varint,6,rep,packed,name=redpanda,proto3,enum=redpanda.api.kconsole.v1alpha1.RedpandaCapability" json:"redpanda,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -827,7 +827,7 @@ func (x *GetIdentityResponse_Permissions) GetRedpanda() []RedpandaCapability {
 type ListConsoleUsersResponse_User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	AuthMethod    AuthenticationMethod   `protobuf:"varint,2,opt,name=auth_method,json=authMethod,proto3,enum=redpanda.api.console.v1alpha1.AuthenticationMethod" json:"auth_method,omitempty"`
+	AuthMethod    AuthenticationMethod   `protobuf:"varint,2,opt,name=auth_method,json=authMethod,proto3,enum=redpanda.api.kconsole.v1alpha1.AuthenticationMethod" json:"auth_method,omitempty"`
 	Role          string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1145,42 +1145,42 @@ func file_redpanda_api_console_v1alpha1_authentication_proto_rawDescGZIP() []byt
 var file_redpanda_api_console_v1alpha1_authentication_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_redpanda_api_console_v1alpha1_authentication_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_redpanda_api_console_v1alpha1_authentication_proto_goTypes = []any{
-	(SASLMechanism)(0),                        // 0: redpanda.api.console.v1alpha1.SASLMechanism
-	(AuthenticationMethod)(0),                 // 1: redpanda.api.console.v1alpha1.AuthenticationMethod
-	(KafkaAclOperation)(0),                    // 2: redpanda.api.console.v1alpha1.KafkaAclOperation
-	(SchemaRegistryCapability)(0),             // 3: redpanda.api.console.v1alpha1.SchemaRegistryCapability
-	(RedpandaCapability)(0),                   // 4: redpanda.api.console.v1alpha1.RedpandaCapability
-	(*LoginSaslScramRequest)(nil),             // 5: redpanda.api.console.v1alpha1.LoginSaslScramRequest
-	(*LoginSaslScramResponse)(nil),            // 6: redpanda.api.console.v1alpha1.LoginSaslScramResponse
-	(*UserIdentity)(nil),                      // 7: redpanda.api.console.v1alpha1.UserIdentity
-	(*ListAuthenticationMethodsRequest)(nil),  // 8: redpanda.api.console.v1alpha1.ListAuthenticationMethodsRequest
-	(*ListAuthenticationMethodsResponse)(nil), // 9: redpanda.api.console.v1alpha1.ListAuthenticationMethodsResponse
-	(*GetIdentityRequest)(nil),                // 10: redpanda.api.console.v1alpha1.GetIdentityRequest
-	(*GetIdentityResponse)(nil),               // 11: redpanda.api.console.v1alpha1.GetIdentityResponse
-	(*ListConsoleUsersRequest)(nil),           // 12: redpanda.api.console.v1alpha1.ListConsoleUsersRequest
-	(*ListConsoleUsersResponse)(nil),          // 13: redpanda.api.console.v1alpha1.ListConsoleUsersResponse
-	(*GetIdentityResponse_Permissions)(nil),   // 14: redpanda.api.console.v1alpha1.GetIdentityResponse.Permissions
-	(*ListConsoleUsersResponse_User)(nil),     // 15: redpanda.api.console.v1alpha1.ListConsoleUsersResponse.User
+	(SASLMechanism)(0),                        // 0: redpanda.api.kconsole.v1alpha1.SASLMechanism
+	(AuthenticationMethod)(0),                 // 1: redpanda.api.kconsole.v1alpha1.AuthenticationMethod
+	(KafkaAclOperation)(0),                    // 2: redpanda.api.kconsole.v1alpha1.KafkaAclOperation
+	(SchemaRegistryCapability)(0),             // 3: redpanda.api.kconsole.v1alpha1.SchemaRegistryCapability
+	(RedpandaCapability)(0),                   // 4: redpanda.api.kconsole.v1alpha1.RedpandaCapability
+	(*LoginSaslScramRequest)(nil),             // 5: redpanda.api.kconsole.v1alpha1.LoginSaslScramRequest
+	(*LoginSaslScramResponse)(nil),            // 6: redpanda.api.kconsole.v1alpha1.LoginSaslScramResponse
+	(*UserIdentity)(nil),                      // 7: redpanda.api.kconsole.v1alpha1.UserIdentity
+	(*ListAuthenticationMethodsRequest)(nil),  // 8: redpanda.api.kconsole.v1alpha1.ListAuthenticationMethodsRequest
+	(*ListAuthenticationMethodsResponse)(nil), // 9: redpanda.api.kconsole.v1alpha1.ListAuthenticationMethodsResponse
+	(*GetIdentityRequest)(nil),                // 10: redpanda.api.kconsole.v1alpha1.GetIdentityRequest
+	(*GetIdentityResponse)(nil),               // 11: redpanda.api.kconsole.v1alpha1.GetIdentityResponse
+	(*ListConsoleUsersRequest)(nil),           // 12: redpanda.api.kconsole.v1alpha1.ListConsoleUsersRequest
+	(*ListConsoleUsersResponse)(nil),          // 13: redpanda.api.kconsole.v1alpha1.ListConsoleUsersResponse
+	(*GetIdentityResponse_Permissions)(nil),   // 14: redpanda.api.kconsole.v1alpha1.GetIdentityResponse.Permissions
+	(*ListConsoleUsersResponse_User)(nil),     // 15: redpanda.api.kconsole.v1alpha1.ListConsoleUsersResponse.User
 }
 var file_redpanda_api_console_v1alpha1_authentication_proto_depIdxs = []int32{
-	0,  // 0: redpanda.api.console.v1alpha1.LoginSaslScramRequest.mechanism:type_name -> redpanda.api.console.v1alpha1.SASLMechanism
-	1,  // 1: redpanda.api.console.v1alpha1.UserIdentity.auth_method:type_name -> redpanda.api.console.v1alpha1.AuthenticationMethod
-	1,  // 2: redpanda.api.console.v1alpha1.ListAuthenticationMethodsResponse.methods:type_name -> redpanda.api.console.v1alpha1.AuthenticationMethod
-	1,  // 3: redpanda.api.console.v1alpha1.GetIdentityResponse.authentication_method:type_name -> redpanda.api.console.v1alpha1.AuthenticationMethod
-	14, // 4: redpanda.api.console.v1alpha1.GetIdentityResponse.permissions:type_name -> redpanda.api.console.v1alpha1.GetIdentityResponse.Permissions
-	15, // 5: redpanda.api.console.v1alpha1.ListConsoleUsersResponse.users:type_name -> redpanda.api.console.v1alpha1.ListConsoleUsersResponse.User
-	2,  // 6: redpanda.api.console.v1alpha1.GetIdentityResponse.Permissions.kafka_cluster_operations:type_name -> redpanda.api.console.v1alpha1.KafkaAclOperation
-	3,  // 7: redpanda.api.console.v1alpha1.GetIdentityResponse.Permissions.schema_registry:type_name -> redpanda.api.console.v1alpha1.SchemaRegistryCapability
-	4,  // 8: redpanda.api.console.v1alpha1.GetIdentityResponse.Permissions.redpanda:type_name -> redpanda.api.console.v1alpha1.RedpandaCapability
-	1,  // 9: redpanda.api.console.v1alpha1.ListConsoleUsersResponse.User.auth_method:type_name -> redpanda.api.console.v1alpha1.AuthenticationMethod
-	5,  // 10: redpanda.api.console.v1alpha1.AuthenticationService.LoginSaslScram:input_type -> redpanda.api.console.v1alpha1.LoginSaslScramRequest
-	8,  // 11: redpanda.api.console.v1alpha1.AuthenticationService.ListAuthenticationMethods:input_type -> redpanda.api.console.v1alpha1.ListAuthenticationMethodsRequest
-	10, // 12: redpanda.api.console.v1alpha1.AuthenticationService.GetIdentity:input_type -> redpanda.api.console.v1alpha1.GetIdentityRequest
-	12, // 13: redpanda.api.console.v1alpha1.AuthenticationService.ListConsoleUsers:input_type -> redpanda.api.console.v1alpha1.ListConsoleUsersRequest
-	6,  // 14: redpanda.api.console.v1alpha1.AuthenticationService.LoginSaslScram:output_type -> redpanda.api.console.v1alpha1.LoginSaslScramResponse
-	9,  // 15: redpanda.api.console.v1alpha1.AuthenticationService.ListAuthenticationMethods:output_type -> redpanda.api.console.v1alpha1.ListAuthenticationMethodsResponse
-	11, // 16: redpanda.api.console.v1alpha1.AuthenticationService.GetIdentity:output_type -> redpanda.api.console.v1alpha1.GetIdentityResponse
-	13, // 17: redpanda.api.console.v1alpha1.AuthenticationService.ListConsoleUsers:output_type -> redpanda.api.console.v1alpha1.ListConsoleUsersResponse
+	0,  // 0: redpanda.api.kconsole.v1alpha1.LoginSaslScramRequest.mechanism:type_name -> redpanda.api.kconsole.v1alpha1.SASLMechanism
+	1,  // 1: redpanda.api.kconsole.v1alpha1.UserIdentity.auth_method:type_name -> redpanda.api.kconsole.v1alpha1.AuthenticationMethod
+	1,  // 2: redpanda.api.kconsole.v1alpha1.ListAuthenticationMethodsResponse.methods:type_name -> redpanda.api.kconsole.v1alpha1.AuthenticationMethod
+	1,  // 3: redpanda.api.kconsole.v1alpha1.GetIdentityResponse.authentication_method:type_name -> redpanda.api.kconsole.v1alpha1.AuthenticationMethod
+	14, // 4: redpanda.api.kconsole.v1alpha1.GetIdentityResponse.permissions:type_name -> redpanda.api.kconsole.v1alpha1.GetIdentityResponse.Permissions
+	15, // 5: redpanda.api.kconsole.v1alpha1.ListConsoleUsersResponse.users:type_name -> redpanda.api.kconsole.v1alpha1.ListConsoleUsersResponse.User
+	2,  // 6: redpanda.api.kconsole.v1alpha1.GetIdentityResponse.Permissions.kafka_cluster_operations:type_name -> redpanda.api.kconsole.v1alpha1.KafkaAclOperation
+	3,  // 7: redpanda.api.kconsole.v1alpha1.GetIdentityResponse.Permissions.schema_registry:type_name -> redpanda.api.kconsole.v1alpha1.SchemaRegistryCapability
+	4,  // 8: redpanda.api.kconsole.v1alpha1.GetIdentityResponse.Permissions.redpanda:type_name -> redpanda.api.kconsole.v1alpha1.RedpandaCapability
+	1,  // 9: redpanda.api.kconsole.v1alpha1.ListConsoleUsersResponse.User.auth_method:type_name -> redpanda.api.kconsole.v1alpha1.AuthenticationMethod
+	5,  // 10: redpanda.api.kconsole.v1alpha1.AuthenticationService.LoginSaslScram:input_type -> redpanda.api.kconsole.v1alpha1.LoginSaslScramRequest
+	8,  // 11: redpanda.api.kconsole.v1alpha1.AuthenticationService.ListAuthenticationMethods:input_type -> redpanda.api.kconsole.v1alpha1.ListAuthenticationMethodsRequest
+	10, // 12: redpanda.api.kconsole.v1alpha1.AuthenticationService.GetIdentity:input_type -> redpanda.api.kconsole.v1alpha1.GetIdentityRequest
+	12, // 13: redpanda.api.kconsole.v1alpha1.AuthenticationService.ListConsoleUsers:input_type -> redpanda.api.kconsole.v1alpha1.ListConsoleUsersRequest
+	6,  // 14: redpanda.api.kconsole.v1alpha1.AuthenticationService.LoginSaslScram:output_type -> redpanda.api.kconsole.v1alpha1.LoginSaslScramResponse
+	9,  // 15: redpanda.api.kconsole.v1alpha1.AuthenticationService.ListAuthenticationMethods:output_type -> redpanda.api.kconsole.v1alpha1.ListAuthenticationMethodsResponse
+	11, // 16: redpanda.api.kconsole.v1alpha1.AuthenticationService.GetIdentity:output_type -> redpanda.api.kconsole.v1alpha1.GetIdentityResponse
+	13, // 17: redpanda.api.kconsole.v1alpha1.AuthenticationService.ListConsoleUsers:output_type -> redpanda.api.kconsole.v1alpha1.ListConsoleUsersResponse
 	14, // [14:18] is the sub-list for method output_type
 	10, // [10:14] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.0
 // 	protoc        (unknown)
-// source: redpanda/api/console/v1alpha1/pipeline.proto
+// source: redpanda/api/kconsole/v1alpha1/pipeline.proto
 
 package consolev1alpha1
 
@@ -1179,26 +1179,26 @@ func file_redpanda_api_console_v1alpha1_pipeline_proto_rawDescGZIP() []byte {
 
 var file_redpanda_api_console_v1alpha1_pipeline_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_redpanda_api_console_v1alpha1_pipeline_proto_goTypes = []any{
-	(*CreatePipelineRequest)(nil),                     // 0: redpanda.api.console.v1alpha1.CreatePipelineRequest
-	(*CreatePipelineResponse)(nil),                    // 1: redpanda.api.console.v1alpha1.CreatePipelineResponse
-	(*GetPipelineRequest)(nil),                        // 2: redpanda.api.console.v1alpha1.GetPipelineRequest
-	(*GetPipelineResponse)(nil),                       // 3: redpanda.api.console.v1alpha1.GetPipelineResponse
-	(*DeletePipelineRequest)(nil),                     // 4: redpanda.api.console.v1alpha1.DeletePipelineRequest
-	(*DeletePipelineResponse)(nil),                    // 5: redpanda.api.console.v1alpha1.DeletePipelineResponse
-	(*ListPipelinesRequest)(nil),                      // 6: redpanda.api.console.v1alpha1.ListPipelinesRequest
-	(*ListPipelinesResponse)(nil),                     // 7: redpanda.api.console.v1alpha1.ListPipelinesResponse
-	(*UpdatePipelineRequest)(nil),                     // 8: redpanda.api.console.v1alpha1.UpdatePipelineRequest
-	(*UpdatePipelineResponse)(nil),                    // 9: redpanda.api.console.v1alpha1.UpdatePipelineResponse
-	(*StopPipelineRequest)(nil),                       // 10: redpanda.api.console.v1alpha1.StopPipelineRequest
-	(*StopPipelineResponse)(nil),                      // 11: redpanda.api.console.v1alpha1.StopPipelineResponse
-	(*StartPipelineRequest)(nil),                      // 12: redpanda.api.console.v1alpha1.StartPipelineRequest
-	(*StartPipelineResponse)(nil),                     // 13: redpanda.api.console.v1alpha1.StartPipelineResponse
-	(*GetPipelineServiceConfigSchemaRequest)(nil),     // 14: redpanda.api.console.v1alpha1.GetPipelineServiceConfigSchemaRequest
-	(*GetPipelineServiceConfigSchemaResponse)(nil),    // 15: redpanda.api.console.v1alpha1.GetPipelineServiceConfigSchemaResponse
-	(*GetPipelinesForSecretRequest)(nil),              // 16: redpanda.api.console.v1alpha1.GetPipelinesForSecretRequest
-	(*GetPipelinesForSecretResponse)(nil),             // 17: redpanda.api.console.v1alpha1.GetPipelinesForSecretResponse
-	(*GetPipelinesBySecretsRequest)(nil),              // 18: redpanda.api.console.v1alpha1.GetPipelinesBySecretsRequest
-	(*GetPipelinesBySecretsResponse)(nil),             // 19: redpanda.api.console.v1alpha1.GetPipelinesBySecretsResponse
+	(*CreatePipelineRequest)(nil),                     // 0: redpanda.api.kconsole.v1alpha1.CreatePipelineRequest
+	(*CreatePipelineResponse)(nil),                    // 1: redpanda.api.kconsole.v1alpha1.CreatePipelineResponse
+	(*GetPipelineRequest)(nil),                        // 2: redpanda.api.kconsole.v1alpha1.GetPipelineRequest
+	(*GetPipelineResponse)(nil),                       // 3: redpanda.api.kconsole.v1alpha1.GetPipelineResponse
+	(*DeletePipelineRequest)(nil),                     // 4: redpanda.api.kconsole.v1alpha1.DeletePipelineRequest
+	(*DeletePipelineResponse)(nil),                    // 5: redpanda.api.kconsole.v1alpha1.DeletePipelineResponse
+	(*ListPipelinesRequest)(nil),                      // 6: redpanda.api.kconsole.v1alpha1.ListPipelinesRequest
+	(*ListPipelinesResponse)(nil),                     // 7: redpanda.api.kconsole.v1alpha1.ListPipelinesResponse
+	(*UpdatePipelineRequest)(nil),                     // 8: redpanda.api.kconsole.v1alpha1.UpdatePipelineRequest
+	(*UpdatePipelineResponse)(nil),                    // 9: redpanda.api.kconsole.v1alpha1.UpdatePipelineResponse
+	(*StopPipelineRequest)(nil),                       // 10: redpanda.api.kconsole.v1alpha1.StopPipelineRequest
+	(*StopPipelineResponse)(nil),                      // 11: redpanda.api.kconsole.v1alpha1.StopPipelineResponse
+	(*StartPipelineRequest)(nil),                      // 12: redpanda.api.kconsole.v1alpha1.StartPipelineRequest
+	(*StartPipelineResponse)(nil),                     // 13: redpanda.api.kconsole.v1alpha1.StartPipelineResponse
+	(*GetPipelineServiceConfigSchemaRequest)(nil),     // 14: redpanda.api.kconsole.v1alpha1.GetPipelineServiceConfigSchemaRequest
+	(*GetPipelineServiceConfigSchemaResponse)(nil),    // 15: redpanda.api.kconsole.v1alpha1.GetPipelineServiceConfigSchemaResponse
+	(*GetPipelinesForSecretRequest)(nil),              // 16: redpanda.api.kconsole.v1alpha1.GetPipelinesForSecretRequest
+	(*GetPipelinesForSecretResponse)(nil),             // 17: redpanda.api.kconsole.v1alpha1.GetPipelinesForSecretResponse
+	(*GetPipelinesBySecretsRequest)(nil),              // 18: redpanda.api.kconsole.v1alpha1.GetPipelinesBySecretsRequest
+	(*GetPipelinesBySecretsResponse)(nil),             // 19: redpanda.api.kconsole.v1alpha1.GetPipelinesBySecretsResponse
 	(*v1.CreatePipelineRequest)(nil),                  // 20: redpanda.api.dataplane.v1.CreatePipelineRequest
 	(*v1.CreatePipelineResponse)(nil),                 // 21: redpanda.api.dataplane.v1.CreatePipelineResponse
 	(*v1.GetPipelineRequest)(nil),                     // 22: redpanda.api.dataplane.v1.GetPipelineRequest
@@ -1221,46 +1221,46 @@ var file_redpanda_api_console_v1alpha1_pipeline_proto_goTypes = []any{
 	(*v1.GetPipelinesBySecretsResponse)(nil),          // 39: redpanda.api.dataplane.v1.GetPipelinesBySecretsResponse
 }
 var file_redpanda_api_console_v1alpha1_pipeline_proto_depIdxs = []int32{
-	20, // 0: redpanda.api.console.v1alpha1.CreatePipelineRequest.request:type_name -> redpanda.api.dataplane.v1.CreatePipelineRequest
-	21, // 1: redpanda.api.console.v1alpha1.CreatePipelineResponse.response:type_name -> redpanda.api.dataplane.v1.CreatePipelineResponse
-	22, // 2: redpanda.api.console.v1alpha1.GetPipelineRequest.request:type_name -> redpanda.api.dataplane.v1.GetPipelineRequest
-	23, // 3: redpanda.api.console.v1alpha1.GetPipelineResponse.response:type_name -> redpanda.api.dataplane.v1.GetPipelineResponse
-	24, // 4: redpanda.api.console.v1alpha1.DeletePipelineRequest.request:type_name -> redpanda.api.dataplane.v1.DeletePipelineRequest
-	25, // 5: redpanda.api.console.v1alpha1.DeletePipelineResponse.response:type_name -> redpanda.api.dataplane.v1.DeletePipelineResponse
-	26, // 6: redpanda.api.console.v1alpha1.ListPipelinesRequest.request:type_name -> redpanda.api.dataplane.v1.ListPipelinesRequest
-	27, // 7: redpanda.api.console.v1alpha1.ListPipelinesResponse.response:type_name -> redpanda.api.dataplane.v1.ListPipelinesResponse
-	28, // 8: redpanda.api.console.v1alpha1.UpdatePipelineRequest.request:type_name -> redpanda.api.dataplane.v1.UpdatePipelineRequest
-	29, // 9: redpanda.api.console.v1alpha1.UpdatePipelineResponse.response:type_name -> redpanda.api.dataplane.v1.UpdatePipelineResponse
-	30, // 10: redpanda.api.console.v1alpha1.StopPipelineRequest.request:type_name -> redpanda.api.dataplane.v1.StopPipelineRequest
-	31, // 11: redpanda.api.console.v1alpha1.StopPipelineResponse.response:type_name -> redpanda.api.dataplane.v1.StopPipelineResponse
-	32, // 12: redpanda.api.console.v1alpha1.StartPipelineRequest.request:type_name -> redpanda.api.dataplane.v1.StartPipelineRequest
-	33, // 13: redpanda.api.console.v1alpha1.StartPipelineResponse.response:type_name -> redpanda.api.dataplane.v1.StartPipelineResponse
-	34, // 14: redpanda.api.console.v1alpha1.GetPipelineServiceConfigSchemaRequest.request:type_name -> redpanda.api.dataplane.v1.GetPipelineServiceConfigSchemaRequest
-	35, // 15: redpanda.api.console.v1alpha1.GetPipelineServiceConfigSchemaResponse.response:type_name -> redpanda.api.dataplane.v1.GetPipelineServiceConfigSchemaResponse
-	36, // 16: redpanda.api.console.v1alpha1.GetPipelinesForSecretRequest.request:type_name -> redpanda.api.dataplane.v1.GetPipelinesForSecretRequest
-	37, // 17: redpanda.api.console.v1alpha1.GetPipelinesForSecretResponse.response:type_name -> redpanda.api.dataplane.v1.GetPipelinesForSecretResponse
-	38, // 18: redpanda.api.console.v1alpha1.GetPipelinesBySecretsRequest.request:type_name -> redpanda.api.dataplane.v1.GetPipelinesBySecretsRequest
-	39, // 19: redpanda.api.console.v1alpha1.GetPipelinesBySecretsResponse.response:type_name -> redpanda.api.dataplane.v1.GetPipelinesBySecretsResponse
-	0,  // 20: redpanda.api.console.v1alpha1.PipelineService.CreatePipeline:input_type -> redpanda.api.console.v1alpha1.CreatePipelineRequest
-	2,  // 21: redpanda.api.console.v1alpha1.PipelineService.GetPipeline:input_type -> redpanda.api.console.v1alpha1.GetPipelineRequest
-	4,  // 22: redpanda.api.console.v1alpha1.PipelineService.DeletePipeline:input_type -> redpanda.api.console.v1alpha1.DeletePipelineRequest
-	6,  // 23: redpanda.api.console.v1alpha1.PipelineService.ListPipelines:input_type -> redpanda.api.console.v1alpha1.ListPipelinesRequest
-	8,  // 24: redpanda.api.console.v1alpha1.PipelineService.UpdatePipeline:input_type -> redpanda.api.console.v1alpha1.UpdatePipelineRequest
-	10, // 25: redpanda.api.console.v1alpha1.PipelineService.StopPipeline:input_type -> redpanda.api.console.v1alpha1.StopPipelineRequest
-	12, // 26: redpanda.api.console.v1alpha1.PipelineService.StartPipeline:input_type -> redpanda.api.console.v1alpha1.StartPipelineRequest
-	14, // 27: redpanda.api.console.v1alpha1.PipelineService.GetPipelineServiceConfigSchema:input_type -> redpanda.api.console.v1alpha1.GetPipelineServiceConfigSchemaRequest
-	16, // 28: redpanda.api.console.v1alpha1.PipelineService.GetPipelinesForSecret:input_type -> redpanda.api.console.v1alpha1.GetPipelinesForSecretRequest
-	18, // 29: redpanda.api.console.v1alpha1.PipelineService.GetPipelinesBySecrets:input_type -> redpanda.api.console.v1alpha1.GetPipelinesBySecretsRequest
-	1,  // 30: redpanda.api.console.v1alpha1.PipelineService.CreatePipeline:output_type -> redpanda.api.console.v1alpha1.CreatePipelineResponse
-	3,  // 31: redpanda.api.console.v1alpha1.PipelineService.GetPipeline:output_type -> redpanda.api.console.v1alpha1.GetPipelineResponse
-	5,  // 32: redpanda.api.console.v1alpha1.PipelineService.DeletePipeline:output_type -> redpanda.api.console.v1alpha1.DeletePipelineResponse
-	7,  // 33: redpanda.api.console.v1alpha1.PipelineService.ListPipelines:output_type -> redpanda.api.console.v1alpha1.ListPipelinesResponse
-	9,  // 34: redpanda.api.console.v1alpha1.PipelineService.UpdatePipeline:output_type -> redpanda.api.console.v1alpha1.UpdatePipelineResponse
-	11, // 35: redpanda.api.console.v1alpha1.PipelineService.StopPipeline:output_type -> redpanda.api.console.v1alpha1.StopPipelineResponse
-	13, // 36: redpanda.api.console.v1alpha1.PipelineService.StartPipeline:output_type -> redpanda.api.console.v1alpha1.StartPipelineResponse
-	15, // 37: redpanda.api.console.v1alpha1.PipelineService.GetPipelineServiceConfigSchema:output_type -> redpanda.api.console.v1alpha1.GetPipelineServiceConfigSchemaResponse
-	17, // 38: redpanda.api.console.v1alpha1.PipelineService.GetPipelinesForSecret:output_type -> redpanda.api.console.v1alpha1.GetPipelinesForSecretResponse
-	19, // 39: redpanda.api.console.v1alpha1.PipelineService.GetPipelinesBySecrets:output_type -> redpanda.api.console.v1alpha1.GetPipelinesBySecretsResponse
+	20, // 0: redpanda.api.kconsole.v1alpha1.CreatePipelineRequest.request:type_name -> redpanda.api.dataplane.v1.CreatePipelineRequest
+	21, // 1: redpanda.api.kconsole.v1alpha1.CreatePipelineResponse.response:type_name -> redpanda.api.dataplane.v1.CreatePipelineResponse
+	22, // 2: redpanda.api.kconsole.v1alpha1.GetPipelineRequest.request:type_name -> redpanda.api.dataplane.v1.GetPipelineRequest
+	23, // 3: redpanda.api.kconsole.v1alpha1.GetPipelineResponse.response:type_name -> redpanda.api.dataplane.v1.GetPipelineResponse
+	24, // 4: redpanda.api.kconsole.v1alpha1.DeletePipelineRequest.request:type_name -> redpanda.api.dataplane.v1.DeletePipelineRequest
+	25, // 5: redpanda.api.kconsole.v1alpha1.DeletePipelineResponse.response:type_name -> redpanda.api.dataplane.v1.DeletePipelineResponse
+	26, // 6: redpanda.api.kconsole.v1alpha1.ListPipelinesRequest.request:type_name -> redpanda.api.dataplane.v1.ListPipelinesRequest
+	27, // 7: redpanda.api.kconsole.v1alpha1.ListPipelinesResponse.response:type_name -> redpanda.api.dataplane.v1.ListPipelinesResponse
+	28, // 8: redpanda.api.kconsole.v1alpha1.UpdatePipelineRequest.request:type_name -> redpanda.api.dataplane.v1.UpdatePipelineRequest
+	29, // 9: redpanda.api.kconsole.v1alpha1.UpdatePipelineResponse.response:type_name -> redpanda.api.dataplane.v1.UpdatePipelineResponse
+	30, // 10: redpanda.api.kconsole.v1alpha1.StopPipelineRequest.request:type_name -> redpanda.api.dataplane.v1.StopPipelineRequest
+	31, // 11: redpanda.api.kconsole.v1alpha1.StopPipelineResponse.response:type_name -> redpanda.api.dataplane.v1.StopPipelineResponse
+	32, // 12: redpanda.api.kconsole.v1alpha1.StartPipelineRequest.request:type_name -> redpanda.api.dataplane.v1.StartPipelineRequest
+	33, // 13: redpanda.api.kconsole.v1alpha1.StartPipelineResponse.response:type_name -> redpanda.api.dataplane.v1.StartPipelineResponse
+	34, // 14: redpanda.api.kconsole.v1alpha1.GetPipelineServiceConfigSchemaRequest.request:type_name -> redpanda.api.dataplane.v1.GetPipelineServiceConfigSchemaRequest
+	35, // 15: redpanda.api.kconsole.v1alpha1.GetPipelineServiceConfigSchemaResponse.response:type_name -> redpanda.api.dataplane.v1.GetPipelineServiceConfigSchemaResponse
+	36, // 16: redpanda.api.kconsole.v1alpha1.GetPipelinesForSecretRequest.request:type_name -> redpanda.api.dataplane.v1.GetPipelinesForSecretRequest
+	37, // 17: redpanda.api.kconsole.v1alpha1.GetPipelinesForSecretResponse.response:type_name -> redpanda.api.dataplane.v1.GetPipelinesForSecretResponse
+	38, // 18: redpanda.api.kconsole.v1alpha1.GetPipelinesBySecretsRequest.request:type_name -> redpanda.api.dataplane.v1.GetPipelinesBySecretsRequest
+	39, // 19: redpanda.api.kconsole.v1alpha1.GetPipelinesBySecretsResponse.response:type_name -> redpanda.api.dataplane.v1.GetPipelinesBySecretsResponse
+	0,  // 20: redpanda.api.kconsole.v1alpha1.PipelineService.CreatePipeline:input_type -> redpanda.api.kconsole.v1alpha1.CreatePipelineRequest
+	2,  // 21: redpanda.api.kconsole.v1alpha1.PipelineService.GetPipeline:input_type -> redpanda.api.kconsole.v1alpha1.GetPipelineRequest
+	4,  // 22: redpanda.api.kconsole.v1alpha1.PipelineService.DeletePipeline:input_type -> redpanda.api.kconsole.v1alpha1.DeletePipelineRequest
+	6,  // 23: redpanda.api.kconsole.v1alpha1.PipelineService.ListPipelines:input_type -> redpanda.api.kconsole.v1alpha1.ListPipelinesRequest
+	8,  // 24: redpanda.api.kconsole.v1alpha1.PipelineService.UpdatePipeline:input_type -> redpanda.api.kconsole.v1alpha1.UpdatePipelineRequest
+	10, // 25: redpanda.api.kconsole.v1alpha1.PipelineService.StopPipeline:input_type -> redpanda.api.kconsole.v1alpha1.StopPipelineRequest
+	12, // 26: redpanda.api.kconsole.v1alpha1.PipelineService.StartPipeline:input_type -> redpanda.api.kconsole.v1alpha1.StartPipelineRequest
+	14, // 27: redpanda.api.kconsole.v1alpha1.PipelineService.GetPipelineServiceConfigSchema:input_type -> redpanda.api.kconsole.v1alpha1.GetPipelineServiceConfigSchemaRequest
+	16, // 28: redpanda.api.kconsole.v1alpha1.PipelineService.GetPipelinesForSecret:input_type -> redpanda.api.kconsole.v1alpha1.GetPipelinesForSecretRequest
+	18, // 29: redpanda.api.kconsole.v1alpha1.PipelineService.GetPipelinesBySecrets:input_type -> redpanda.api.kconsole.v1alpha1.GetPipelinesBySecretsRequest
+	1,  // 30: redpanda.api.kconsole.v1alpha1.PipelineService.CreatePipeline:output_type -> redpanda.api.kconsole.v1alpha1.CreatePipelineResponse
+	3,  // 31: redpanda.api.kconsole.v1alpha1.PipelineService.GetPipeline:output_type -> redpanda.api.kconsole.v1alpha1.GetPipelineResponse
+	5,  // 32: redpanda.api.kconsole.v1alpha1.PipelineService.DeletePipeline:output_type -> redpanda.api.kconsole.v1alpha1.DeletePipelineResponse
+	7,  // 33: redpanda.api.kconsole.v1alpha1.PipelineService.ListPipelines:output_type -> redpanda.api.kconsole.v1alpha1.ListPipelinesResponse
+	9,  // 34: redpanda.api.kconsole.v1alpha1.PipelineService.UpdatePipeline:output_type -> redpanda.api.kconsole.v1alpha1.UpdatePipelineResponse
+	11, // 35: redpanda.api.kconsole.v1alpha1.PipelineService.StopPipeline:output_type -> redpanda.api.kconsole.v1alpha1.StopPipelineResponse
+	13, // 36: redpanda.api.kconsole.v1alpha1.PipelineService.StartPipeline:output_type -> redpanda.api.kconsole.v1alpha1.StartPipelineResponse
+	15, // 37: redpanda.api.kconsole.v1alpha1.PipelineService.GetPipelineServiceConfigSchema:output_type -> redpanda.api.kconsole.v1alpha1.GetPipelineServiceConfigSchemaResponse
+	17, // 38: redpanda.api.kconsole.v1alpha1.PipelineService.GetPipelinesForSecret:output_type -> redpanda.api.kconsole.v1alpha1.GetPipelinesForSecretResponse
+	19, // 39: redpanda.api.kconsole.v1alpha1.PipelineService.GetPipelinesBySecrets:output_type -> redpanda.api.kconsole.v1alpha1.GetPipelinesBySecretsResponse
 	30, // [30:40] is the sub-list for method output_type
 	20, // [20:30] is the sub-list for method input_type
 	20, // [20:20] is the sub-list for extension type_name

@@ -166,7 +166,7 @@ class AnimationExample extends Component<{}> {
 
         this.counter++;
         this.random = Math.random();
-        console.log('tick', this.counter);
+        kconsole.log('tick', this.counter);
     });
 
     constructor(p: any) {

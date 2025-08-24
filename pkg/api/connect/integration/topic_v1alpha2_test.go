@@ -37,7 +37,7 @@ func (s *APISuite) TestListTopics_v1alpha2() {
 	ctx, cancel := context.WithTimeout(context.Background(), 9*time.Second)
 	t.Cleanup(cancel)
 
-	topicPrefix := "console-integration-test-list-topics-"
+	topicPrefix := "kconsole-integration-test-list-topics-"
 	topicsToCreate := 5
 
 	createdTopics := make(map[string]struct{})
@@ -214,7 +214,7 @@ func (s *APISuite) TestCreateTopic_v1alpha2() {
 		defer cancel()
 
 		// 1. Create Topic via Connect API call
-		topicName := "console-integration-test-valid-request-connect-go"
+		topicName := "kconsole-integration-test-valid-request-connect-go"
 		partitionCount := int32(2)
 		client := v1alpha2connect.NewTopicServiceClient(http.DefaultClient, s.httpAddress())
 		createReq := &v1alpha2.CreateTopicRequest{
@@ -280,7 +280,7 @@ func (s *APISuite) TestCreateTopic_v1alpha2() {
 		defer cancel()
 
 		// Try tp create Topic via Connect API call
-		topicName := "console-integration-test-bad-topic-name!"
+		topicName := "kconsole-integration-test-bad-topic-name!"
 		client := v1alpha2connect.NewTopicServiceClient(http.DefaultClient, s.httpAddress())
 		createReq := &v1alpha2.CreateTopicRequest{
 			Topic: &v1alpha2.CreateTopicRequest_Topic{
@@ -299,7 +299,7 @@ func (s *APISuite) TestCreateTopic_v1alpha2() {
 		defer cancel()
 
 		// 1. Start dry-run of create topic via Connect API call
-		topicName := "console-integration-test-dry-run-request-connect-go"
+		topicName := "kconsole-integration-test-dry-run-request-connect-go"
 		partitionCount := int32(2)
 		client := v1alpha2connect.NewTopicServiceClient(http.DefaultClient, s.httpAddress())
 		createReq := &v1alpha2.CreateTopicRequest{
@@ -347,7 +347,7 @@ func (s *APISuite) TestCreateTopic_v1alpha2() {
 			} `json:"replica_assignments"`
 		}
 
-		topicName := "console-integration-test-valid-request-rest"
+		topicName := "kconsole-integration-test-valid-request-rest"
 		partitionCount := 2
 		httpReq := createTopicRequest{
 			Name:              topicName,
@@ -502,7 +502,7 @@ func (s *APISuite) TestDeleteTopic_v1alpha2() {
 		defer cancel()
 
 		// 1. Create one Topic via Kafka API
-		topicName := "console-integration-test-delete-topic-connect-go"
+		topicName := "kconsole-integration-test-delete-topic-connect-go"
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
 
@@ -539,7 +539,7 @@ func (s *APISuite) TestDeleteTopic_v1alpha2() {
 		defer cancel()
 
 		// 1. Create one Topic via Kafka API
-		topicName := "console.integration_test-delete-topic-http1" // Dot, underscore, dash are allowed special chars
+		topicName := "kconsole.integration_test-delete-topic-http1" // Dot, underscore, dash are allowed special chars
 		_, err := s.kafkaAdminClient.CreateTopic(ctx, 1, 1, nil, topicName)
 		require.NoError(err)
 
@@ -660,7 +660,7 @@ func (s *APISuite) TestGetTopicConfiguration_v1alpha2() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-get-topic-config-valid-connect-go"
+		topicName := "kconsole-integration-test-get-topic-config-valid-connect-go"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":  kmsg.StringPtr("delete"),
 			"retention.bytes": kmsg.StringPtr("1000"),
@@ -737,7 +737,7 @@ func (s *APISuite) TestGetTopicConfiguration_v1alpha2() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-get-topic-config-valid-http"
+		topicName := "kconsole-integration-test-get-topic-config-valid-http"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":  kmsg.StringPtr("delete"),
 			"retention.bytes": kmsg.StringPtr("1000"),
@@ -805,7 +805,7 @@ func (s *APISuite) TestUpdateTopicConfiguration_v1alpha2() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-valid-connect-go"
+		topicName := "kconsole-integration-test-update-topic-config-valid-connect-go"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -879,7 +879,7 @@ func (s *APISuite) TestUpdateTopicConfiguration_v1alpha2() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-valid-http"
+		topicName := "kconsole-integration-test-update-topic-config-valid-http"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -978,7 +978,7 @@ func (s *APISuite) TestUpdateTopicConfiguration_v1alpha2() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-invalid-connect-go"
+		topicName := "kconsole-integration-test-update-topic-config-invalid-connect-go"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -1060,7 +1060,7 @@ func (s *APISuite) TestUpdateTopicConfiguration_v1alpha2() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-empty-payload-http"
+		topicName := "kconsole-integration-test-update-topic-config-empty-payload-http"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -1103,7 +1103,7 @@ func (s *APISuite) TestSetTopicConfiguration_v1alpha2() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-valid-connect-go"
+		topicName := "kconsole-integration-test-update-topic-config-valid-connect-go"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -1174,7 +1174,7 @@ func (s *APISuite) TestSetTopicConfiguration_v1alpha2() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-valid-http"
+		topicName := "kconsole-integration-test-update-topic-config-valid-http"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),
@@ -1270,7 +1270,7 @@ func (s *APISuite) TestSetTopicConfiguration_v1alpha2() {
 		defer cancel()
 
 		// 1. Create new topic
-		topicName := "console-integration-test-update-topic-config-invalid-connect-go"
+		topicName := "kconsole-integration-test-update-topic-config-invalid-connect-go"
 		topicConfigs := map[string]*string{
 			"cleanup.policy":   kmsg.StringPtr("delete"),
 			"retention.bytes":  kmsg.StringPtr("1000"),

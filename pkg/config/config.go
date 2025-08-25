@@ -36,7 +36,6 @@ type Config struct {
 	ServeFrontend          bool   `yaml:"serveFrontend"` // useful for local development where we want the frontend from 'npm run start'
 
 	Console        Console      `yaml:"kconsole"`
-	Redpanda       Redpanda     `yaml:"redpanda"`
 	KafkaConnect   KafkaConnect `yaml:"kafkaConnect"`
 	REST           Server       `yaml:"server"`
 	Kafka          Kafka        `yaml:"kafka"`
@@ -80,11 +79,6 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("failed to validate Console config: %w", err)
 	}
 
-	err = c.Redpanda.Validate()
-	if err != nil {
-		return fmt.Errorf("failed to validate Redpanda config: %w", err)
-	}
-
 	err = c.KafkaConnect.Validate()
 	if err != nil {
 		return fmt.Errorf("failed to validate KafkaConnect config: %w", err)
@@ -108,7 +102,6 @@ func (c *Config) SetDefaults() {
 	c.REST.SetDefaults()
 	c.Kafka.SetDefaults()
 	c.Serde.SetDefaults()
-	c.Redpanda.SetDefaults()
 	c.Console.SetDefaults()
 	c.KafkaConnect.SetDefaults()
 }

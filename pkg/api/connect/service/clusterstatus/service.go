@@ -27,15 +27,9 @@ import (
 	"github.com/xxxcrel/kafka-console/pkg/config"
 	kafkaconnect "github.com/xxxcrel/kafka-console/pkg/connect"
 	kafkafactory "github.com/xxxcrel/kafka-console/pkg/factory/kafka"
-	"github.com/xxxcrel/kafka-console/pkg/factory/redpanda"
 	"github.com/xxxcrel/kafka-console/pkg/factory/schema"
-	v1alpha1 "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1"
-	"github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1/consolev1alpha1connect"
-	v1alpha2 "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/dataplane/v1alpha2"
 	"github.com/xxxcrel/kafka-console/pkg/version"
 )
-
-var _ consolev1alpha1connect.ClusterStatusServiceHandler = (*Service)(nil)
 
 // Service that implements the ClusterStatusServiceHandler interface. This includes all
 // RPCs to retrieve cluster information about all connected APIs.
@@ -43,13 +37,11 @@ type Service struct {
 	cfg    *config.Config
 	logger *zap.Logger
 
-	kafkaClientProvider    kafkafactory.ClientFactory
-	redpandaClientProvider redpanda.ClientFactory
-	schemaClientProvider   schema.ClientFactory
-	connectSvc             *kafkaconnect.Service
+	kafkaClientProvider  kafkafactory.ClientFactory
+	schemaClientProvider schema.ClientFactory
+	connectSvc           *kafkaconnect.Service
 
-	kafkaStatusChecker    *kafkaStatusChecker
-	redpandaStatusChecker *redpandaStatusChecker
+	kafkaStatusChecker *kafkaStatusChecker
 }
 
 // NewService creates a new Service that serves the RPCs for retrieving cluster statuses.
@@ -57,7 +49,6 @@ func NewService(
 	cfg *config.Config,
 	logger *zap.Logger,
 	kafkaClientProvider kafkafactory.ClientFactory,
-	redpandaClientProvider redpanda.ClientFactory,
 	schemaClientProvider schema.ClientFactory,
 	connectSvc *kafkaconnect.Service,
 ) *Service {
@@ -65,10 +56,9 @@ func NewService(
 		cfg:    cfg,
 		logger: logger,
 
-		kafkaClientProvider:    kafkaClientProvider,
-		redpandaClientProvider: redpandaClientProvider,
-		schemaClientProvider:   schemaClientProvider,
-		connectSvc:             connectSvc,
+		kafkaClientProvider:  kafkaClientProvider,
+		schemaClientProvider: schemaClientProvider,
+		connectSvc:           connectSvc,
 
 		kafkaStatusChecker: &kafkaStatusChecker{logger: logger},
 	}
@@ -77,7 +67,7 @@ func NewService(
 // GetKafkaInfo retrieves Kafka cluster metadata and API version concurrently,
 // aggregates details (such as broker counts, topics, partitions, and replicas),
 // and returns a comprehensive Kafka status response.
-func (s *Service) GetKafkaInfo(ctx context.Context, _ *connect.Request[v1alpha1.GetKafkaInfoRequest]) (*connect.Response[v1alpha1.GetKafkaInfoResponse], error) {
+func (s *Service) GetKafkaInfo(ctx context.Context) (*KafkaInfo, error) {
 	_, adminCl, err := s.kafkaClientProvider.GetKafkaClient(ctx)
 	if err != nil {
 		return nil, err
@@ -122,7 +112,7 @@ func (s *Service) GetKafkaInfo(ctx context.Context, _ *connect.Request[v1alpha1.
 		return nil, apierrors.NewConnectError(
 			connect.CodeInternal,
 			err,
-			apierrors.NewErrorInfo(v1alpha2.Reason_REASON_KAFKA_API_ERROR.String(), apierrors.KeyValsFromKafkaError(err)...),
+			apierrors.NewErrorInfo(Reason_REASON_KAFKA_API_ERROR.String(), apierrors.KeyValsFromKafkaError(err)...),
 		)
 	}
 
@@ -136,7 +126,7 @@ func (s *Service) GetKafkaInfo(ctx context.Context, _ *connect.Request[v1alpha1.
 		replicaCount += int32(len(p.Replicas))
 	})
 
-	kafkaInfoResponse := &v1alpha1.GetKafkaInfoResponse{
+	kafkaInfoResponse := &KafkaInfo{
 		Status:          s.kafkaStatusChecker.statusFromMetadata(metadata),
 		Version:         clusterVersion,
 		Distribution:    s.kafkaStatusChecker.distributionFromMetadata(metadata),
@@ -150,16 +140,16 @@ func (s *Service) GetKafkaInfo(ctx context.Context, _ *connect.Request[v1alpha1.
 		ClusterId:       metadata.Cluster,
 	}
 
-	return connect.NewResponse(kafkaInfoResponse), nil
+	return kafkaInfoResponse, nil
 }
 
 // GetKafkaAuthorizerInfo fetches Kafka ACLs using a describe request and
 // returns the total count of ACL resources, converting any Kafka API errors
 // into ConnectRPC errors.
-func (s *Service) GetKafkaAuthorizerInfo(ctx context.Context, _ *connect.Request[v1alpha1.GetKafkaAuthorizerInfoRequest]) (*connect.Response[v1alpha1.GetKafkaAuthorizerInfoResponse], error) {
+func (s *Service) GetKafkaAuthorizerInfo(ctx context.Context) (int32, error) {
 	kafkaCl, _, err := s.kafkaClientProvider.GetKafkaClient(ctx)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	listAllReq := kmsg.NewDescribeACLsRequest()
@@ -170,103 +160,30 @@ func (s *Service) GetKafkaAuthorizerInfo(ctx context.Context, _ *connect.Request
 
 	aclResponses, err := listAllReq.RequestWith(ctx, kafkaCl)
 	if err != nil {
-		return nil, apierrors.NewConnectError(
+		return 0, apierrors.NewConnectError(
 			connect.CodeInternal,
 			err,
-			apierrors.NewErrorInfo(v1alpha2.Reason_REASON_KAFKA_API_ERROR.String(), apierrors.KeyValsFromKafkaError(err)...),
+			apierrors.NewErrorInfo(Reason_REASON_KAFKA_API_ERROR.String(), apierrors.KeyValsFromKafkaError(err)...),
 		)
 	}
 
 	connectErr := apierrors.NewConnectErrorFromKafkaErrorCode(aclResponses.ErrorCode, aclResponses.ErrorMessage)
 	if connectErr != nil {
-		return nil, connectErr
+		return 0, connectErr
 	}
 
-	return connect.NewResponse(&v1alpha1.GetKafkaAuthorizerInfoResponse{AclCount: int32(len(aclResponses.Resources))}), nil
-}
-
-// GetRedpandaInfo retrieves cluster information from the Redpanda Admin API,
-// including cluster version (determined via brokers) and user count, while
-// enforcing a short timeout to mitigate long delays.
-func (s *Service) GetRedpandaInfo(ctx context.Context, _ *connect.Request[v1alpha1.GetRedpandaInfoRequest]) (*connect.Response[v1alpha1.GetRedpandaInfoResponse], error) {
-	// Try to retrieve a Redpanda Admin API client.
-	redpandaCl, err := s.redpandaClientProvider.GetRedpandaAPIClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// We use a child context with a shorter timeout because otherwise we'll potentially have very long response
-	// times in case of a single broker being down.
-	childCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	grp, grpCtx := errgroup.WithContext(childCtx)
-
-	version := "unknown"
-	grp.Go(func() error {
-		brokers, err := redpandaCl.Brokers(grpCtx)
-		if err != nil {
-			s.logger.Warn("failed to request redpanda brokers", zap.Error(err))
-		} else {
-			version = s.redpandaStatusChecker.clusterVersionFromBrokerList(brokers)
-		}
-		return nil
-	})
-
-	userCount := int32(-1)
-	grp.Go(func() error {
-		users, err := redpandaCl.ListUsers(ctx)
-		if err != nil {
-			s.logger.Warn("failed to list users via redpanda admin api", zap.Error(err))
-		} else {
-			userCount = int32(len(users))
-		}
-		return nil
-	})
-
-	// No error is returned, errors are already logged inside each go routine
-	_ = grp.Wait()
-
-	redpandaOverview := v1alpha1.GetRedpandaInfoResponse{
-		Version:   version,
-		UserCount: userCount,
-	}
-
-	return connect.NewResponse(&redpandaOverview), nil
-}
-
-// GetRedpandaPartitionBalancerStatus obtains the partition balancer status
-// from the Redpanda Admin API, converts it to the corresponding protobuf
-// response, and handles any associated errors.
-func (s *Service) GetRedpandaPartitionBalancerStatus(ctx context.Context, _ *connect.Request[v1alpha1.GetRedpandaPartitionBalancerStatusRequest]) (*connect.Response[v1alpha1.GetRedpandaPartitionBalancerStatusResponse], error) {
-	// Try to retrieve a Redpanda Admin API client.
-	redpandaCl, err := s.redpandaClientProvider.GetRedpandaAPIClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	pbs, err := redpandaCl.GetPartitionStatus(ctx)
-	if err != nil {
-		return nil, apierrors.NewConnectErrorFromRedpandaAdminAPIError(err, "failed retrieving partition balancer status: ")
-	}
-
-	protoStatus := s.redpandaStatusChecker.partitionBalancerStatusToProto(&pbs)
-
-	return connect.NewResponse(protoStatus), nil
+	return int32(len(aclResponses.Resources)), nil
 }
 
 // GetConsoleInfo returns version and build timestamp information for Console.
-func (*Service) GetConsoleInfo(context.Context, *connect.Request[v1alpha1.GetConsoleInfoRequest]) (*connect.Response[v1alpha1.GetConsoleInfoResponse], error) {
-	return connect.NewResponse(&v1alpha1.GetConsoleInfoResponse{
-		Version: version.Version,
-		BuiltAt: version.BuiltAt,
-	}), nil
+func (*Service) GetConsoleInfo(context.Context) (string, string, error) {
+	return version.Version, version.BuiltAt, nil
 }
 
 // GetKafkaConnectInfo retrieves information from all configured Kafka KafkaConnect
 // clusters, including cluster name, host, version, health status, and the count
 // of installed plugins, while ensuring that Kafka KafkaConnect is enabled.
-func (s *Service) GetKafkaConnectInfo(ctx context.Context, _ *connect.Request[v1alpha1.GetKafkaConnectInfoRequest]) (*connect.Response[v1alpha1.GetKafkaConnectInfoResponse], error) {
+func (s *Service) GetKafkaConnectInfo(ctx context.Context) ([]*KafkaConnectCluster, error) {
 	// Currently the connectSvc is always configured, even if it's not enabled.
 	// The connectSvc itself will then return errors if you request resources in
 	// case it hasn't been enabled in the configuration. Hence, we have to check
@@ -277,14 +194,14 @@ func (s *Service) GetKafkaConnectInfo(ctx context.Context, _ *connect.Request[v1
 
 	// Get cluster info from all clusters
 	clustersInfo := s.connectSvc.GetAllClusterInfo(ctx)
-	clustersOverview := make([]*v1alpha1.GetKafkaConnectInfoResponse_KafkaConnectCluster, len(clustersInfo))
+	clustersOverview := make([]*KafkaConnectCluster, len(clustersInfo))
 
 	for i, clusterInfo := range clustersInfo {
-		status := &v1alpha1.ComponentStatus{Status: v1alpha1.StatusType_STATUS_TYPE_HEALTHY}
+		status := &ComponentStatus{Status: StatusType_STATUS_TYPE_HEALTHY}
 		if clusterInfo.RequestError != nil {
-			status = &v1alpha1.ComponentStatus{Status: v1alpha1.StatusType_STATUS_TYPE_UNHEALTHY, StatusReason: clusterInfo.RequestError.Error()}
+			status = &ComponentStatus{Status: StatusType_STATUS_TYPE_UNHEALTHY, StatusReason: clusterInfo.RequestError.Error()}
 		}
-		clustersOverview[i] = &v1alpha1.GetKafkaConnectInfoResponse_KafkaConnectCluster{
+		clustersOverview[i] = &KafkaConnectCluster{
 			Name:                  clusterInfo.Name,
 			Status:                status,
 			Host:                  clusterInfo.Host,
@@ -292,21 +209,19 @@ func (s *Service) GetKafkaConnectInfo(ctx context.Context, _ *connect.Request[v1
 			InstalledPluginsCount: int32(len(clusterInfo.Plugins)),
 		}
 	}
-	return connect.NewResponse(&v1alpha1.GetKafkaConnectInfoResponse{
-		Clusters: clustersOverview,
-	}), nil
+	return clustersOverview, nil
 }
 
 // GetSchemaRegistryInfo obtains the status of the Schema Registry and the number
 // of registered subjects. It reports an unhealthy status if subjects cannot be
 // fetched, ensuring that errors are properly reflected in the response.
-func (s *Service) GetSchemaRegistryInfo(ctx context.Context, _ *connect.Request[v1alpha1.GetSchemaRegistryInfoRequest]) (*connect.Response[v1alpha1.GetSchemaRegistryInfoResponse], error) {
+func (s *Service) GetSchemaRegistryInfo(ctx context.Context) (*SchemaRegistryInfo, error) {
 	if !s.cfg.SchemaRegistry.Enabled {
 		return nil, apierrors.NewSchemaRegistryNotConfiguredError()
 	}
 
-	status := &v1alpha1.ComponentStatus{
-		Status:       v1alpha1.StatusType_STATUS_TYPE_HEALTHY,
+	status := &ComponentStatus{
+		Status:       StatusType_STATUS_TYPE_HEALTHY,
 		StatusReason: "",
 	}
 
@@ -318,15 +233,15 @@ func (s *Service) GetSchemaRegistryInfo(ctx context.Context, _ *connect.Request[
 	registeredSubjects := int32(0)
 	subjects, err := srClient.Subjects(ctx)
 	if err != nil {
-		setStatus(status, v1alpha1.StatusType_STATUS_TYPE_UNHEALTHY, fmt.Sprintf("Could not fetch subjects from schema registry %q", err.Error()))
+		setStatus(status, StatusType_STATUS_TYPE_UNHEALTHY, fmt.Sprintf("Could not fetch subjects from schema registry %q", err.Error()))
 	} else {
 		registeredSubjects = int32(len(subjects))
 	}
 
-	info := v1alpha1.GetSchemaRegistryInfoResponse{
+	info := SchemaRegistryInfo{
 		Status:                  status,
 		RegisteredSubjectsCount: registeredSubjects,
 	}
 
-	return connect.NewResponse(&info), nil
+	return &info, nil
 }

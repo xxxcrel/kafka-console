@@ -859,10 +859,6 @@ const apiStore = {
         console.error(e);
         return null;
       }),
-      client.getRedpandaInfo({}).catch((e) => {
-        console.error(e);
-        return null;
-      }),
       client.getKafkaConnectInfo({}).catch((e) => {
         console.error(e);
         return null;
@@ -885,7 +881,6 @@ const apiStore = {
       kafkaAuthorizerInfoResponse,
       consoleInfoResponse,
       kafkaResponse,
-      redpandaResponse,
       kafkaConnectResponse,
       schemaRegistryResponse = null, // Default to null in case it wasn't requested
     ] = responses;
@@ -894,7 +889,6 @@ const apiStore = {
       kafkaAuthorizerInfo: kafkaAuthorizerInfoResponse,
       console: consoleInfoResponse,
       kafka: kafkaResponse,
-      redpanda: redpandaResponse,
       schemaRegistry: schemaRegistryResponse,
       kafkaConnect: kafkaConnectResponse,
     };

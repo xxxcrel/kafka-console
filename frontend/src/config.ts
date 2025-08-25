@@ -115,7 +115,6 @@ export interface Breadcrumb {
 
 interface Config {
   restBasePath: string;
-  grpcBasePath: string;
   authenticationClient?: PromiseClient<typeof AuthenticationService>;
   licenseClient?: PromiseClient<typeof LicenseService>;
   consoleClient?: PromiseClient<typeof ConsoleService>;

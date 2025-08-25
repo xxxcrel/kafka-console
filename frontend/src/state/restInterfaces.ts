@@ -1388,7 +1388,6 @@ export interface CreateSecretResponse {
 export interface ClusterOverview {
   kafkaAuthorizerInfo: GetKafkaAuthorizerInfoResponse | null;
   kafka: GetKafkaInfoResponse | null;
-  redpanda: GetRedpandaInfoResponse | null;
   console: GetConsoleInfoResponse | null;
   kafkaConnect: GetKafkaConnectInfoResponse | null;
   schemaRegistry: GetSchemaRegistryInfoResponse | null;

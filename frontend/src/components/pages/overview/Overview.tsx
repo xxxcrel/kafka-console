@@ -66,15 +66,15 @@ class Overview extends PageComponent {
     p.title = 'Overview';
     p.addBreadcrumb('Overview', '/overview');
 
-    this.refreshData(true);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
   }
 
-  refreshData(force: boolean) {
+  refreshData() {
     api.refreshCluster();
     void api.refreshClusterOverview();
 
-    api.refreshBrokers(force);
+    api.refreshBrokers();
     void api.refreshClusterHealth();
     void api.refreshDebugBundleStatuses();
   }

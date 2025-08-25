@@ -12,13 +12,10 @@ package clusterstatus
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"go.uber.org/zap"
-
-	consolev1alpha1 "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1"
 )
 
 // kafkaStatusChecker encapsulates the logic to derive Kafka cluster status.
@@ -27,10 +24,10 @@ type kafkaStatusChecker struct {
 }
 
 // statusFromMetadata computes the health status from Kafka metadata.
-func (k *kafkaStatusChecker) statusFromMetadata(metadata kadm.Metadata) *consolev1alpha1.ComponentStatus {
+func (k *kafkaStatusChecker) statusFromMetadata(metadata kadm.Metadata) *ComponentStatus {
 	// Start with a healthy status; it can be downgraded based on findings.
-	status := &consolev1alpha1.ComponentStatus{
-		Status:       consolev1alpha1.StatusType_STATUS_TYPE_HEALTHY,
+	status := &ComponentStatus{
+		Status:       StatusType_STATUS_TYPE_HEALTHY,
 		StatusReason: "",
 	}
 
@@ -43,7 +40,7 @@ func (k *kafkaStatusChecker) statusFromMetadata(metadata kadm.Metadata) *console
 	// Get brokers that are expected to be online.
 	expectedBrokers := k.getExpectedBrokers(metadata)
 	if len(expectedBrokers) > len(onlineBrokers) {
-		setStatus(status, consolev1alpha1.StatusType_STATUS_TYPE_DEGRADED,
+		setStatus(status, StatusType_STATUS_TYPE_DEGRADED,
 			fmt.Sprintf("Expected %v online brokers which host replicas, but only %v are online",
 				len(expectedBrokers), len(onlineBrokers)),
 		)
@@ -93,15 +90,15 @@ func (k *kafkaStatusChecker) statusFromMetadata(metadata kadm.Metadata) *console
 
 	// Set degraded status based on the issues found.
 	if partitionLeadersNotAvailable > 0 {
-		setStatus(status, consolev1alpha1.StatusType_STATUS_TYPE_DEGRADED,
+		setStatus(status, StatusType_STATUS_TYPE_DEGRADED,
 			fmt.Sprintf("The leaders of %v partitions are currently unavailable. Leaders may be unavailable for various reasons, including a leader reelection.", partitionLeadersNotAvailable))
 	}
 	if underReplicatedPartitions > 0 {
-		setStatus(status, consolev1alpha1.StatusType_STATUS_TYPE_DEGRADED,
+		setStatus(status, StatusType_STATUS_TYPE_DEGRADED,
 			fmt.Sprintf("The cluster has %v partitions that are under-replicated.", underReplicatedPartitions))
 	}
 	if unwritablePartitions > 0 {
-		setStatus(status, consolev1alpha1.StatusType_STATUS_TYPE_DEGRADED,
+		setStatus(status, StatusType_STATUS_TYPE_DEGRADED,
 			fmt.Sprintf("The cluster has %v partitions that are unwritable. Partitions may be unwritable because they are under-replicated or their replicas are offline.", unwritablePartitions))
 	}
 
@@ -137,22 +134,18 @@ func (*kafkaStatusChecker) getExpectedBrokers(metadata kadm.Metadata) map[int32]
 
 // distributionFromMetadata tries to derive the Kafka distribution based on the
 // cluster id we retrieve via the metadata.
-func (*kafkaStatusChecker) distributionFromMetadata(metadata kadm.Metadata) consolev1alpha1.KafkaDistribution {
+func (*kafkaStatusChecker) distributionFromMetadata(metadata kadm.Metadata) KafkaDistribution {
 	if metadata.Cluster == "" {
-		return consolev1alpha1.KafkaDistribution_KAFKA_DISTRIBUTION_UNKNOWN
+		return KafkaDistribution_KAFKA_DISTRIBUTION_UNKNOWN
 	}
 
-	if strings.HasPrefix(metadata.Cluster, "redpanda.") {
-		return consolev1alpha1.KafkaDistribution_KAFKA_DISTRIBUTION_REDPANDA
-	}
-
-	return consolev1alpha1.KafkaDistribution_KAFKA_DISTRIBUTION_APACHE_KAFKA
+	return KafkaDistribution_KAFKA_DISTRIBUTION_APACHE_KAFKA
 }
 
-func (*kafkaStatusChecker) brokersFromMetadata(metadata kadm.Metadata) []*consolev1alpha1.KafkaBroker {
-	brokersProto := make([]*consolev1alpha1.KafkaBroker, len(metadata.Brokers))
+func (*kafkaStatusChecker) brokersFromMetadata(metadata kadm.Metadata) []*KafkaBroker {
+	brokersProto := make([]*KafkaBroker, len(metadata.Brokers))
 	for i, broker := range metadata.Brokers {
-		brokersProto[i] = &consolev1alpha1.KafkaBroker{
+		brokersProto[i] = &KafkaBroker{
 			BrokerId: broker.NodeID,
 			Host:     broker.Host,
 			RackId:   broker.Rack,

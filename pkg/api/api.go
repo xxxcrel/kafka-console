@@ -15,16 +15,14 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 	"time"
 
-	"github.com/cloudhut/common/rest"
+	"github.com/xxxcrel/kafka-console/pkg/api/connect/service/clusterstatus"
 	"github.com/xxxcrel/kafka-console/pkg/config"
 	"github.com/xxxcrel/kafka-console/pkg/connect"
 	"github.com/xxxcrel/kafka-console/pkg/embed"
 	kafkafactory "github.com/xxxcrel/kafka-console/pkg/factory/kafka"
-	redpandafactory "github.com/xxxcrel/kafka-console/pkg/factory/redpanda"
 	schemafactory "github.com/xxxcrel/kafka-console/pkg/factory/schema"
 	"github.com/xxxcrel/kafka-console/pkg/git"
 	"github.com/xxxcrel/kafka-console/pkg/kconsole"
@@ -41,16 +39,11 @@ type API struct {
 	Logger     *zap.Logger
 	ConsoleSvc kconsole.Servicer
 	ConnectSvc *connect.Service
+	ClusterSvc *clusterstatus.Service
 	GitSvc     *git.Service
 
-	RedpandaClientProvider redpandafactory.ClientFactory
-	KafkaClientProvider    kafkafactory.ClientFactory
-	SchemaClientProvider   schemafactory.ClientFactory
-
-	// FrontendResources is an in-memory Filesystem with all go:embedded frontend resources.
-	// The index.html is expected to be at the root of the filesystem. This prop will only be accessed
-	// if the config property serveFrontend is set to true.
-	FrontendResources fs.FS
+	KafkaClientProvider  kafkafactory.ClientFactory
+	SchemaClientProvider schemafactory.ClientFactory
 
 	// License is the license information for Console that will be used for logging
 	// and visibility purposes inside the open source version. License protected features
@@ -59,9 +52,6 @@ type API struct {
 
 	// Hooks to add additional functionality from the outside at different places
 	Hooks *Hooks
-
-	// internal server intance
-	server *rest.Server
 }
 
 // New creates a new API instance
@@ -113,7 +103,6 @@ func New(cfg *config.Config, inputOpts ...Option) *API {
 		logger,
 		opts.kafkaClientProvider,
 		opts.schemaClientProvider,
-		opts.redpandaClientProvider,
 		opts.cacheNamespaceFn,
 		connectSvc,
 	)
@@ -121,17 +110,23 @@ func New(cfg *config.Config, inputOpts ...Option) *API {
 		logger.Fatal("failed to create kconsole service", zap.Error(err))
 	}
 
+	clusterStatusSvc := clusterstatus.NewService(
+		cfg,
+		logging.NewLogger(&cfg.Logger, "redpanda_cluster_status_service"),
+		opts.kafkaClientProvider,
+		opts.schemaClientProvider,
+		connectSvc,
+	)
 	year := 24 * time.Hour * 365
 	return &API{
-		Cfg:                    cfg,
-		Logger:                 logger,
-		ConsoleSvc:             consoleSvc,
-		ConnectSvc:             connectSvc,
-		KafkaClientProvider:    opts.kafkaClientProvider,
-		SchemaClientProvider:   opts.schemaClientProvider,
-		RedpandaClientProvider: opts.redpandaClientProvider,
-		Hooks:                  newDefaultHooks(),
-		FrontendResources:      opts.frontendResources,
+		Cfg:                  cfg,
+		Logger:               logger,
+		ConsoleSvc:           consoleSvc,
+		ConnectSvc:           connectSvc,
+		ClusterSvc:           clusterStatusSvc,
+		KafkaClientProvider:  opts.kafkaClientProvider,
+		SchemaClientProvider: opts.schemaClientProvider,
+		Hooks:                newDefaultHooks(),
 		License: license.License{
 			Source:    license.SourceConsole,
 			Type:      license.TypeOpenSource,
@@ -159,13 +154,6 @@ func setDefaultClientProviders(cfg *config.Config, logger *zap.Logger, opts *opt
 		opts.schemaClientProvider = schemaClientProvider
 	}
 
-	if opts.redpandaClientProvider == nil {
-		redpandaClientProvider, err := redpandafactory.NewSingleClientProvider(cfg)
-		if err != nil {
-			logger.Fatal("failed to create the Redpanda client provider", zap.Error(err))
-		}
-		opts.redpandaClientProvider = redpandaClientProvider
-	}
 }
 
 // Start the API server and block
@@ -196,13 +184,4 @@ func (api *API) Start() {
 	//if err != nil {
 	//	api.Logger.Fatal("REST Server returned an error", zap.Error(err))
 	//}
-}
-
-// Stop gracefully stops the API.
-func (api *API) Stop(ctx context.Context) error {
-	err := api.server.Server.Shutdown(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to shutdown HTTP server: %w", err)
-	}
-	return nil
 }

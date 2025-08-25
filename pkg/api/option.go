@@ -22,13 +22,12 @@ import (
 )
 
 type options struct {
-	frontendResources      fs.FS
-	license                license.License
-	kafkaClientProvider    kafka.ClientFactory
-	redpandaClientProvider redpandafactory.ClientFactory
-	schemaClientProvider   schema.ClientFactory
-	logger                 *zap.Logger
-	cacheNamespaceFn       func(context.Context) (string, error)
+	frontendResources    fs.FS
+	license              license.License
+	kafkaClientProvider  kafka.ClientFactory
+	schemaClientProvider schema.ClientFactory
+	logger               *zap.Logger
+	cacheNamespaceFn     func(context.Context) (string, error)
 }
 
 // Option is a function that applies some configuration to the options struct.

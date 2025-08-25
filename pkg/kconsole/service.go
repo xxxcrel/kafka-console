@@ -24,7 +24,6 @@ import (
 	"github.com/xxxcrel/kafka-console/pkg/config"
 	"github.com/xxxcrel/kafka-console/pkg/connect"
 	kafkafactory "github.com/xxxcrel/kafka-console/pkg/factory/kafka"
-	redpandafactory "github.com/xxxcrel/kafka-console/pkg/factory/redpanda"
 	schemafactory "github.com/xxxcrel/kafka-console/pkg/factory/schema"
 	"github.com/xxxcrel/kafka-console/pkg/git"
 	"github.com/xxxcrel/kafka-console/pkg/msgpack"
@@ -38,16 +37,15 @@ var _ Servicer = (*Service)(nil)
 // Service offers all methods to serve the responses for the REST API. This usually only involves fetching
 // several responses from Kafka concurrently and constructing them so, that they are
 type Service struct {
-	kafkaClientFactory    kafkafactory.ClientFactory
-	schemaClientFactory   schemafactory.ClientFactory
-	redpandaClientFactory redpandafactory.ClientFactory
-	gitSvc                *git.Service // Git service can be nil if not configured
-	connectSvc            *connect.Service
-	cachedSchemaClient    *schemacache.CachedClient
-	serdeSvc              *serde.Service
-	protoSvc              *proto.Service
-	logger                *zap.Logger
-	cfg                   *config.Config
+	kafkaClientFactory  kafkafactory.ClientFactory
+	schemaClientFactory schemafactory.ClientFactory
+	gitSvc              *git.Service // Git service can be nil if not configured
+	connectSvc          *connect.Service
+	cachedSchemaClient  *schemacache.CachedClient
+	serdeSvc            *serde.Service
+	protoSvc            *proto.Service
+	logger              *zap.Logger
+	cfg                 *config.Config
 
 	// configExtensionsByName contains additional metadata about Topic or BrokerWithLogDirs configs.
 	// The additional information is used by the frontend to provide a good UX when
@@ -61,7 +59,6 @@ func NewService(
 	logger *zap.Logger,
 	kafkaClientFactory kafkafactory.ClientFactory,
 	schemaClientFactory schemafactory.ClientFactory,
-	redpandaClientFactory redpandafactory.ClientFactory,
 	cacheNamespaceFn func(context.Context) (string, error),
 	connectSvc *connect.Service,
 ) (Servicer, error) {
@@ -109,16 +106,15 @@ func NewService(
 	}
 
 	return &Service{
-		kafkaClientFactory:    kafkaClientFactory,
-		schemaClientFactory:   schemaClientFactory,
-		redpandaClientFactory: redpandaClientFactory,
-		gitSvc:                gitSvc,
-		connectSvc:            connectSvc,
-		cachedSchemaClient:    cachedSchemaClient,
-		serdeSvc:              serdeSvc,
-		protoSvc:              protoSvc,
-		logger:                logger,
-		cfg:                   cfg,
+		kafkaClientFactory:  kafkaClientFactory,
+		schemaClientFactory: schemaClientFactory,
+		gitSvc:              gitSvc,
+		connectSvc:          connectSvc,
+		cachedSchemaClient:  cachedSchemaClient,
+		serdeSvc:            serdeSvc,
+		protoSvc:            protoSvc,
+		logger:              logger,
+		cfg:                 cfg,
 
 		configExtensionsByName: configExtensionsByName,
 	}, nil

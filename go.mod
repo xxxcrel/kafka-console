@@ -61,7 +61,6 @@ require (
 	go.uber.org/zap v1.27.0
 	go.vallahaye.net/connect-gateway v0.8.0
 	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
-	golang.org/x/net v0.37.0
 	golang.org/x/sync v0.12.0
 	golang.org/x/text v0.23.0
 	google.golang.org/genproto v0.0.0-20240415180920-8c6c420018be
@@ -230,6 +229,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/mod v0.23.0 // indirect
+	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	gopkg.in/linkedin/goavro.v1 v1.0.5 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect

@@ -9,9 +9,7 @@
 
 package clusterstatus
 
-import consolev1alpha1 "github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1"
-
-func setStatus(s *consolev1alpha1.ComponentStatus, status consolev1alpha1.StatusType, reason string) {
+func setStatus(s *ComponentStatus, status StatusType, reason string) {
 	if status > s.Status {
 		s.Status = status
 		s.StatusReason = reason

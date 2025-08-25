@@ -30,8 +30,8 @@ func (app *App) GetEndpointCompatibility() (kconsole.EndpointCompatibility, erro
 	return app.api.ConsoleSvc.GetEndpointCompatibility(app.ctx)
 }
 
-func (app *App) GetConsumerGroupsOverview() ([]kconsole.ConsumerGroupOverview, *rest.Error) {
-	return app.api.ConsoleSvc.GetConsumerGroupsOverview(app.ctx, nil)
+func (app *App) GetConsumerGroupsOverview(groupIDS []string) ([]kconsole.ConsumerGroupOverview, *rest.Error) {
+	return app.api.ConsoleSvc.GetConsumerGroupsOverview(app.ctx, groupIDS)
 }
 
 func (app *App) GetKafkaInfo() (*clusterstatus.KafkaInfo, error) {

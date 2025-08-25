@@ -15,8 +15,6 @@ import (
 
 	"github.com/twmb/franz-go/pkg/kmsg"
 	"github.com/twmb/franz-go/pkg/kversion"
-	"go.uber.org/zap"
-
 	"github.com/xxxcrel/kafka-console/pkg/protogen/redpanda/api/console/v1alpha1/consolev1alpha1connect"
 	"github.com/xxxcrel/kafka-console/pkg/version"
 )
@@ -59,11 +57,10 @@ func (s *Service) GetEndpointCompatibility(ctx context.Context) (EndpointCompati
 
 	// Required kafka requests per API endpoint
 	type endpoint struct {
-		URL             string
-		Method          string
-		Requests        []kmsg.Request
-		HasRedpandaAPI  bool
-		RedpandaFeature redpandaFeature
+		URL            string
+		Method         string
+		Requests       []kmsg.Request
+		HasRedpandaAPI bool
 	}
 	endpointRequirements := []endpoint{
 		{
@@ -130,16 +127,14 @@ func (s *Service) GetEndpointCompatibility(ctx context.Context) (EndpointCompati
 			HasRedpandaAPI: true,
 		},
 		{
-			URL:             consolev1alpha1connect.TransformServiceName,
-			Method:          "POST",
-			HasRedpandaAPI:  true,
-			RedpandaFeature: redpandaFeatureWASMDataTransforms,
+			URL:            consolev1alpha1connect.TransformServiceName,
+			Method:         "POST",
+			HasRedpandaAPI: true,
 		},
 		{
-			URL:             consolev1alpha1connect.DebugBundleServiceName,
-			Method:          "POST",
-			HasRedpandaAPI:  true,
-			RedpandaFeature: redpandaFeatureDebugBundle,
+			URL:            consolev1alpha1connect.DebugBundleServiceName,
+			Method:         "POST",
+			HasRedpandaAPI: true,
 		},
 	}
 
@@ -160,27 +155,6 @@ func (s *Service) GetEndpointCompatibility(ctx context.Context) (EndpointCompati
 				endpointSupported = false
 			}
 		}
-
-		// Some API endpoints may be controllable via the Redpanda Admin API
-		// and the Kafka API. If the Kafka API is not supported, but the same
-		// endpoint is exposed via the Redpanda Admin API, we support
-		// this feature anyways.
-		if endpointReq.HasRedpandaAPI && s.cfg.Redpanda.AdminAPI.Enabled {
-			endpointSupported = true
-
-			// If we have an actual feature defined that we can check explicitly
-			// lets check that specific feature.
-			if endpointReq.RedpandaFeature != "" {
-				adminAPICl, err := s.redpandaClientFactory.GetRedpandaAPIClient(ctx)
-				if err == nil {
-					endpointSupported = s.checkRedpandaFeature(ctx, adminAPICl, endpointReq.RedpandaFeature)
-				} else {
-					endpointSupported = false
-					s.logger.Warn("failed to retrieve a redpanda api client to check endpoint compatibility", zap.Error(err))
-				}
-			}
-		}
-
 		endpoints = append(endpoints, EndpointCompatibilityEndpoint{
 			Endpoint:    endpointReq.URL,
 			Method:      endpointReq.Method,

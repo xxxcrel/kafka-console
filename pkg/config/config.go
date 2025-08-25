@@ -33,7 +33,6 @@ type Config struct {
 	// StrictConfigValidation rejects unknown YAML variables, unless turned off.
 	StrictConfigValidation bool
 	MetricsNamespace       string `yaml:"metricsNamespace"`
-	ServeFrontend          bool   `yaml:"serveFrontend"` // useful for local development where we want the frontend from 'npm run start'
 
 	Console        Console      `yaml:"kconsole"`
 	KafkaConnect   KafkaConnect `yaml:"kafkaConnect"`
@@ -94,7 +93,6 @@ func (c *Config) Validate() error {
 
 // SetDefaults for all root and child config structs
 func (c *Config) SetDefaults() {
-	c.ServeFrontend = true
 	c.MetricsNamespace = "kconsole"
 	c.StrictConfigValidation = true
 

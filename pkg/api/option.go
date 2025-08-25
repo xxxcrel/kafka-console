@@ -11,18 +11,15 @@ package api
 
 import (
 	"context"
-	"io/fs"
 
 	"go.uber.org/zap"
 
 	"github.com/xxxcrel/kafka-console/pkg/factory/kafka"
-	redpandafactory "github.com/xxxcrel/kafka-console/pkg/factory/redpanda"
 	"github.com/xxxcrel/kafka-console/pkg/factory/schema"
 	"github.com/xxxcrel/kafka-console/pkg/license"
 )
 
 type options struct {
-	frontendResources    fs.FS
 	license              license.License
 	kafkaClientProvider  kafka.ClientFactory
 	schemaClientProvider schema.ClientFactory
@@ -36,15 +33,6 @@ type Option func(*options)
 // apply takes an options instance and applies the configuration.
 func (opt Option) apply(opts *options) {
 	opt(opts)
-}
-
-// WithFrontendResources is an option to set an in-memory filesystem that provides the frontend resources.
-// The index.html is expected to be at the root of the filesystem. This method is called by Console
-// Enterprise, so that it can inject additional assets to the frontend.
-func WithFrontendResources(fsys fs.FS) Option {
-	return func(o *options) {
-		o.frontendResources = fsys
-	}
 }
 
 // WithLicense provides the license information which was used to start Redpanda
@@ -61,14 +49,6 @@ func WithLicense(license license.License) Option {
 func WithKafkaClientFactory(factory kafka.ClientFactory) Option {
 	return func(o *options) {
 		o.kafkaClientProvider = factory
-	}
-}
-
-// WithRedpandaClientFactory uses the provided ClientFactory for creating new
-// Redpanda API clients in all endpoint handlers.
-func WithRedpandaClientFactory(factory redpandafactory.ClientFactory) Option {
-	return func(o *options) {
-		o.redpandaClientProvider = factory
 	}
 }
 

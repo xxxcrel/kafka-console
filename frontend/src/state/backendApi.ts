@@ -44,7 +44,6 @@ import {
   type DeleteConsumerGroupOffsetsResponse,
   type DeleteConsumerGroupOffsetsResponseTopic,
   type DeleteConsumerGroupOffsetsTopic,
-  type DeleteRecordsResponseData,
   type EditConsumerGroupOffsetsRequest,
   type EditConsumerGroupOffsetsResponse,
   type EditConsumerGroupOffsetsResponseTopic,
@@ -52,13 +51,7 @@ import {
   type EndpointCompatibility,
   type GetAclOverviewResponse,
   type GetAclsRequest,
-  type GetAllPartitionsResponse,
-  type GetConsumerGroupResponse,
   type GetConsumerGroupsResponse,
-  type GetPartitionsResponse,
-  type GetTopicConsumersResponse,
-  type GetTopicOffsetsByTimestampResponse,
-  type GetTopicsResponse,
   type GetUsersResponse,
   type GroupDescription,
   isApiError,
@@ -91,13 +84,7 @@ import {
   type SchemaRegistryValidateSchemaResponse,
   type SchemaVersion,
   type Topic,
-  type TopicConfigResponse,
-  type TopicConsumer,
-  type TopicDescription,
-  type TopicDocumentation,
-  type TopicDocumentationResponse,
   type TopicMessage,
-  type TopicOffset,
   type TopicPermissions,
   type UserData,
   WrappedApiError,
@@ -108,7 +95,6 @@ import {proto3} from '@bufbuild/protobuf';
 import type {ConnectError} from '@connectrpc/connect';
 import {Code} from '@connectrpc/connect';
 import {AuthenticationMethod, type GetIdentityResponse, KafkaAclOperation, RedpandaCapability, SchemaRegistryCapability,} from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
-import {KafkaDistribution} from '../protogen/redpanda/api/console/v1alpha1/cluster_status_pb';
 import {CompressionType as ProtoCompressionType, PayloadEncoding,} from '../protogen/redpanda/api/console/v1alpha1/common_pb';
 import {type CreateDebugBundleRequest, type CreateDebugBundleResponse, type DebugBundleStatus, DebugBundleStatus_Status, type GetClusterHealthResponse, type GetDebugBundleStatusResponse_DebugBundleBrokerStatus,} from '../protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
 import type {License, ListEnterpriseFeaturesResponse_Feature, SetLicenseRequest, SetLicenseResponse,} from '../protogen/redpanda/api/console/v1alpha1/license_pb';
@@ -120,11 +106,15 @@ import {type CreateSecretRequest, type DeleteSecretRequest, type ListSecretScope
 import type {TransformMetadata} from '../protogen/redpanda/api/dataplane/v1alpha2/transform_pb';
 import {Features} from './supportedFeatures';
 import {PartitionOffsetOrigin} from './ui';
-import {GetBrokerConfig, GetBrokersWithLogDirs, GetClusterInfo, GetEndpointCompatibility} from "../../wailsjs/go/main/App";
+import {DeleteTopic, DeleteTopicRecords, GetBrokerConfig, GetBrokersWithLogDirs, GetClusterInfo, GetConsoleInfo, GetConsumerGroupsOverview, GetEndpointCompatibility, GetKafkaAuthorizerInfo, GetKafkaConnectInfo, GetKafkaInfo, GetSchemaRegistryInfo, GetTopicConfigs, GetTopicDetails, GetTopicDocumentation, GetTopicsOverview, ListOffsets, ListTopicConsumers} from "../../wailsjs/go/main/App";
 import {kconsole} from "../../wailsjs/go/models";
 import BrokerConfigEntry = kconsole.BrokerConfigEntry;
 import ClusterInfo = kconsole.ClusterInfo;
 import BrokerWithLogDirs = kconsole.BrokerWithLogDirs;
+import TopicConfig = kconsole.TopicConfig;
+import TopicSummary = kconsole.TopicSummary;
+import TopicPartitionDetails = kconsole.TopicPartitionDetails;
+import ConsumerGroupOverview = kconsole.ConsumerGroupOverview;
 
 const REST_TIMEOUT_SEC = 25;
 export const REST_CACHE_DURATION_SEC = 20;
@@ -356,14 +346,14 @@ const apiStore = {
   schemaReferencedBy: new Map<string, Map<number, SchemaReferencedByEntry[]>>(), // subjectName => version => details
   schemaUsagesById: new Map<number, SchemaVersion[]>(),
 
-  topics: null as Topic[] | null,
-  topicConfig: new Map<string, TopicDescription | null>(), // null = not allowed to view config of this topic
-  topicDocumentation: new Map<string, TopicDocumentation>(),
+  topics: null as TopicSummary[] | null,
+  topicConfig: new Map<string, TopicConfig | null>(), // null = not allowed to view config of this topic
+  topicDocumentation: new Map<string, kconsole.TopicDocumentation>(),
   topicPermissions: new Map<string, TopicPermissions | null>(),
-  topicPartitions: new Map<string, Partition[] | null>(), // null = not allowed to view partitions of this config
+  topicPartitions: new Map<string, TopicPartitionDetails[] | null>(), // null = not allowed to view partitions of this config
   topicPartitionErrors: new Map<string, Array<{ id: number; partitionError: string }>>(),
   topicWatermarksErrors: new Map<string, Array<{ id: number; waterMarksError: string }>>(),
-  topicConsumers: new Map<string, TopicConsumer[]>(),
+  topicConsumers: new Map<string, kconsole.TopicConsumerGroup[]>(),
   topicAcls: new Map<string, GetAclOverviewResponse | null>(),
 
   serviceAccounts: undefined as GetUsersResponse | undefined | null,
@@ -374,7 +364,7 @@ const apiStore = {
 
   Quotas: undefined as QuotaResponse | undefined | null,
 
-  consumerGroups: new Map<string, GroupDescription>(),
+  consumerGroups: new Map<string, ConsumerGroupOverview>(),
   consumerGroupAcls: new Map<string, GetAclOverviewResponse | null>(),
 
   partitionReassignments: undefined as PartitionReassignments[] | null | undefined,
@@ -518,77 +508,55 @@ const apiStore = {
   // Fetch errors
   errors: [] as any[],
 
-  refreshTopics(force?: boolean) {
-    cachedApiRequest<GetTopicsResponse>(`${appConfig.restBasePath}/topics`, force).then((v) => {
-      if (v?.topics != null) {
-        for (const t of v.topics) {
-          if (!t.allowedActions) continue;
+  refreshTopics() {
+    GetTopicsOverview()
+      .then((topics) => {
+        this.topics = topics;
+      }, addError);
+  },
 
-          // DEBUG: randomly remove some allowedActions
-          /*
-                        const numToRemove = Math.round(Math.random() * t.allowedActions.length);
-                        for (let i = 0; i < numToRemove; i++) {
-                            const randomIndex = Math.round(Math.random() * (t.allowedActions.length - 1));
-                            t.allowedActions.splice(randomIndex, 1);
-                        }
-                        */
+  async refreshTopicConfig(topicName: string): Promise<void> {
+    GetTopicConfigs(topicName, [])
+      .then((topicConfig) => {
+        if (topicConfig instanceof TopicConfig) {
+          if (!topicConfig) {
+            this.topicConfig.delete(topicName);
+            return;
+          }
+
+          if (topicConfig.error) {
+            this.topicConfig.set(topicName, topicConfig);
+            return;
+          }
+
+          // add 'type' to each synonym
+          // in the raw data, only the root entries have 'type', but the nested synonyms do not
+          // we need 'type' on synonyms as well for filtering
+          const topicDescription = topicConfig;
+          prepareSynonyms(topicDescription.configEntries);
+          this.topicConfig.set(topicName, topicDescription);
         }
-      }
-      this.topics = v?.topics;
-    }, addError);
+      }, addError)
   },
 
-  async refreshTopicConfig(topicName: string, force?: boolean): Promise<void> {
-    const promise = cachedApiRequest<TopicConfigResponse | null>(
-      `${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}/configuration`,
-      force,
-    ).then((v) => {
-      if (!v) {
-        this.topicConfig.delete(topicName);
-        return;
-      }
-
-      if (v.topicDescription.error) {
-        this.topicConfig.set(topicName, v.topicDescription);
-        return;
-      }
-
-      // add 'type' to each synonym
-      // in the raw data, only the root entries have 'type', but the nested synonyms do not
-      // we need 'type' on synonyms as well for filtering
-      const topicDescription = v.topicDescription;
-      prepareSynonyms(topicDescription.configEntries);
-      this.topicConfig.set(topicName, topicDescription);
-    }, addError); // 403 -> null
-    return promise as Promise<void>;
+  async getTopicOffsetsByTimestamp(topicNames: string[], timestampUnixMs: number): Promise<kconsole.TopicOffset[]> {
+    return ListOffsets(topicNames, timestampUnixMs);
   },
 
-  async getTopicOffsetsByTimestamp(topicNames: string[], timestampUnixMs: number): Promise<TopicOffset[]> {
-    const query = `topicNames=${encodeURIComponent(topicNames.join(','))}&timestamp=${timestampUnixMs}`;
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/topics-offsets?${query}`, {
-      method: 'GET',
-      headers: [['Content-Type', 'application/json']],
-    });
-
-    const r = await parseOrUnwrap<GetTopicOffsetsByTimestampResponse>(response, null);
-    return r.topicOffsets;
-  },
-
-  refreshTopicDocumentation(topicName: string, force?: boolean) {
-    cachedApiRequest<TopicDocumentationResponse>(
-      `${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}/documentation`,
-      force,
-    ).then((v) => {
-      const text = v.documentation.markdown == null ? null : decodeBase64(v.documentation.markdown);
-      v.documentation.text = text;
-      this.topicDocumentation.set(topicName, v.documentation);
-    }, addError);
+  refreshTopicDocumentation(topicName: string) {
+    GetTopicDocumentation(topicName)
+      .then((documentation) => {
+        const text = documentation.markdown == null ? null : decodeBase64(Buffer.from(documentation.markdown).toString("utf-8"));
+        documentation.text = text;
+        this.topicDocumentation.set(topicName, documentation);
+      }, addError);
   },
 
   async deleteTopic(topicName: string) {
-    return rest(`${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}`, {method: 'DELETE'}).catch(
-      addError,
-    );
+    return DeleteTopic(topicName)
+      .catch(
+        addError,
+      );
   },
 
   async deleteTopicRecords(topicName: string, offset: number, partitionId?: number) {
@@ -607,8 +575,8 @@ const apiStore = {
 
   async deleteTopicRecordsFromAllPartitionsHighWatermark(topicName: string) {
     const partitions = this.topicPartitions?.get(topicName)?.map(({waterMarkHigh, id}) => ({
-      partitionId: id,
-      offset: waterMarkHigh,
+      Partition: id,
+      Offset: waterMarkHigh,
     }));
 
     if (!partitions || partitions.length === 0) {
@@ -621,160 +589,151 @@ const apiStore = {
 
   async deleteTopicRecordsFromMultiplePartitionOffsetPairs(
     topicName: string,
-    pairs: Array<{ partitionId: number; offset: number }>,
+    pairs: Array<{ Partition: number; Offset: number }>,
   ) {
-    return rest<DeleteRecordsResponseData>(
-      `${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}/records`,
-      {
-        method: 'DELETE',
-        headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify({partitions: pairs}),
-      },
-    ).catch(addError);
+    return DeleteTopicRecords({Topic: topicName, Partitions: [...pairs], UnknownTags: undefined})
+      .catch(addError);
   },
 
-  refreshPartitions(topics: 'all' | string[] = 'all', force?: boolean): Promise<void> {
-    if (Array.isArray(topics))
-      // sort in order to maximize cache hits (todo: track/cache each topic individually instead)
-      topics = topics.sort().map((t) => encodeURIComponent(t));
+  refreshPartitions(topics: 'all' | string[] = 'all'): Promise<void> {
+    return GetTopicDetails(topics === 'all' ? [] : [...topics])
+      .then((topics) => {
+        if (!topics) return;
+        if (topics instanceof Array) {
+          transaction(() => {
+              const errors: {
+                topicName: string;
+                partitionErrors: { partitionId: number; error: string }[];
+                waterMarkErrors: { partitionId: number; error: string }[];
+              }[] = [];
 
-    const url =
-      topics === 'all'
-        ? `${appConfig.restBasePath}/operations/topic-details`
-        : `${appConfig.restBasePath}/operations/topic-details?topicNames=${topics.joinStr(',')}`;
+              for (const t of topics) {
+                if (t.error != null) {
+                  // kconsole.error(`refreshAllTopicPartitions: error for topic ${t.topicName}: ${t.error}`);
+                  continue;
+                }
 
-    return cachedApiRequest<GetAllPartitionsResponse | null>(url, force).then((response) => {
-      if (!response?.topics) return;
-      transaction(() => {
-        const errors: {
-          topicName: string;
-          partitionErrors: { partitionId: number; error: string }[];
-          waterMarkErrors: { partitionId: number; error: string }[];
-        }[] = [];
+                // If any partition has any errors, don't set the result for that topic
+                const partitionErrors = [];
+                const waterMarkErrors = [];
+                for (const p of t.partitions) {
+                  // topicName
+                  p.topicName = t.topicName;
 
-        for (const t of response.topics) {
-          if (t.error != null) {
-            // kconsole.error(`refreshAllTopicPartitions: error for topic ${t.topicName}: ${t.error}`);
-            continue;
+                  let partitionHasError = false;
+                  if (p.partitionError) {
+                    partitionErrors.push({partitionId: p.id, error: p.partitionError});
+                    partitionHasError = true;
+                  }
+                  if (p.waterMarksError) {
+                    waterMarkErrors.push({partitionId: p.id, error: p.waterMarksError});
+                    partitionHasError = true;
+                  }
+                  if (partitionHasError) {
+                    continue;
+                  }
+
+                  // Add some local/cached properties to make working with the data easier
+                  const validLogDirs = p.partitionLogDirs.filter((e) => !e.error && e.size >= 0);
+                  const replicaSize = validLogDirs.length > 0 ? validLogDirs.max((e) => e.size) : 0;
+                  p.replicaSize = replicaSize >= 0 ? replicaSize : 0;
+                }
+
+                // Set partition
+                this.topicPartitions.set(t.topicName, t.partitions);
+
+                if (partitionErrors.length === 0 && waterMarkErrors.length === 0) {
+                } else {
+                  errors.push({
+                    topicName: t.topicName,
+                    partitionErrors: partitionErrors,
+                    waterMarkErrors: waterMarkErrors,
+                  });
+                }
+              }
+
+              // if (errors.length > 0)
+              //     kconsole.error('refreshAllTopicPartitions: response had errors', errors);
+            }
+          )
+        }
+      }, addError);
+  },
+
+  refreshPartitionsForTopic(topicName: string) {
+    GetTopicDetails([topicName])
+      .then((topicDetails) => {
+        if (topicDetails instanceof Array) {
+          if (topicDetails.length != 1) {
+            return;
+          }
+          let partitions = topicDetails[0].partitions;
+          if (partitions) {
+            const partitionErrors: Array<{ id: number; partitionError: string }> = [];
+            const waterMarksErrors: Array<{ id: number; waterMarksError: string }> = [];
+
+            // Add some local/cached properties to make working with the data easier
+            for (const p of partitions) {
+              // topicName
+              p.topicName = topicName;
+
+              if (p.partitionError) partitionErrors.push({id: p.id, partitionError: p.partitionError});
+              if (p.waterMarksError) waterMarksErrors.push({id: p.id, waterMarksError: p.waterMarksError});
+              if (partitionErrors.length || waterMarksErrors.length) continue;
+
+              // replicaSize
+              const validLogDirs = p.partitionLogDirs.filter((e) => (e.error == null || e.error === '') && e.size >= 0);
+              const replicaSize = validLogDirs.length > 0 ? validLogDirs.max((e) => e.size) : 0;
+              p.replicaSize = replicaSize >= 0 ? replicaSize : 0;
+            }
+
+            if (partitionErrors.length === 0 && waterMarksErrors.length === 0) {
+              // Set partitions
+              this.topicPartitionErrors.delete(topicName);
+              this.topicWatermarksErrors.delete(topicName);
+              this.topicPartitions.set(topicName, partitions);
+            } else {
+              this.topicPartitionErrors.set(topicName, partitionErrors);
+              this.topicWatermarksErrors.set(topicName, waterMarksErrors);
+              console.error(
+                `refreshPartitionsForTopic: response has partition errors (t=${topicName} p=${partitionErrors.length}, w=${waterMarksErrors.length})`,
+              );
+            }
+          } else {
+            // Set null to indicate that we're not allowed to see the partitions
+            this.topicPartitions.set(topicName, null);
+            return;
           }
 
-          // If any partition has any errors, don't set the result for that topic
-          const partitionErrors = [];
-          const waterMarkErrors = [];
-          for (const p of t.partitions) {
-            // topicName
-            p.topicName = t.topicName;
+          let partitionErrors = 0;
+          let waterMarkErrors = 0;
 
-            let partitionHasError = false;
-            if (p.partitionError) {
-              partitionErrors.push({partitionId: p.id, error: p.partitionError});
-              partitionHasError = true;
-            }
-            if (p.waterMarksError) {
-              waterMarkErrors.push({partitionId: p.id, error: p.waterMarksError});
-              partitionHasError = true;
-            }
-            if (partitionHasError) {
-              p.hasErrors = true;
+          // Add some local/cached properties to make working with the data easier
+          for (const p of partitions) {
+            // topicName
+            p.topicName = topicName;
+
+            if (p.partitionError) partitionErrors++;
+            if (p.waterMarksError) waterMarkErrors++;
+            if (partitionErrors || waterMarkErrors) {
               continue;
             }
 
-            // Add some local/cached properties to make working with the data easier
-            const validLogDirs = p.partitionLogDirs.filter((e) => !e.error && e.size >= 0);
+            // replicaSize
+            const validLogDirs = p.partitionLogDirs.filter((e) => (e.error == null || e.error === '') && e.size >= 0);
             const replicaSize = validLogDirs.length > 0 ? validLogDirs.max((e) => e.size) : 0;
             p.replicaSize = replicaSize >= 0 ? replicaSize : 0;
           }
 
-          // Set partition
-          this.topicPartitions.set(t.topicName, t.partitions);
-
-          if (partitionErrors.length === 0 && waterMarkErrors.length === 0) {
-          } else {
-            errors.push({
-              topicName: t.topicName,
-              partitionErrors: partitionErrors,
-              waterMarkErrors: waterMarkErrors,
-            });
-          }
-        }
-
-        // if (errors.length > 0)
-        //     kconsole.error('refreshAllTopicPartitions: response had errors', errors);
-      });
-    }, addError);
-  },
-
-  refreshPartitionsForTopic(topicName: string, force?: boolean) {
-    cachedApiRequest<GetPartitionsResponse | null>(
-      `${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}/partitions`,
-      force,
-    ).then((response) => {
-      if (response?.partitions) {
-        const partitionErrors: Array<{ id: number; partitionError: string }> = [];
-        const waterMarksErrors: Array<{ id: number; waterMarksError: string }> = [];
-
-        // Add some local/cached properties to make working with the data easier
-        for (const p of response.partitions) {
-          // topicName
-          p.topicName = topicName;
-
-          if (p.partitionError) partitionErrors.push({id: p.id, partitionError: p.partitionError});
-          if (p.waterMarksError) waterMarksErrors.push({id: p.id, waterMarksError: p.waterMarksError});
-          if (partitionErrors.length || waterMarksErrors.length) continue;
-
-          // replicaSize
-          const validLogDirs = p.partitionLogDirs.filter((e) => (e.error == null || e.error === '') && e.size >= 0);
-          const replicaSize = validLogDirs.length > 0 ? validLogDirs.max((e) => e.size) : 0;
-          p.replicaSize = replicaSize >= 0 ? replicaSize : 0;
-        }
-
-        if (partitionErrors.length === 0 && waterMarksErrors.length === 0) {
           // Set partitions
-          this.topicPartitionErrors.delete(topicName);
-          this.topicWatermarksErrors.delete(topicName);
-          this.topicPartitions.set(topicName, response.partitions);
-        } else {
-          this.topicPartitionErrors.set(topicName, partitionErrors);
-          this.topicWatermarksErrors.set(topicName, waterMarksErrors);
-          console.error(
-            `refreshPartitionsForTopic: response has partition errors (t=${topicName} p=${partitionErrors.length}, w=${waterMarksErrors.length})`,
-          );
+          this.topicPartitions.set(topicName, partitions);
+
+          if (partitionErrors > 0 || waterMarkErrors > 0)
+            console.warn(
+              `refreshPartitionsForTopic: response has partition errors (topic=${topicName} partitionErrors=${partitionErrors}, waterMarkErrors=${waterMarkErrors})`,
+            )
         }
-      } else {
-        // Set null to indicate that we're not allowed to see the partitions
-        this.topicPartitions.set(topicName, null);
-        return;
-      }
-
-      let partitionErrors = 0;
-      let waterMarkErrors = 0;
-
-      // Add some local/cached properties to make working with the data easier
-      for (const p of response.partitions) {
-        // topicName
-        p.topicName = topicName;
-
-        if (p.partitionError) partitionErrors++;
-        if (p.waterMarksError) waterMarkErrors++;
-        if (partitionErrors || waterMarkErrors) {
-          p.hasErrors = true;
-          continue;
-        }
-
-        // replicaSize
-        const validLogDirs = p.partitionLogDirs.filter((e) => (e.error == null || e.error === '') && e.size >= 0);
-        const replicaSize = validLogDirs.length > 0 ? validLogDirs.max((e) => e.size) : 0;
-        p.replicaSize = replicaSize >= 0 ? replicaSize : 0;
-      }
-
-      // Set partitions
-      this.topicPartitions.set(topicName, response.partitions);
-
-      if (partitionErrors > 0 || waterMarkErrors > 0)
-        console.warn(
-          `refreshPartitionsForTopic: response has partition errors (topic=${topicName} partitionErrors=${partitionErrors}, waterMarkErrors=${waterMarkErrors})`,
-        );
-    }, addError);
+      }, addError);
   },
 
   get getTopicPartitionArray() {
@@ -804,11 +763,9 @@ const apiStore = {
     });
   },
 
-  refreshTopicConsumers(topicName: string, force?: boolean) {
-    cachedApiRequest<GetTopicConsumersResponse>(
-      `${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}/consumers`,
-      force,
-    ).then((v) => this.topicConsumers.set(topicName, v.topicConsumers), addError);
+  refreshTopicConsumers(topicName: string) {
+    ListTopicConsumers(topicName)
+      .then((consumerGroups) => this.topicConsumers.set(topicName, consumerGroups), addError);
   },
 
   async refreshAcls(request: GetAclsRequest, force?: boolean): Promise<void> {
@@ -840,26 +797,20 @@ const apiStore = {
   },
 
   async refreshClusterOverview() {
-    const client = appConfig.clusterStatusClient;
-
-    if (!client) {
-      throw new Error('Cluster status client is not initialized');
-    }
-
     const requests: Array<Promise<any>> = [
-      client.getKafkaAuthorizerInfo({}).catch((e) => {
+      GetKafkaAuthorizerInfo().catch((e) => {
         console.error(e);
         return null;
       }),
-      client.getConsoleInfo({}).catch((e) => {
+      GetConsoleInfo().catch((e) => {
         console.error(e);
         return null;
       }),
-      client.getKafkaInfo({}).catch((e) => {
+      GetKafkaInfo().catch((e) => {
         console.error(e);
         return null;
       }),
-      client.getKafkaConnectInfo({}).catch((e) => {
+      GetKafkaConnectInfo().catch((e) => {
         console.error(e);
         return null;
       }),
@@ -868,7 +819,7 @@ const apiStore = {
     // Conditionally add schema registry request
     if (api.userData?.canViewSchemas) {
       requests.push(
-        client.getSchemaRegistryInfo({}).catch((e) => {
+        GetSchemaRegistryInfo().catch((e) => {
           console.error(e);
           return null;
         }),
@@ -895,11 +846,11 @@ const apiStore = {
   },
 
   get isRedpanda() {
-    return this.clusterOverview?.kafka?.distribution === KafkaDistribution.REDPANDA;
+    return false;
   },
 
   get isAdminApiConfigured() {
-    return this.clusterOverview?.redpanda !== null;
+    return false;
   },
 
   refreshBrokers() {
@@ -943,26 +894,29 @@ const apiStore = {
       });
   },
 
-  refreshConsumerGroup(groupId: string, force?: boolean) {
-    cachedApiRequest<GetConsumerGroupResponse>(
-      `${appConfig.restBasePath}/consumer-groups/${encodeURIComponent(groupId)}`,
-      force,
-    ).then((v) => {
-      addFrontendFieldsForConsumerGroup(v.consumerGroup);
-      this.consumerGroups.set(v.consumerGroup.groupId, v.consumerGroup);
-    }, addError);
+  refreshConsumerGroup(groupId: string) {
+    GetConsumerGroupsOverview([groupId])
+      .then((groupOverviews) => {
+        if (groupOverviews instanceof Array) {
+          addFrontendFieldsForConsumerGroup(groupOverviews[0]);
+          this.consumerGroups.set(groupOverviews[0].groupId, groupOverviews[0]);
+        }
+      }, addError);
   },
 
-  refreshConsumerGroups(force?: boolean) {
-    cachedApiRequest<GetConsumerGroupsResponse>(`${appConfig.restBasePath}/consumer-groups`, force).then((v) => {
-      if (v?.consumerGroups != null) {
-        for (const g of v.consumerGroups) addFrontendFieldsForConsumerGroup(g);
+  refreshConsumerGroups() {
+      GetConsumerGroupsOverview([])
+      .then((groupOverviews) => {
+        if (groupOverviews instanceof Array) {
+          if (groupOverviews != null) {
+            for (const g of groupOverviews) addFrontendFieldsForConsumerGroup(g);
 
-        transaction(() => {
-          this.consumerGroups.clear();
-          for (const g of v.consumerGroups) this.consumerGroups.set(g.groupId, g);
-        });
-      }
+            transaction(() => {
+              this.consumerGroups.clear();
+              for (const g of groupOverviews) this.consumerGroups.set(g.groupId, g);
+            });
+          }
+        }
     }, addError);
   },
 
@@ -2692,7 +2646,7 @@ function addFrontendFieldsForConnectCluster(cluster: ClusterConnectors) {
     else connector.jsonConfig = '';
 }
 
-function addFrontendFieldsForConsumerGroup(g: GroupDescription) {
+function addFrontendFieldsForConsumerGroup(g: ConsumerGroupOverview) {
   g.lagSum = g.topicOffsets.sum((o) => o.summedLag);
 
   if (g.allowedActions) {

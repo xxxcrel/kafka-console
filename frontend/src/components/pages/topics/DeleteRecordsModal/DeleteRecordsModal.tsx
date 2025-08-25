@@ -379,7 +379,7 @@ export default function DeleteRecordsModal(props: DeleteRecordsModalProps): JSX.
   const toast = useToast();
 
   useEffect(() => {
-    topic?.topicName && api.refreshPartitionsForTopic(topic.topicName, true);
+    topic?.topicName && api.refreshPartitionsForTopic(topic.topicName);
   }, [topic?.topicName]);
 
   const [partitionOption, setPartitionOption] = useState<PartitionOption>(null);

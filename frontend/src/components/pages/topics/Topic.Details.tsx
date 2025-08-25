@@ -148,22 +148,22 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
     api.refreshClusterOverview();
 
     // there is no single endpoint to refresh a single topic
-    api.refreshTopics(force);
+    api.refreshTopics();
 
     // consumers are lazy loaded because they're (relatively) expensive
-    if (uiSettings.topicDetailsActiveTabKey === 'consumers') api.refreshTopicConsumers(this.props.topicName, force);
+    if (uiSettings.topicDetailsActiveTabKey === 'consumers') api.refreshTopicConsumers(this.props.topicName);
 
     // partitions are always required to display message count in the statistics bar
-    api.refreshPartitionsForTopic(this.props.topicName, force);
+    api.refreshPartitionsForTopic(this.props.topicName);
 
     // configuration is always required for the statistics bar
-    api.refreshTopicConfig(this.props.topicName, force);
+    api.refreshTopicConfig(this.props.topicName);
 
     void api.refreshClusterHealth();
 
     // documentation can be lazy loaded
     if (uiSettings.topicDetailsActiveTabKey === 'documentation')
-      api.refreshTopicDocumentation(this.props.topicName, force);
+      api.refreshTopicDocumentation(this.props.topicName);
 
     // ACL can be lazy loaded
     if (uiSettings.topicDetailsActiveTabKey === 'topicacl') api.refreshTopicAcls(this.props.topicName, force);

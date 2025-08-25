@@ -13,6 +13,7 @@ package kconsole
 type TopicDocumentation struct {
 	IsEnabled bool   `json:"isEnabled"`
 	Markdown  []byte `json:"markdown"`
+	Text      string `json:"text"`
 }
 
 // GetTopicDocumentation returns the documentation for the given topic if available.

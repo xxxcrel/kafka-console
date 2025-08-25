@@ -15,13 +15,11 @@ package api
 
 import (
 	"context"
-	"io/fs"
 	"time"
 
 	"github.com/xxxcrel/kafka-console/pkg/api/connect/service/clusterstatus"
 	"github.com/xxxcrel/kafka-console/pkg/config"
 	"github.com/xxxcrel/kafka-console/pkg/connect"
-	"github.com/xxxcrel/kafka-console/pkg/embed"
 	kafkafactory "github.com/xxxcrel/kafka-console/pkg/factory/kafka"
 	schemafactory "github.com/xxxcrel/kafka-console/pkg/factory/schema"
 	"github.com/xxxcrel/kafka-console/pkg/git"
@@ -82,16 +80,6 @@ func New(cfg *config.Config, inputOpts ...Option) *API {
 
 	// Create default client factories if none are provided
 	setDefaultClientProviders(cfg, logger, opts)
-
-	// Use default frontend resources from embeds. We don't use hooks here because
-	// we may want to use the API struct without providing all hooks.
-	if opts.frontendResources == nil {
-		fsys, err := fs.Sub(embed.FrontendFiles, "frontend")
-		if err != nil {
-			logger.Fatal("failed to build subtree from embedded frontend files", zap.Error(err))
-		}
-		opts.frontendResources = fsys
-	}
 
 	connectSvc, err := connect.NewService(cfg.KafkaConnect, logger)
 	if err != nil {

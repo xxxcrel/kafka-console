@@ -57,9 +57,6 @@ func (api *API) handleGetEndpoints() http.HandlerFunc {
 		endpointCompatibility.Endpoints = mergeCompatibilityEndpoints(originalEndpoints, hookedEndpointCompatibility)
 
 		distribution := KafkaDistributionApacheKafka
-		if api.Cfg.Redpanda.AdminAPI.Enabled {
-			distribution = KafkaDistributionRedpanda
-		}
 
 		response := response{
 			Distribution:          distribution,

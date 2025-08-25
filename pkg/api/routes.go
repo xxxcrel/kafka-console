@@ -20,7 +20,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
-	transformsvcv1alpha2 "github.com/xxxcrel/kafka-console/pkg/api/connect/service/transform/v1alpha2"
 	"github.com/xxxcrel/kafka-console/pkg/version"
 )
 
@@ -29,8 +28,6 @@ func (api *API) routes() *chi.Mux {
 	baseRouter := chi.NewRouter()
 	baseRouter.NotFound(rest.HandleNotFound(api.Logger))
 	baseRouter.MethodNotAllowed(rest.HandleMethodNotAllowed(api.Logger))
-
-	transformSvc := transformsvcv1alpha2.NewService(api.Cfg, api.Logger.Named("transform_service"), v, api.RedpandaClientProvider)
 
 	instrument := middleware.NewInstrument(api.Cfg.MetricsNamespace)
 	recoverer := middleware.Recoverer{Logger: api.Logger}
@@ -116,11 +113,6 @@ func (api *API) routes() *chi.Mux {
 				r.Post("/acls", api.handleCreateACL())
 				r.Delete("/acls", api.handleDeleteACLs())
 
-				// Kafka Users/Principals
-				r.Get("/users", api.handleGetUsers())
-				r.Post("/users", api.handleCreateUser())
-				r.Delete("/users/{principalID}", api.handleDeleteUser())
-
 				// Topics
 				r.Get("/topics-configs", api.handleGetTopicsConfigs())
 				r.Get("/topics-offsets", api.handleGetTopicsOffsets())
@@ -181,9 +173,6 @@ func (api *API) routes() *chi.Mux {
 				r.Post("/kafka-connect/clusters/{clusterName}/connectors/{connector}/restart", api.handleRestartConnector())
 				r.Post("/kafka-connect/clusters/{clusterName}/connectors/{connector}/tasks/{taskID}/restart", api.handleRestartConnectorTask())
 
-				// Wasm Transforms
-				r.Put("/transforms", transformSvc.HandleDeployTransform())
-
 				// Console Endpoints that inform which endpoints & features are available to the frontend.
 				r.Get("/kconsole/endpoints", api.handleGetEndpoints())
 			})
@@ -191,14 +180,6 @@ func (api *API) routes() *chi.Mux {
 			api.Hooks.Route.ConfigAPIRouterPostRegistration(r)
 		})
 
-		if api.Cfg.ServeFrontend {
-			// SPA Files
-			router.Group(func(r chi.Router) {
-				r.Get("/*", api.handleFrontendResources())
-			})
-		} else {
-			api.Logger.Info("no static files will be served as serving the frontend has been disabled")
-		}
 	})
 
 	return baseRouter

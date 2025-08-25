@@ -87,7 +87,7 @@ class GroupDetails extends PageComponent<{ groupId: string }> {
 
   refreshData(force: boolean) {
     const group = decodeURIComponent(this.props.groupId);
-    api.refreshConsumerGroup(group, force);
+    api.refreshConsumerGroup(group);
     api.refreshConsumerGroupAcls(group, force);
   }
 

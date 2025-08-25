@@ -46,14 +46,13 @@ import type {
   DeleteConsumerGroupOffsetsTopic,
   EditConsumerGroupOffsetsTopic,
   GroupDescription,
-  PartitionOffset,
-  TopicOffset,
 } from '../../../state/restInterfaces';
 import { toJson } from '../../../utils/jsonUtils';
 import { InfoText, Button as RPButton, numberToThousandsString } from '../../../utils/tsxUtils';
 import { showErrorModal } from '../../misc/ErrorModal';
 import { KowlTimePicker } from '../../misc/KowlTimePicker';
 import { SingleSelect } from '../../misc/Select';
+import {kconsole} from "../../../../wailsjs/go/models";
 
 type EditOptions = 'startOffset' | 'endOffset' | 'time' | 'otherGroup' | 'shiftBy';
 
@@ -76,7 +75,7 @@ export type GroupOffset = {
   // number     => concrete offset from other consumer group
   // Date       => placeholder for 'specific time' until real offsets are loaded
   // PartitionOffset => real offsets for Date
-  newOffset?: number | Date | PartitionOffset;
+  newOffset?: number | Date | kconsole.PartitionOffset;
 };
 
 const { ToastContainer, toast } = createStandaloneToast({
@@ -475,7 +474,7 @@ export class EditOffsetsModal extends Component<{
             duration: null,
           });
 
-          let offsetsForTimestamp: TopicOffset[];
+          let offsetsForTimestamp: kconsole.TopicOffset[];
           try {
             offsetsForTimestamp = await api.getTopicOffsetsByTimestamp(requiredTopics, this.timestampUtcMs);
             toast.update(toastRef, {
@@ -697,7 +696,7 @@ export class EditOffsetsModal extends Component<{
       );
     } finally {
       this.isApplyingEdit = false;
-      api.refreshConsumerGroup(this.props.group.groupId, true);
+      api.refreshConsumerGroup(this.props.group.groupId);
       this.props.onClose();
     }
   }

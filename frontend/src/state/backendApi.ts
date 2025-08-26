@@ -25,7 +25,7 @@ import {ListMessagesRequest} from '../protogen/redpanda/api/console/v1alpha1/lis
 import type {PublishMessageRequest, PublishMessageResponse,} from '../protogen/redpanda/api/console/v1alpha1/publish_messages_pb';
 import {Features} from './supportedFeatures';
 import {PartitionOffsetOrigin} from './ui';
-import {CreateACL, CreateTopic, DeleteACLs, DeleteConsumerGroup, DeleteConsumerGroupOffsets, DeleteTopic, DeleteTopicRecords, DescribeQuotas, EditConsumerGroupOffsets, EditTopicConfig, GetBrokerConfig, GetBrokersWithLogDirs, GetClusterInfo, GetConsoleInfo, GetConsumerGroupsOverview, GetEndpointCompatibility, GetKafkaAuthorizerInfo, GetKafkaConnectInfo, GetKafkaInfo, GetSchemaRegistryInfo, GetTopicConfigs, GetTopicDetails, GetTopicDocumentation, GetTopicsOverview, ListAllACLs, ListOffsets, ListTopicConsumers, ProducePlainRecords} from "../../wailsjs/go/main/App";
+import {CreateACL, CreateTopic, DeleteACLs, DeleteConsumerGroup, DeleteConsumerGroupOffsets, DeleteTopic, DeleteTopicRecords, DescribeQuotas, EditConsumerGroupOffsets, EditTopicConfig, GetBrokerConfig, GetBrokersWithLogDirs, GetClusterInfo, GetConsoleInfo, GetConsumerGroupsOverview, GetEndpointCompatibility, GetKafkaAuthorizerInfo, GetKafkaConnectInfo, GetKafkaInfo, GetSchemaRegistryConfig, GetSchemaRegistryInfo, GetSchemaRegistryMode, GetSchemaRegistrySchemaReferencedBy, GetSchemaRegistrySchemaTypes, GetSchemaRegistrySubjectDetails, GetSchemaRegistrySubjects, GetSchemaUsagesByID, GetTopicConfigs, GetTopicDetails, GetTopicDocumentation, GetTopicsConfigs, GetTopicsOverview, ListAllACLs, ListOffsets, ListTopicConsumers, ProducePlainRecords} from "../../wailsjs/go/main/App";
 import {kconsole, kgo, kmsg} from "../../wailsjs/go/models";
 import {AclRequestDefault, ClusterOverview, GetAclsRequest, PublishRecordsRequest, TopicPermissions, UserData} from "./restInterfaces";
 import BrokerConfigEntry = kconsole.BrokerConfigEntry;
@@ -47,6 +47,13 @@ import DeleteACLsRequestFilter = kmsg.DeleteACLsRequestFilter;
 import CreateACLsRequestCreation = kmsg.CreateACLsRequestCreation;
 import QuotaResponse = kconsole.QuotaResponse;
 import DescribeACLsRequest = kmsg.DescribeACLsRequest;
+import TopicConfigEntry = kconsole.TopicConfigEntry;
+import ACLResource = kconsole.ACLResource;
+import ACLOverview = kconsole.ACLOverview;
+import SchemaRegistrySubject = kconsole.SchemaRegistrySubject;
+import SchemaRegistrySubjectDetails = kconsole.SchemaRegistrySubjectDetails;
+import SchemaReference = kconsole.SchemaReference;
+import SchemaVersion = kconsole.SchemaVersion;
 
 export const REST_CACHE_DURATION_SEC = 20;
 
@@ -59,7 +66,8 @@ const {toast} = createStandaloneToast({
     - If statusCode is not 2xx (any sort of error) -> response content will always be an `ApiError` json object
     - 2xx does not mean complete success, for some endpoints (e.g.: broker log dirs) we can get partial responses (array with some result entries and some error entries)
 */
-
+let SchemaCompatibilityLevel: string[] = ["NONE", "BACKWARD", "BACKWARD_TRANSITIVE", "FORWARD", "FORWARD_TRANSITIVE", "FULL", "FULL_TRANSITIVE"];
+let SchemaTypeMap: string[] = ["AVRO", "PROTOBUF", "JSON"]
 //
 // BackendAPI
 //
@@ -82,7 +90,7 @@ const apiStore = {
   schemaSubjects: undefined as SchemaRegistrySubject[] | undefined,
   schemaTypes: undefined as string[] | undefined,
   schemaDetails: new Map<string, SchemaRegistrySubjectDetails>(), // subjectName => details
-  schemaReferencedBy: new Map<string, Map<number, SchemaReferencedByEntry[]>>(), // subjectName => version => details
+  schemaReferencedBy: new Map<string, Map<number, SchemaReference[]>>(), // subjectName => version => details
   schemaUsagesById: new Map<number, SchemaVersion[]>(),
 
   topics: null as TopicSummary[] | null,
@@ -93,14 +101,14 @@ const apiStore = {
   topicPartitionErrors: new Map<string, Array<{ id: number; partitionError: string }>>(),
   topicWatermarksErrors: new Map<string, Array<{ id: number; waterMarksError: string }>>(),
   topicConsumers: new Map<string, TopicConsumerGroup[]>(),
-  topicAcls: new Map<string, GetAclOverviewResponse | null>(),
+  topicAcls: new Map<string, ACLOverview | null>(),
 
-  ACLs: undefined as GetAclOverviewResponse | undefined | null,
+  ACLs: undefined as ACLOverview | undefined | null,
 
   Quotas: undefined as QuotaResponse | undefined | null,
 
   consumerGroups: new Map<string, ConsumerGroupOverview>(),
-  consumerGroupAcls: new Map<string, GetAclOverviewResponse | null>(),
+  consumerGroupAcls: new Map<string, ACLOverview | null>(),
 
   partitionReassignments: undefined as PartitionReassignments[] | null | undefined,
 
@@ -141,9 +149,6 @@ const apiStore = {
     }
   },
 
-  // Make currently running requests observable
-  activeRequests: [] as CacheEntry[],
-
   // Fetch errors
   errors: [] as any[],
 
@@ -157,24 +162,17 @@ const apiStore = {
   async refreshTopicConfig(topicName: string): Promise<void> {
     GetTopicConfigs(topicName, [])
       .then((topicConfig) => {
-        if (topicConfig instanceof TopicConfig) {
-          if (!topicConfig) {
-            this.topicConfig.delete(topicName);
-            return;
-          }
-
-          if (topicConfig.error) {
-            this.topicConfig.set(topicName, topicConfig);
-            return;
-          }
-
-          // add 'type' to each synonym
-          // in the raw data, only the root entries have 'type', but the nested synonyms do not
-          // we need 'type' on synonyms as well for filtering
-          const topicDescription = topicConfig;
-          prepareSynonyms(topicDescription.configEntries);
-          this.topicConfig.set(topicName, topicDescription);
+        if (!topicConfig) {
+          this.topicConfig.delete(topicName);
+          return;
         }
+        if (topicConfig.error) {
+          this.topicConfig.set(topicName, topicConfig);
+          return;
+        }
+        const topicDescription = topicConfig;
+        prepareSynonyms(topicDescription.configEntries);
+        this.topicConfig.set(topicName, topicDescription);
       }, addError)
   },
 
@@ -520,10 +518,8 @@ const apiStore = {
   refreshBrokerConfig(brokerId: number) {
     GetBrokerConfig(brokerId)
       .then(brokerConfigs => {
-        if (brokerConfigs instanceof Array) {
-          prepareSynonyms(brokerConfigs);
-          this.brokerConfigs.set(brokerId, brokerConfigs);
-        }
+        prepareSynonyms(brokerConfigs);
+        this.brokerConfigs.set(brokerId, brokerConfigs);
       })
       .catch((err) => {
         this.brokerConfigs.set(brokerId, String(err));
@@ -533,43 +529,39 @@ const apiStore = {
   refreshConsumerGroup(groupId: string) {
     GetConsumerGroupsOverview([groupId])
       .then((groupOverviews) => {
-        if (groupOverviews instanceof Array) {
-          addFrontendFieldsForConsumerGroup(groupOverviews[0]);
-          this.consumerGroups.set(groupOverviews[0].groupId, groupOverviews[0]);
-        }
+        addFrontendFieldsForConsumerGroup(groupOverviews[0]);
+        this.consumerGroups.set(groupOverviews[0].groupId, groupOverviews[0]);
       }, addError);
   },
 
   refreshConsumerGroups() {
     GetConsumerGroupsOverview([])
       .then((groupOverviews) => {
-        if (groupOverviews instanceof Array) {
-          if (groupOverviews != null) {
-            for (const g of groupOverviews) addFrontendFieldsForConsumerGroup(g);
+        if (groupOverviews != null) {
+          for (const g of groupOverviews) addFrontendFieldsForConsumerGroup(g);
 
-            transaction(() => {
-              this.consumerGroups.clear();
-              for (const g of groupOverviews) this.consumerGroups.set(g.groupId, g);
-            });
-          }
+          transaction(() => {
+            this.consumerGroups.clear();
+            for (const g of groupOverviews) this.consumerGroups.set(g.groupId, g);
+          });
         }
       }, addError);
   },
 
-  // refreshConsumerGroupAcls(groupName: string, force?: boolean) {
-  //   const query = aclRequestToQuery({
-  //     ...AclRequestDefault,
-  //     resourcePatternTypeFilter: 'Match',
-  //     resourceType: 'Group',
-  //     resourceName: groupName,
-  //   });
-  //   cachedApiRequest<GetAclOverviewResponse | null>(`${appConfig.restBasePath}/acls?${query}`, force).then((v) => {
-  //     if (v) {
-  //       normalizeAcls(v.aclResources);
-  //     }
-  //     this.consumerGroupAcls.set(groupName, v);
-  //   });
-  // },
+  refreshConsumerGroupAcls(groupName: string) {
+    ListAllACLs(DescribeACLsRequest.createFrom({
+      ...AclRequestDefault,
+      ResourcePatternType: 2,
+      ResourceType: 3,
+      ResourceName: groupName,
+    }))
+      .then((v) => {
+        if (v) {
+          normalizeAcls(v.aclResources);
+        }
+        this.consumerGroupAcls.set(groupName, v);
+      });
+  },
 
   async editConsumerGroupOffsets(
     groupId: string,
@@ -588,171 +580,136 @@ const apiStore = {
   async deleteConsumerGroup(groupId: string): Promise<void> {
     return DeleteConsumerGroup(groupId);
   },
-  //
-  // async refreshSchemaMode() {
-  //   const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/mode`, {
-  //     method: 'GET',
-  //     headers: [['Content-Type', 'application/json']],
-  //   });
-  //   const rq = parseOrUnwrap<SchemaRegistryModeResponse>(response, null);
-  //
-  //   return rq
-  //     .then((r) => {
-  //       if (r.isConfigured === false) {
-  //         this.schemaOverviewIsConfigured = false;
-  //         this.schemaMode = null;
-  //       } else {
-  //         this.schemaOverviewIsConfigured = true;
-  //         this.schemaMode = r.mode;
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       this.schemaMode = 'Unknown';
-  //       console.warn('failed to request schema mode', err);
-  //     });
-  // },
-  //
-  // async refreshSchemaCompatibilityConfig() {
-  //   const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/config`, {
-  //     method: 'GET',
-  //     headers: [['Content-Type', 'application/json']],
-  //   });
-  //   const rq = parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
-  //
-  //   return rq
-  //     .then((r) => {
-  //       if (r.isConfigured === false) {
-  //         this.schemaOverviewIsConfigured = false;
-  //         this.schemaCompatibility = null;
-  //       } else {
-  //         this.schemaOverviewIsConfigured = true;
-  //         this.schemaCompatibility = r.compatibility;
-  //       }
-  //     })
-  //     .catch(addError);
-  // },
-  //
-  // refreshSchemaSubjects(force?: boolean) {
-  //   cachedApiRequest<SchemaRegistrySubject[]>(`${appConfig.restBasePath}/schema-registry/subjects`, force).then(
-  //     (subjects) => {
-  //       // could also be a "not configured" response
-  //       if (Array.isArray(subjects)) {
-  //         this.schemaSubjects = subjects;
-  //       }
-  //     },
-  //     addError,
-  //   );
-  // },
-  //
-  // refreshSchemaTypes(force?: boolean) {
-  //   cachedApiRequest<SchemaRegistrySchemaTypesResponse>(
-  //     `${appConfig.restBasePath}/schema-registry/schemas/types`,
-  //     force,
-  //   )
-  //     .then((types) => {
-  //       // could also be a "not configured" response
-  //       if (types.schemaTypes) {
-  //         this.schemaTypes = types.schemaTypes;
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       this.schemaTypes = undefined;
-  //       console.warn('failed to request schema type', err);
-  //     });
-  // },
-  //
-  // refreshSchemaDetails(subjectName: string, force?: boolean) {
-  //   // Always refresh all versions, otherwise we cannot know wether or not we have to refresh with 'all,
-  //   // If we refresh with 'latest' or specific number, we'd need to keep track of what information we're missing
-  //   const version = 'all';
-  //   const rq = cachedApiRequest(
-  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${version}`,
-  //     force,
-  //   ) as Promise<SchemaRegistrySubjectDetails>;
-  //
-  //   return rq
-  //     .then((details) => {
-  //       this.schemaDetails.set(subjectName, details);
-  //     })
-  //     .catch(addError);
-  // },
-  //
-  // refreshSchemaReferencedBy(subjectName: string, version: number, force?: boolean) {
-  //   const rq = cachedApiRequest<SchemaReferencedByEntry[]>(
-  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${version}/referencedby`,
-  //     force,
-  //   );
-  //
-  //   return rq
-  //     .then((references) => {
-  //       const cleanedReferences = [] as SchemaReferencedByEntry[];
-  //       for (const ref of references) {
-  //         if (ref.error) {
-  //           console.error('error in refreshSchemaReferencedBy, reference entry has error', {
-  //             subjectName,
-  //             version,
-  //             error: ref.error,
-  //             refRaw: ref,
-  //           });
-  //           continue;
-  //         }
-  //         cleanedReferences.push(ref);
-  //       }
-  //
-  //       let subjectVersions = this.schemaReferencedBy.get(subjectName);
-  //       if (!subjectVersions) {
-  //         // @ts-ignore MobX does not play nice with TypeScript 5: Type 'ObservableMap<number, SchemaReferencedByEntry[]>' is not assignable to type 'Map<number, SchemaReferencedByEntry[]>'.
-  //         subjectVersions = observable(new Map<number, SchemaReferencedByEntry[]>());
-  //         if (subjectVersions) {
-  //           this.schemaReferencedBy.set(subjectName, subjectVersions);
-  //         }
-  //       }
-  //
-  //       subjectVersions?.set(version, cleanedReferences);
-  //     })
-  //     .catch(() => {
-  //     });
-  // },
-  //
-  // async refreshSchemaUsagesById(schemaId: number, force?: boolean): Promise<void> {
-  //   type SchemaNotConfiguredType = { isConfigured: false };
-  //
-  //   function isSchemaVersionArray(r: SchemaVersion[] | SchemaNotConfiguredType): r is SchemaVersion[] {
-  //     return Array.isArray(r);
-  //   }
-  //
-  //   await cachedApiRequest<SchemaVersion[] | { isConfigured: false }>(
-  //     `${appConfig.restBasePath}/schema-registry/schemas/ids/${schemaId}/versions`,
-  //     force,
-  //   ).then(
-  //     (r) => {
-  //       if (isSchemaVersionArray(r)) {
-  //         this.schemaUsagesById.set(schemaId, r);
-  //       }
-  //     },
-  //     (err) => {
-  //       if (err instanceof Error) {
-  //         // Currently we don't get helpful status codes (502) so we have to inspect the message
-  //         if (err.message.includes('404') && err.message.includes('not found')) {
-  //           // Do nothing, most likely cause is that the user has entered a value into the search box that doesn't exist
-  //           return null;
-  //         }
-  //       }
-  //       throw err;
-  //     },
-  //   );
-  // },
-  //
-  // async setSchemaRegistryCompatibilityMode(
-  //   mode: SchemaRegistryCompatibilityMode,
-  // ): Promise<SchemaRegistryConfigResponse> {
-  //   const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/config`, {
-  //     method: 'PUT',
-  //     headers: [['Content-Type', 'application/json']],
-  //     body: JSON.stringify({compatibility: mode} as SchemaRegistrySetCompatibilityModeRequest),
-  //   });
-  //   return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
-  // },
+
+  async refreshSchemaMode() {
+    return GetSchemaRegistryMode()
+      .then((r) => {
+        this.schemaOverviewIsConfigured = true;
+        this.schemaMode = r.mode;
+      })
+      .catch((err) => {
+        this.schemaMode = 'Unknown';
+        console.warn('failed to request schema mode', err);
+      });
+  },
+
+  async refreshSchemaCompatibilityConfig() {
+    return GetSchemaRegistryConfig("")
+      .then((r) => {
+        this.schemaOverviewIsConfigured = true;
+        this.schemaCompatibility = SchemaCompatibilityLevel[r.compatibility];
+      })
+      .catch(addError);
+  },
+
+  refreshSchemaSubjects() {
+    GetSchemaRegistrySubjects()
+      .then(
+        (subjects) => {
+          // could also be a "not configured" response
+          if (Array.isArray(subjects)) {
+            this.schemaSubjects = subjects;
+          }
+        },
+        addError,
+      );
+  },
+
+  refreshSchemaTypes() {
+    GetSchemaRegistrySchemaTypes()
+      .then((types) => {
+        // could also be a "not configured" response
+        if (types.schemaTypes) {
+          this.schemaTypes = types.schemaTypes.map(i => {
+            return SchemaTypeMap[i];
+          });
+        }
+      })
+      .catch((err) => {
+        this.schemaTypes = undefined;
+        console.warn('failed to request schema type', err);
+      });
+  },
+
+  refreshSchemaDetails(subjectName: string) {
+    // Always refresh all versions, otherwise we cannot know wether or not we have to refresh with 'all,
+    // If we refresh with 'latest' or specific number, we'd need to keep track of what information we're missing
+    GetSchemaRegistrySubjectDetails(subjectName, "all")
+      .then((details) => {
+        this.schemaDetails.set(subjectName, details);
+      })
+      .catch(addError);
+  },
+
+  refreshSchemaReferencedBy(subjectName: string, version: number) {
+    GetSchemaRegistrySchemaReferencedBy(subjectName, version)
+      .then((references) => {
+        const cleanedReferences = [] as SchemaReference[];
+        for (const ref of references) {
+          if (ref.error) {
+            console.error('error in refreshSchemaReferencedBy, reference entry has error', {
+              subjectName,
+              version,
+              error: ref.error,
+              refRaw: ref,
+            });
+            continue;
+          }
+          cleanedReferences.push(ref);
+        }
+
+        let subjectVersions = this.schemaReferencedBy.get(subjectName);
+        if (!subjectVersions) {
+          // @ts-ignore MobX does not play nice with TypeScript 5: Type 'ObservableMap<number, SchemaReferencedByEntry[]>' is not assignable to type 'Map<number, SchemaReferencedByEntry[]>'.
+          subjectVersions = observable(new Map<number, SchemaReferencedByEntry[]>());
+          if (subjectVersions) {
+            this.schemaReferencedBy.set(subjectName, subjectVersions);
+          }
+        }
+
+        subjectVersions?.set(version, cleanedReferences);
+      })
+      .catch(() => {
+      });
+  },
+
+  async refreshSchemaUsagesById(schemaId: number): Promise<void> {
+    type SchemaNotConfiguredType = { isConfigured: false };
+
+    function isSchemaVersionArray(r: SchemaVersion[] | SchemaNotConfiguredType): r is SchemaVersion[] {
+      return Array.isArray(r);
+    }
+
+    GetSchemaUsagesByID(schemaId)
+      .then(
+        (r) => {
+          if (isSchemaVersionArray(r)) {
+            this.schemaUsagesById.set(schemaId, r);
+          }
+        },
+        (err) => {
+          if (err instanceof Error) {
+            // Currently we don't get helpful status codes (502) so we have to inspect the message
+            if (err.message.includes('404') && err.message.includes('not found')) {
+              // Do nothing, most likely cause is that the user has entered a value into the search box that doesn't exist
+              return null;
+            }
+          }
+          throw err;
+        },
+      );
+  },
+
+  async setSchemaRegistryCompatibilityMode(
+    mode: SchemaRegistryCompatibilityMode,
+  ): Promise<SchemaRegistryConfigResponse> {
+    const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/config`, {
+      method: 'PUT',
+      headers: [['Content-Type', 'application/json']],
+      body: JSON.stringify({compatibility: mode} as SchemaRegistrySetCompatibilityModeRequest),
+    });
+    return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
+  },
   //
   // async setSchemaRegistrySubjectCompatibilityMode(
   //   subjectName: string,
@@ -968,37 +925,6 @@ const apiStore = {
   //   return await parseOrUnwrap<PatchConfigsResponse>(response, null);
   // },
   //
-  // async refreshConnectClusters(): Promise<void> {
-  //   this.connectConnectorsError = null;
-  //   const response = await appConfig.fetch(`${appConfig.restBasePath}/kafka-connect/connectors`, {
-  //     method: 'GET',
-  //     headers: [['Content-Type', 'application/json']],
-  //   });
-  //
-  //   return await parseOrUnwrap<KafkaConnectors | null>(response, null).then(
-  //     (v) => {
-  //       // backend error
-  //       if (!v) {
-  //         this.connectConnectors = undefined;
-  //         return;
-  //       }
-  //
-  //       // not configured
-  //       if (!v.clusters) {
-  //         this.connectConnectors = v;
-  //         return;
-  //       }
-  //
-  //       // prepare helper properties
-  //       for (const cluster of v.clusters) addFrontendFieldsForConnectCluster(cluster);
-  //
-  //       this.connectConnectors = v;
-  //     },
-  //     (error: WrappedApiError) => {
-  //       this.connectConnectorsError = error;
-  //     },
-  //   );
-  // },
 
   // PATCH /topics/{topicName}/configuration   //
   // PATCH /topics/configuration               // default config
@@ -1527,7 +1453,7 @@ export const brokerMap = computed(
 
 // 1. add 'type' to each synonym, so when expanding a config entry (to view its synonyms), we can still see the type
 // 2. remove redundant synonym entries (those that have the same source as the root config entry)
-function prepareSynonyms(configEntries: BrokerConfigEntry[]) {
+function prepareSynonyms(configEntries: TopicConfigEntry[]) {
   if (!Array.isArray(configEntries)) return;
 
   for (const e of configEntries) {
@@ -1538,7 +1464,7 @@ function prepareSynonyms(configEntries: BrokerConfigEntry[]) {
   }
 }
 
-function normalizeAcls(acls: AclResource[]) {
+function normalizeAcls(acls: ACLResource[]) {
   function upperFirst(str: string): string {
     if (!str) return str;
     const lower = str.toLowerCase();
@@ -1577,14 +1503,9 @@ function normalizeAcls(acls: AclResource[]) {
 
 export async function partialTopicConfigs(
   configKeys: string[],
-  topics?: string[],
-): Promise<PartialTopicConfigsResponse> {
-  const keys = configKeys.map((k) => encodeURIComponent(k)).join(',');
-  const topicNames = topics?.map((t) => encodeURIComponent(t)).join(',');
-  const query = topicNames ? `topicNames=${topicNames}&configKeys=${keys}` : `configKeys=${keys}`;
-
-  const response = await appConfig.fetch(`${appConfig.restBasePath}/topics-configs?${query}`);
-  return parseOrUnwrap<PartialTopicConfigsResponse>(response, null);
+  topics: string[],
+): Promise<Array<kconsole.TopicConfig>> {
+  return GetTopicsConfigs(topics, configKeys).then(Object.values);
 }
 
 export interface MessageSearchRequest {
@@ -1604,29 +1525,6 @@ export interface MessageSearchRequest {
 
   keyDeserializer?: PayloadEncoding;
   valueDeserializer?: PayloadEncoding;
-}
-
-async function parseOrUnwrap<T>(response: Response, text: string | null): Promise<T> {
-  let obj: undefined | any = undefined;
-  if (text === null) {
-    if (response.bodyUsed) throw new Error('response content already consumed');
-    text = await response.text();
-  }
-  try {
-    obj = JSON.parse(text);
-  } catch {
-  }
-
-  // api error?
-  if (isApiError(obj)) throw new WrappedApiError(response, obj);
-
-  // server/proxy error?
-  if (!response.ok) {
-    text = text?.trim() ?? '';
-    throw new Error(`${response.status} (${text ?? response.statusText})`);
-  }
-
-  return obj as T;
 }
 
 function addError(err: Error) {

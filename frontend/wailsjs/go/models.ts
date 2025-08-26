@@ -1531,6 +1531,7 @@ export namespace kconsole {
 	    name: string;
 	    value?: string;
 	    source: string;
+	    type: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new TopicConfigSynonym(source);
@@ -1541,6 +1542,7 @@ export namespace kconsole {
 	        this.name = source["name"];
 	        this.value = source["value"];
 	        this.source = source["source"];
+	        this.type = source["type"];
 	    }
 	}
 	export class TopicConfigEntry {

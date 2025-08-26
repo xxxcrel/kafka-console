@@ -30,7 +30,7 @@ type SchemaRegistryMode struct {
 
 // SchemaRegistryConfig returns the global schema registry config.
 type SchemaRegistryConfig struct {
-	Compatibility sr.CompatibilityLevel `json:"compatibility"`
+	Compatibility CompatibilityLevel `json:"compatibility"`
 }
 
 // SchemaRegistrySubject is the subject name along with a bool that
@@ -69,7 +69,7 @@ func (s *Service) GetSchemaRegistryConfig(ctx context.Context, subject string) (
 		return nil, fmt.Errorf("failed to get compatibility: %w", err)
 	}
 
-	return &SchemaRegistryConfig{Compatibility: compatibility.Level}, nil
+	return &SchemaRegistryConfig{Compatibility: CompatibilityLevel(compatibility.Level)}, nil
 }
 
 // PutSchemaRegistryConfig sets the global compatibility level. The global
@@ -86,7 +86,7 @@ func (s *Service) PutSchemaRegistryConfig(ctx context.Context, subject string, c
 		return nil, fmt.Errorf("failed to set compatibility: %w", err)
 	}
 
-	return &SchemaRegistryConfig{Compatibility: compatibility.Level}, nil
+	return &SchemaRegistryConfig{Compatibility: CompatibilityLevel(compatibility.Level)}, nil
 }
 
 // DeleteSchemaRegistrySubjectConfig deletes the subject's compatibility level.
@@ -163,8 +163,8 @@ func (s *Service) GetSchemaRegistrySubjects(ctx context.Context) ([]SchemaRegist
 // or the full schema information that's part of the subject.
 type SchemaRegistrySubjectDetails struct {
 	Name                string                                `json:"name"`
-	Type                sr.SchemaType                         `json:"type"`
-	Compatibility       *sr.CompatibilityLevel                `json:"compatibility"`
+	Type                SchemaType                            `json:"type"`
+	Compatibility       *CompatibilityLevel                   `json:"compatibility"`
 	RegisteredVersions  []SchemaRegistrySubjectDetailsVersion `json:"versions"`
 	LatestActiveVersion int                                   `json:"latestActiveVersion"`
 	Schemas             []SchemaRegistryVersionedSchema       `json:"schemas"`
@@ -190,7 +190,7 @@ func mapSubjectSchema(in sr.SubjectSchema, isSoftDeleted bool) SchemaRegistryVer
 		ID:            in.ID,
 		Version:       in.Version,
 		IsSoftDeleted: isSoftDeleted,
-		Type:          in.Type,
+		Type:          SchemaType(in.Type),
 		Schema:        in.Schema.Schema,
 		References:    references,
 	}
@@ -224,7 +224,7 @@ func (s *Service) GetSchemaRegistrySubjectDetails(ctx context.Context, subjectNa
 	}
 
 	// 2. Retrieve schemas and compat level concurrently
-	var compatLevel *sr.CompatibilityLevel
+	var compatLevel *CompatibilityLevel
 
 	grp, grpCtx := errgroup.WithContext(ctx)
 	grp.SetLimit(10)
@@ -237,7 +237,7 @@ func (s *Service) GetSchemaRegistrySubjectDetails(ctx context.Context, subjectNa
 			s.logger.Warn("failed to get subject config", zap.String("subject", subjectName), zap.Error(err))
 			return nil
 		}
-		compatLevel = &compatibility.Level
+		compatLevel = (*CompatibilityLevel)(&compatibility.Level)
 		return nil
 	})
 
@@ -278,7 +278,7 @@ func (s *Service) GetSchemaRegistrySubjectDetails(ctx context.Context, subjectNa
 		return nil, err
 	}
 
-	var schemaType sr.SchemaType
+	var schemaType SchemaType
 	if len(schemas) > 0 {
 		schemaType = schemas[len(schemas)-1].Type
 	}
@@ -384,12 +384,12 @@ func (*Service) getSchemaRegistrySchemaVersions(ctx context.Context, srClient *s
 
 // SchemaRegistryVersionedSchema describes a retrieved schema.
 type SchemaRegistryVersionedSchema struct {
-	ID            int           `json:"id"`
-	Version       int           `json:"version"`
-	IsSoftDeleted bool          `json:"isSoftDeleted"`
-	Type          sr.SchemaType `json:"type"`
-	Schema        string        `json:"schema"`
-	References    []Reference   `json:"references"`
+	ID            int         `json:"id"`
+	Version       int         `json:"version"`
+	IsSoftDeleted bool        `json:"isSoftDeleted"`
+	Type          SchemaType  `json:"type"`
+	Schema        string      `json:"schema"`
+	References    []Reference `json:"references"`
 }
 
 // Reference describes a reference to a different schema stored in the schema registry.

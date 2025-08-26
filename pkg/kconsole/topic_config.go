@@ -101,6 +101,7 @@ type TopicConfigSynonym struct {
 	Name   string  `json:"name"`
 	Value  *string `json:"value"`
 	Source string  `json:"source"`
+	Type   string  `json:"type"`
 }
 
 // GetConfigEntryByName returns the TopicConfigEntry for a given config name (e. g. "cleanup.policy") or nil if

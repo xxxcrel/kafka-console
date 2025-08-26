@@ -12,55 +12,33 @@ package kconsole
 import (
 	"context"
 	"fmt"
-	"net/http"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kmsg"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // CreateACL creates an ACL resource in your target Kafka cluster.
-func (s *Service) CreateACL(ctx context.Context, createReq kmsg.CreateACLsRequestCreation) *rest.Error {
+func (s *Service) CreateACL(ctx context.Context, createReq kmsg.CreateACLsRequestCreation) error {
 	cl, _, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return errorToRestError(err)
+		return err
 	}
 
 	req := kmsg.NewCreateACLsRequest()
 	req.Creations = []kmsg.CreateACLsRequestCreation{createReq}
 	res, err := req.RequestWith(ctx, cl)
 	if err != nil {
-		return &rest.Error{
-			Err:          err,
-			Status:       http.StatusServiceUnavailable,
-			Message:      fmt.Sprintf("Failed to execute create ACL command: %v", err.Error()),
-			InternalLogs: []zapcore.Field{zap.Any("create_acl_req", createReq)},
-			IsSilent:     false,
-		}
+		return fmt.Errorf("Failed to execute create ACL command: %v", err.Error())
 	}
 
 	if len(res.Results) != 1 {
-		return &rest.Error{
-			Err:          fmt.Errorf("unexpected number of results in create ACL response"),
-			Status:       http.StatusInternalServerError,
-			Message:      fmt.Sprintf("Failed to execute delete topic command: %v", err.Error()),
-			InternalLogs: []zapcore.Field{zap.Int("results_length", len(res.Results))},
-			IsSilent:     false,
-		}
+		return fmt.Errorf("unexpected number of results in create ACL response")
 	}
 
 	aclRes := res.Results[0]
 	err = kerr.ErrorForCode(aclRes.ErrorCode)
 	if err != nil {
-		return &rest.Error{
-			Err:          err,
-			Status:       http.StatusServiceUnavailable,
-			Message:      fmt.Sprintf("Failed to execute create ACL command: %v", err.Error()),
-			InternalLogs: []zapcore.Field{zap.Any("create_acl_req", createReq)},
-			IsSilent:     false,
-		}
+		return fmt.Errorf("Failed to execute create ACL command: %v", err.Error())
 	}
 
 	return nil

@@ -42,8 +42,6 @@ import UserDetailsPage from './pages/acls/UserDetails';
 import UserEditPage from './pages/acls/UserEdit';
 import { AdminDebugBundle } from './pages/admin/Admin.DebugBundle';
 import AdminPageDebugBundleProgress from './pages/admin/Admin.DebugBundleProgress';
-import LicenseExpiredPage from './pages/admin/LicenseExpiredPage';
-import UploadLicensePage from './pages/admin/UploadLicensePage';
 import KafkaClusterDetails from './pages/connect/Cluster.Details';
 import KafkaConnectorDetails from './pages/connect/Connector.Details';
 import CreateConnector from './pages/connect/CreateConnector';
@@ -362,24 +360,6 @@ export const APP_ROUTES: IRouteEntry[] = [
     'Connector Details',
   ),
 
-  MakeRoute<{}>(
-    '/transforms-setup',
-    TransformsSetup,
-    'Transforms',
-    undefined,
-    true,
-    routeVisibility(true, [Feature.TransformsService]),
-  ),
-  MakeRoute<{}>(
-    '/transforms',
-    TransformsList,
-    'Transforms',
-    MdOutlineSmartToy,
-    true,
-    routeVisibility(true, [Feature.TransformsService]),
-  ),
-  MakeRoute<{ transformName: string }>('/transforms/:transformName', TransformDetails, 'Transforms'),
-
   // MakeRoute<{}>('/rp-connect', RpConnectPipelinesList, 'Connectors', LinkIcon, true),
   MakeRoute<{}>('/rp-connect/secrets/create', RpConnectSecretCreate, 'Connector-Secrets'),
   MakeRoute<{}>('/rp-connect/create', RpConnectPipelinesCreate, 'Connectors'),
@@ -417,15 +397,4 @@ export const APP_ROUTES: IRouteEntry[] = [
     true,
     routeVisibility(false, [Feature.DebugBundleService], ['canViewDebugBundle']),
   ),
-
-  MakeRoute<{}>(
-    '/upload-license',
-    UploadLicensePage,
-    'Upload License',
-    undefined,
-    false,
-    routeVisibility(() => api.isRedpanda && api.isAdminApiConfigured, [], ['canManageLicense']),
-  ),
-
-  MakeRoute<{}>('/trial-expired', LicenseExpiredPage, 'Your enterprise trial has expired'),
 ].filterNull();

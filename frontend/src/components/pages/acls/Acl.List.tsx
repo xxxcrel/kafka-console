@@ -63,8 +63,6 @@ import {
 import { AclPrincipalGroupEditor } from './PrincipalGroupEditor';
 
 import ErrorResult from '../../../components/misc/ErrorResult';
-import { FeatureLicenseNotification } from '../../license/FeatureLicenseNotification';
-import { NullFallbackBoundary } from '../../misc/NullFallbackBoundary';
 import { UserRoleTags } from './UserPermissionAssignments';
 
 // TODO - once AclList is migrated to FC, we could should move this code to use useToast()
@@ -469,10 +467,6 @@ const RolesTab = observer(() => {
     <Flex flexDirection="column" gap="4">
       <Box>Roles are groups of ACLs abstracted under a single name. Roles can be assigned to principals.</Box>
 
-      <NullFallbackBoundary>
-        <FeatureLicenseNotification featureName="rbac" />
-      </NullFallbackBoundary>
-
       <SearchField
         width="300px"
         searchText={uiSettings.aclList.rolesTab.quickSearch}
@@ -574,7 +568,7 @@ const RolesTab = observer(() => {
 
 const AclsTab = observer((p: { principalGroups: AclPrincipalGroup[] }) => {
   useEffect(() => {
-    void api.refreshAcls(AclRequestDefault, true);
+    void api.refreshAcls(AclRequestDefault);
   }, []);
 
   const [aclFailed, setAclFailed] = useState<{ err: unknown } | null>(null);
@@ -622,8 +616,7 @@ const AclsTab = observer((p: { principalGroups: AclPrincipalGroup[] }) => {
             type={editorType}
             onClose={() => {
               setEdittingPrincipalGroup(null);
-              api.refreshAcls(AclRequestDefault, true);
-              api.refreshServiceAccounts();
+              api.refreshAcls(AclRequestDefault);
             }}
           />
         )}

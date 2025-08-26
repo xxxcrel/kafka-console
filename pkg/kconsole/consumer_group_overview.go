@@ -13,11 +13,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"slices"
 	"sort"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"go.uber.org/zap"
 )
@@ -57,19 +55,14 @@ type GroupMemberAssignment struct {
 
 // GetConsumerGroupsOverview returns a ConsumerGroupOverview for all available consumer groups
 // Pass nil for groupIDs if you want to fetch all available groups.
-func (s *Service) GetConsumerGroupsOverview(ctx context.Context, groupIDs []string) ([]ConsumerGroupOverview, *rest.Error) {
+func (s *Service) GetConsumerGroupsOverview(ctx context.Context, groupIDs []string) ([]ConsumerGroupOverview, error) {
 	_, adminCl, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return nil, errorToRestError(err)
+		return nil, err
 	}
 	groups, err := adminCl.ListGroups(ctx)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:      fmt.Errorf("failed to list consumer groups: %w", err),
-			Status:   http.StatusInternalServerError,
-			Message:  "Failed to list consumer groups",
-			IsSilent: false,
-		}
+		return nil, fmt.Errorf("failed to list consumer groups: %w", err)
 	}
 
 	if groupIDs == nil {
@@ -80,12 +73,7 @@ func (s *Service) GetConsumerGroupsOverview(ctx context.Context, groupIDs []stri
 		for _, id := range groupIDs {
 			exists := slices.Contains(groupIDs, id)
 			if !exists {
-				return nil, &rest.Error{
-					Err:      fmt.Errorf("requested group id '%v' does not exist in Kafka cluster", id),
-					Status:   http.StatusNotFound,
-					Message:  fmt.Sprintf("Requested group id '%v' does not exist in Kafka cluster", id),
-					IsSilent: false,
-				}
+				return nil, fmt.Errorf("requested group id '%v' does not exist in Kafka cluster", id)
 			}
 		}
 	}
@@ -94,11 +82,11 @@ func (s *Service) GetConsumerGroupsOverview(ctx context.Context, groupIDs []stri
 	if err != nil {
 		var se *kadm.ShardErrors
 		if !errors.As(err, &se) {
-			return nil, errorToRestError(err)
+			return nil, err
 		}
 
 		if se.AllFailed {
-			return nil, errorToRestError(err)
+			return nil, err
 		}
 		s.logger.Warn("failed to describe consumer groups from some shards", zap.Int("failed_shards", len(se.Errs)))
 		for _, shardErr := range se.Errs {
@@ -110,12 +98,7 @@ func (s *Service) GetConsumerGroupsOverview(ctx context.Context, groupIDs []stri
 
 	groupLags, err := s.getConsumerGroupOffsets(ctx, adminCl, describedGroups.Names())
 	if err != nil {
-		return nil, &rest.Error{
-			Err:      fmt.Errorf("failed to get consumer group lags: %w", err),
-			Status:   http.StatusNotFound,
-			Message:  fmt.Sprintf("Failed to get consumer group lags: %v", err.Error()),
-			IsSilent: false,
-		}
+		return nil, fmt.Errorf("failed to get consumer group lags: %w", err)
 	}
 
 	res := s.convertKgoGroupDescriptions(describedGroups, groupLags)

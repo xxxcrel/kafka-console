@@ -12,7 +12,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -26,22 +25,22 @@ func (api *API) handleGetAllTopicDetails() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		var topicNames []string
-		requestedTopicNames := rest.GetQueryParam(r, "topicNames")
-		if requestedTopicNames != "" {
-			topicNames = strings.Split(requestedTopicNames, ",")
-		}
+		//var topicNames []string
+		//requestedTopicNames := rest.GetQueryParam(r, "topicNames")
+		//if requestedTopicNames != "" {
+		//	topicNames = strings.Split(requestedTopicNames, ",")
+		//}
 
-		topicDetails, restErr := api.ConsoleSvc.GetTopicDetails(r.Context(), topicNames)
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
-
-		res := response{
-			Topics: topicDetails,
-		}
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, res)
+		//topicDetails, restErr := api.ConsoleSvc.GetTopicDetails(r.Context(), topicNames)
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
+		//
+		//res := response{
+		//	Topics: topicDetails,
+		//}
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, res)
 	}
 }
 
@@ -264,14 +263,14 @@ func (api *API) handlePatchConfigs() http.HandlerFunc {
 			kmsgReq[i] = alterResource
 		}
 
-		// 4. Check response and pass it to the frontend
-		patchedCfgs, restErr := api.ConsoleSvc.IncrementalAlterConfigs(r.Context(), kmsgReq)
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
-
-		res := response{PatchedConfigs: patchedCfgs}
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, res)
+		//// 4. Check response and pass it to the frontend
+		//patchedCfgs, restErr := api.ConsoleSvc.IncrementalAlterConfigs(r.Context(), kmsgReq)
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
+		//
+		//res := response{PatchedConfigs: patchedCfgs}
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, res)
 	}
 }

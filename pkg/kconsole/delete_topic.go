@@ -12,19 +12,15 @@ package kconsole
 import (
 	"context"
 	"fmt"
-	"net/http"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kmsg"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // DeleteTopic deletes a Kafka Topic (if possible and not disabled).
-func (s *Service) DeleteTopic(ctx context.Context, topicName string) *rest.Error {
+func (s *Service) DeleteTopic(ctx context.Context, topicName string) error {
 	cl, _, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return errorToRestError(err)
+		return err
 	}
 
 	req := kmsg.NewDeleteTopicsRequest()
@@ -33,34 +29,16 @@ func (s *Service) DeleteTopic(ctx context.Context, topicName string) *rest.Error
 
 	res, err := req.RequestWith(ctx, cl)
 	if err != nil {
-		return &rest.Error{
-			Err:          err,
-			Status:       http.StatusServiceUnavailable,
-			Message:      fmt.Sprintf("Failed to execute delete topic command: %v", err.Error()),
-			InternalLogs: []zapcore.Field{zap.String("topic_name", topicName)},
-			IsSilent:     false,
-		}
+		return fmt.Errorf("Failed to execute delete topic command: %v", err.Error())
 	}
 
 	if len(res.Topics) != 1 {
-		return &rest.Error{
-			Err:          fmt.Errorf("topics array in response is empty"),
-			Status:       http.StatusServiceUnavailable,
-			Message:      "Unexpected Kafka response: No topics set in the response",
-			InternalLogs: []zapcore.Field{zap.String("topic_name", topicName)},
-			IsSilent:     false,
-		}
+		return fmt.Errorf("topics array in response is empty")
 	}
 
 	topicRes := res.Topics[0]
 	if err := newKafkaErrorWithDynamicMessage(topicRes.ErrorCode, topicRes.ErrorMessage); err != nil {
-		return &rest.Error{
-			Err:          err,
-			Status:       http.StatusServiceUnavailable,
-			Message:      fmt.Sprintf("Failed to delete Kafka topic: %v", err.Error()),
-			InternalLogs: []zapcore.Field{zap.String("topic_name", topicName)},
-			IsSilent:     false,
-		}
+		return fmt.Errorf("Failed to delete Kafka topic: %v", err.Error())
 	}
 
 	return nil

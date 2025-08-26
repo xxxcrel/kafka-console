@@ -9,9 +9,13 @@
  * by the Apache License, Version 2.0
  */
 
-import { untracked } from 'mobx';
-import type { Broker, BrokerConfig, Partition, Topic } from '../../../../state/restInterfaces';
-import { toJson } from '../../../../utils/jsonUtils';
+import {untracked} from 'mobx';
+import {toJson} from '../../../../utils/jsonUtils';
+import {kconsole} from "../../../../../wailsjs/go/models";
+import TopicSummary = kconsole.TopicSummary;
+import Broker = kconsole.Broker;
+import TopicPartitionDetails = kconsole.TopicPartitionDetails;
+import BrokerConfigEntry = kconsole.BrokerConfigEntry;
 
 // Requirements:
 // 1. Each replica must be on a different broker (unless replicationFactor < brokerCount makes it impossible).
@@ -31,8 +35,8 @@ import { toJson } from '../../../../utils/jsonUtils';
 
 // Input for a reassignment computation. A selection of partitions that should be reassigned.
 export type TopicPartitions = {
-  topic: Topic; // topic the partitions belong to
-  partitions: Partition[]; // selected partitions
+  topic: TopicSummary; // topic the partitions belong to
+  partitions: TopicPartitionDetails[]; // selected partitions
 };
 
 // Result of a reassignment computation. Tells you what brokers to use for each partition in each topic.
@@ -42,7 +46,7 @@ export type TopicAssignments = {
   };
 };
 export type PartitionAssignments = {
-  partition: Partition;
+  partition: TopicPartitionDetails;
   brokers: Broker[]; // brokers the replicas are on; meaning length is always equal to the replicationFactor
 };
 
@@ -52,7 +56,7 @@ type BrokerReplicaCount = {
   assignedReplicas: number;
 };
 
-export type ApiData = { brokers: Broker[]; topics: Topic[]; topicPartitions: Map<string, Partition[]> };
+export type ApiData = { brokers: Broker[]; topics: TopicSummary[]; topicPartitions: Map<string, TopicPartitionDetails[]> };
 
 function computeReassignments(
   apiData: ApiData,
@@ -82,7 +86,7 @@ function computeReassignments(
   for (const t of selectedTopicPartitions) {
     resultAssignments[t.topic.topicName] = {};
     for (const partition of t.partitions)
-      resultAssignments[t.topic.topicName][partition.id] = { partition: partition, brokers: [] };
+      resultAssignments[t.topic.topicName][partition.id] = {partition: partition, brokers: []};
   }
 
   // Distribute:
@@ -105,9 +109,9 @@ function computeReassignments(
 
   const optimizationLog: { skewBefore: number; skewAfter: number; swaps: number }[] = [];
   for (let round = 0; round < 10; round++) {
-    const { range: skewBefore } = calcRange(allExBrokers, (x) => x.plannedLeader);
+    const {range: skewBefore} = calcRange(allExBrokers, (x) => x.plannedLeader);
     const leaderSwitchCount = balanceLeaders(selectedTopicPartitions, resultAssignments, allExBrokers, apiData);
-    const { range: skewAfter } = calcRange(allExBrokers, (x) => x.plannedLeader);
+    const {range: skewAfter} = calcRange(allExBrokers, (x) => x.plannedLeader);
 
     optimizationLog.push({
       skewBefore,
@@ -148,7 +152,7 @@ const untrackedCompute = (
   selectedTopicPartitions: TopicPartitions[],
   targetBrokers: Broker[],
 ): TopicAssignments => untracked(() => computeReassignments(apiData, selectedTopicPartitions, targetBrokers));
-export { untrackedCompute as computeReassignments };
+export {untrackedCompute as computeReassignments};
 
 // Compute, for the partitions of a single topic, to which brokers their replicas should be assigned to.
 function computeTopicAssignments(
@@ -157,7 +161,7 @@ function computeTopicAssignments(
   allBrokers: ExBroker[],
   resultAssignments: { [partitionId: number]: PartitionAssignments },
 ) {
-  const { topic, partitions } = topicPartitions;
+  const {topic, partitions} = topicPartitions;
 
   // shouldn't happen, if the user didn't select any partitions, the entry for that topic shouldn't be there either
   if (partitions.length === 0) return;
@@ -166,7 +170,7 @@ function computeTopicAssignments(
   if (replicationFactor <= 0) return; // normally it shouldn't be possible; every topic must have at least 1 replica for each of its partitions
 
   // Track how many replicas (of this topic!) were assigned to each broker
-  const brokerReplicaCount: BrokerReplicaCount[] = targetBrokers.map((b) => ({ broker: b, assignedReplicas: 0 }));
+  const brokerReplicaCount: BrokerReplicaCount[] = targetBrokers.map((b) => ({broker: b, assignedReplicas: 0}));
 
   // Find the most suitable brokers for each partition
   partitions.sort((a, b) => a.id - b.id);
@@ -189,7 +193,7 @@ function computeTopicAssignments(
 // To determine that score we'd just re-use the first two very simple metrics (same broker is best: score=2, and same rack is almost as good: score=1)
 
 function computeReplicaAssignments(
-  partition: Partition,
+  partition: TopicPartitionDetails,
   replicas: number,
   brokerReplicaCount: BrokerReplicaCount[],
   allBrokers: ExBroker[],
@@ -199,7 +203,7 @@ function computeReplicaAssignments(
   const sourceBrokers = partition.replicas.map((id) => allBrokers.first((b) => b.brokerId === id)!);
   if (sourceBrokers.any((x) => x == null))
     throw new Error(
-      `replicas of partition ${partition.id} (${toJson(partition.replicas)}) define a brokerId which can't be found in 'allBrokers': ${toJson(allBrokers.map((b) => ({ id: b.brokerId, address: b.address, rack: b.rack })))}`,
+      `replicas of partition ${partition.id} (${toJson(partition.replicas)}) define a brokerId which can't be found in 'allBrokers': ${toJson(allBrokers.map((b) => ({id: b.brokerId, address: b.address, rack: b.rack})))}`,
     );
   const sourceRacks = sourceBrokers.map((b) => b.rack).distinct();
 
@@ -343,8 +347,8 @@ function balanceLeaders(
 }
 
 type RiskyPartition = {
-  topic: Topic;
-  partition: Partition;
+  topic: TopicSummary;
+  partition: TopicPartitionDetails;
   criticalRacks: string[]; // if this rack is offline, the whole partition will be unavailable
   criticalBrokers: ExBroker[]; // if this broker is offline...
 };
@@ -360,7 +364,7 @@ function findRiskyPartitions(
   const riskyPartitions: RiskyPartition[] = [];
 
   for (const t of selectedTopicPartitions) {
-    const { topic, partitions } = t;
+    const {topic, partitions} = t;
     const topicAssignments = resultAssignments[topic.topicName];
     for (const partition of partitions) {
       const partitionAssignments = topicAssignments[partition.id];
@@ -399,7 +403,7 @@ function findRiskyPartitions(
 // Except for situations where a topic has a replication factor of 1 (each partition will always be on only one broker),
 // or when there is only a single rack available (happens when brokers have null or empty string set as their rack).
 function reportRiskyPartitions(riskyPartitions: RiskyPartition[]) {
-  for (const { key: topic, items: partitionIssues } of riskyPartitions.groupInto((x) => x.topic)) {
+  for (const {key: topic, items: partitionIssues} of riskyPartitions.groupInto((x) => x.topic)) {
     // topics with rf:1 will always be an issue
     if (topic.replicationFactor <= 1) continue;
 
@@ -426,7 +430,7 @@ class ExBroker implements Broker {
   logDirSize: number;
   address: string;
   rack: string;
-  config: BrokerConfig;
+  config: BrokerConfigEntry;
 
   // Values as they actually are currently in the cluster
   actualReplicas = 0; // number of all replicas (no matter from which topic) assigned to this broker
@@ -448,15 +452,21 @@ class ExBroker implements Broker {
   get plannedReplicas(): number {
     return this.initialReplicas + this.assignedReplicas;
   }
+
   get plannedSize(): number {
     return this.initialSize + this.assignedSize;
   }
+
   get plannedLeader(): number {
     return this.initialLeader + this.assignedLeader;
   }
 
   constructor(sourceBroker: Broker) {
     Object.assign(this, sourceBroker);
+  }
+
+  convertValues(_a: any, _classs: any, _asMap?: boolean) {
+    throw new Error("Method not implemented.");
   }
 
   recompute(apiData: ApiData, selectedTopicPartitions: TopicPartitions[]) {

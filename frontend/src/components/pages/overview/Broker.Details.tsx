@@ -15,7 +15,6 @@ import { observer } from 'mobx-react';
 import { Component } from 'react';
 import { appGlobal } from '../../../state/appGlobal';
 import { api } from '../../../state/backendApi';
-import type { ConfigEntry } from '../../../state/restInterfaces';
 import { uiSettings } from '../../../state/ui';
 import { DefaultSkeleton, OptionGroup } from '../../../utils/tsxUtils';
 import { prettyBytesOrNA } from '../../../utils/utils';
@@ -24,6 +23,8 @@ import PageContent from '../../misc/PageContent';
 import Section from '../../misc/Section';
 import { Statistic } from '../../misc/Statistic';
 import { PageComponent, type PageInitHelper } from '../Page';
+import {kconsole} from "../../../../wailsjs/go/models";
+import BrokerConfigEntry = kconsole.BrokerConfigEntry;
 
 @observer
 class BrokerDetails extends PageComponent<{ brokerId: string }> {
@@ -43,13 +44,13 @@ class BrokerDetails extends PageComponent<{ brokerId: string }> {
     const id = Number(this.props.brokerId);
     p.addBreadcrumb(`Broker #${id}`, `/overview/${id}`);
 
-    this.refreshData(true);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
   }
 
-  refreshData(force: boolean) {
+  refreshData() {
     api.refreshClusterOverview();
-    api.refreshBrokers(force);
+    api.refreshBrokers();
     api.refreshBrokerConfig(Number(this.props.brokerId));
   }
 
@@ -100,7 +101,7 @@ class BrokerDetails extends PageComponent<{ brokerId: string }> {
 export { BrokerDetails };
 
 @observer
-class BrokerConfigView extends Component<{ entries: ConfigEntry[] }> {
+class BrokerConfigView extends Component<{ entries: BrokerConfigEntry[] }> {
   render() {
     const entries = this.props.entries.slice().sort((a, b) => {
       switch (uiSettings.brokerList.propsOrder) {

@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -14,7 +11,6 @@ import (
 )
 
 func (app *App) GetClusterInfo() (*kconsole.ClusterInfo, error) {
-	fmt.Printf("hello\n")
 	return app.api.ConsoleSvc.GetClusterInfo(app.ctx)
 }
 
@@ -22,7 +18,7 @@ func (app *App) GetBrokersWithLogDirs() ([]kconsole.BrokerWithLogDirs, error) {
 	return app.api.ConsoleSvc.GetBrokersWithLogDirs(app.ctx)
 }
 
-func (app *App) GetBrokerConfig(brokerId int32) ([]kconsole.BrokerConfigEntry, *rest.Error) {
+func (app *App) GetBrokerConfig(brokerId int32) ([]kconsole.BrokerConfigEntry, error) {
 	return app.api.ConsoleSvc.GetBrokerConfig(app.ctx, brokerId)
 }
 
@@ -30,7 +26,7 @@ func (app *App) GetEndpointCompatibility() (kconsole.EndpointCompatibility, erro
 	return app.api.ConsoleSvc.GetEndpointCompatibility(app.ctx)
 }
 
-func (app *App) GetConsumerGroupsOverview(groupIDS []string) ([]kconsole.ConsumerGroupOverview, *rest.Error) {
+func (app *App) GetConsumerGroupsOverview(groupIDS []string) ([]kconsole.ConsumerGroupOverview, error) {
 	return app.api.ConsoleSvc.GetConsumerGroupsOverview(app.ctx, groupIDS)
 }
 
@@ -62,34 +58,34 @@ func (app *App) GetAllBrokerConfigs() (map[int32]kconsole.BrokerConfig, error) {
 func (app *App) DeleteConsumerGroup(groupID string) error {
 	return app.api.ConsoleSvc.DeleteConsumerGroup(app.ctx, groupID)
 }
-func (app *App) CreateACL(createReq kmsg.CreateACLsRequestCreation) *rest.Error {
+func (app *App) CreateACL(createReq kmsg.CreateACLsRequestCreation) error {
 	return app.api.ConsoleSvc.CreateACL(app.ctx, createReq)
 }
-func (app *App) CreateTopic(createTopicReq kmsg.CreateTopicsRequestTopic) (kconsole.CreateTopicResponse, *rest.Error) {
+func (app *App) CreateTopic(createTopicReq kmsg.CreateTopicsRequestTopic) (kconsole.CreateTopicResponse, error) {
 	return app.api.ConsoleSvc.CreateTopic(app.ctx, createTopicReq)
 }
-func (app *App) DeleteACLs(filter kmsg.DeleteACLsRequestFilter) (kconsole.DeleteACLsResponse, *rest.Error) {
+func (app *App) DeleteACLs(filter kmsg.DeleteACLsRequestFilter) (kconsole.DeleteACLsResponse, error) {
 	return app.api.ConsoleSvc.DeleteACLs(app.ctx, filter)
 }
 func (app *App) DeleteConsumerGroupOffsets(groupID string, topics []kmsg.OffsetDeleteRequestTopic) ([]kconsole.DeleteConsumerGroupOffsetsResponseTopic, error) {
 	return app.api.ConsoleSvc.DeleteConsumerGroupOffsets(app.ctx, groupID, topics)
 }
-func (app *App) DeleteTopic(topicName string) *rest.Error {
+func (app *App) DeleteTopic(topicName string) error {
 	return app.api.ConsoleSvc.DeleteTopic(app.ctx, topicName)
 }
-func (app *App) DeleteTopicRecords(deleteReq kmsg.DeleteRecordsRequestTopic) (kconsole.DeleteTopicRecordsResponse, *rest.Error) {
+func (app *App) DeleteTopicRecords(deleteReq kmsg.DeleteRecordsRequestTopic) (kconsole.DeleteTopicRecordsResponse, error) {
 	return app.api.ConsoleSvc.DeleteTopicRecords(app.ctx, deleteReq)
 }
 func (app *App) DescribeQuotas() kconsole.QuotaResponse {
 	return app.api.ConsoleSvc.DescribeQuotas(app.ctx)
 }
-func (app *App) EditConsumerGroupOffsets(groupID string, topics []kmsg.OffsetCommitRequestTopic) (*kconsole.EditConsumerGroupOffsetsResponse, *rest.Error) {
+func (app *App) EditConsumerGroupOffsets(groupID string, topics []kmsg.OffsetCommitRequestTopic) (*kconsole.EditConsumerGroupOffsetsResponse, error) {
 	return app.api.ConsoleSvc.EditConsumerGroupOffsets(app.ctx, groupID, topics)
 }
 func (app *App) EditTopicConfig(topicName string, configs []kmsg.IncrementalAlterConfigsRequestResourceConfig) error {
 	return app.api.ConsoleSvc.EditTopicConfig(app.ctx, topicName, configs)
 }
-func (app *App) IncrementalAlterConfigs(alterConfigs []kmsg.IncrementalAlterConfigsRequestResource) ([]kconsole.IncrementalAlterConfigsResourceResponse, *rest.Error) {
+func (app *App) IncrementalAlterConfigs(alterConfigs []kmsg.IncrementalAlterConfigsRequestResource) ([]kconsole.IncrementalAlterConfigsResourceResponse, error) {
 	return app.api.ConsoleSvc.IncrementalAlterConfigs(app.ctx, alterConfigs)
 }
 func (app *App) ListAllACLs(req kmsg.DescribeACLsRequest) (*kconsole.ACLOverview, error) {
@@ -115,7 +111,7 @@ func (app *App) ProducePlainRecords(records []*kgo.Record, useTransactions bool,
 func (app *App) ProduceRecord(string, int32, []kgo.RecordHeader, *serde.RecordPayloadInput, *serde.RecordPayloadInput, bool, []kgo.CompressionCodec) (*kconsole.ProduceRecordResponse, error) {
 	return nil, nil
 }
-func (app *App) GetTopicConfigs(topicName string, configNames []string) (*kconsole.TopicConfig, *rest.Error) {
+func (app *App) GetTopicConfigs(topicName string, configNames []string) (*kconsole.TopicConfig, error) {
 	return app.api.ConsoleSvc.GetTopicConfigs(app.ctx, topicName, configNames)
 }
 func (app *App) GetTopicsConfigs(topicNames []string, configNames []string) (map[string]*kconsole.TopicConfig, error) {
@@ -133,7 +129,7 @@ func (app *App) GetTopicsOverview() ([]*kconsole.TopicSummary, error) {
 func (app *App) GetAllTopicNames() ([]string, error) {
 	return app.api.ConsoleSvc.GetAllTopicNames(app.ctx)
 }
-func (app *App) GetTopicDetails(topicNames []string) ([]kconsole.TopicDetails, *rest.Error) {
+func (app *App) GetTopicDetails(topicNames []string) ([]kconsole.TopicDetails, error) {
 	return app.api.ConsoleSvc.GetTopicDetails(app.ctx, topicNames)
 }
 

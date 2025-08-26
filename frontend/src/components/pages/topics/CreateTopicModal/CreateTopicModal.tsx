@@ -66,15 +66,6 @@ export class CreateTopicModalContent extends Component<Props> {
     const state = this.props.state;
 
     let replicationFactorError = '';
-    if (api.clusterOverview)
-      if (state.replicationFactor != null)
-        if (api.isRedpanda) {
-          // enforce odd numbers
-          const isOdd = state.replicationFactor % 2 === 1;
-          if (!isOdd) {
-            replicationFactorError = 'Replication factor must be an odd number';
-          }
-        }
 
     return (
       <div className="createTopicModal">
@@ -118,7 +109,7 @@ export class CreateTopicModalContent extends Component<Props> {
               </Box>
             </Label>
 
-            {!api.isRedpanda && (
+            {(
               <Label text="Min In-Sync Replicas" style={{ flexBasis: '160px' }}>
                 <NumInput
                   value={state.minInSyncReplicas}

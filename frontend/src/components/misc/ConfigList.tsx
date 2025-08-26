@@ -11,7 +11,6 @@
 
 import { MdInfoOutline, MdOutlineVisibilityOff } from 'react-icons/md';
 import colors from '../../colors';
-import type { ConfigEntry } from '../../state/restInterfaces';
 import type { ValueDisplay } from '../../state/ui';
 import { formatConfigValue } from '../../utils/formatters/ConfigValueFormatter';
 import { equalsIgnoreCase } from '../../utils/utils';
@@ -20,19 +19,21 @@ import styles from './ConfigList.module.scss';
 
 import { Box, DataTable, Flex, Text, Tooltip } from '@redpanda-data/ui';
 import type { ColumnDef } from '@tanstack/react-table';
+import {kconsole} from "../../../wailsjs/go/models";
+import BrokerConfigEntry = kconsole.BrokerConfigEntry;
 
 export function ConfigList({
   configEntries,
   valueDisplay,
   renderTooltip,
 }: {
-  configEntries: ConfigEntry[];
+  configEntries: BrokerConfigEntry[];
   valueDisplay: ValueDisplay;
-  renderTooltip?: (e: ConfigEntry, content: JSX.Element) => JSX.Element;
+  renderTooltip?: (e: BrokerConfigEntry, content: JSX.Element) => JSX.Element;
 }) {
   const allTypesUnknown = configEntries.all((x) => equalsIgnoreCase(x.type, 'unknown'));
 
-  const tableColumns: ColumnDef<ConfigEntry>[] = [
+  const tableColumns: ColumnDef<BrokerConfigEntry>[] = [
     {
       header: 'Configuration',
       accessorKey: 'name',
@@ -118,7 +119,7 @@ export function ConfigList({
   });
 
   return (
-    <DataTable<ConfigEntry>
+    <DataTable<BrokerConfigEntry>
       data={configEntries}
       pagination={false}
       sorting={false}
@@ -131,7 +132,7 @@ export function ConfigList({
         }
         return (
           <Box py={6} px={10}>
-            <DataTable<ConfigEntry>
+            <DataTable<BrokerConfigEntry>
               // @ts-ignore TODO - we need to fix types here and find a shared interface
               data={row.original.synonyms.filter((x) => x.source !== row.original.source)}
               columns={tableColumns}

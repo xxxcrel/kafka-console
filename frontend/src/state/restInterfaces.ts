@@ -19,6 +19,7 @@ import type {
   GetSchemaRegistryInfoResponse,
 } from '../protogen/redpanda/api/console/v1alpha1/cluster_status_pb';
 import type { TroubleshootReport } from '../protogen/redpanda/api/console/v1alpha1/common_pb';
+import {kgo} from "../../wailsjs/go/models";
 
 export interface ApiError {
   statusCode: number;
@@ -1286,7 +1287,7 @@ export interface PublishRecordsRequest {
   useTransactions: boolean;
 
   // Records contains one or more records (key, value, headers) that shall be produced.
-  records: PublishRecord[];
+  records: Record[];
 }
 
 export interface PublishRecord {

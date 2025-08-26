@@ -9,12 +9,11 @@
  * by the Apache License, Version 2.0
  */
 
-import { FaGithub, FaLinkedin, FaSlack, FaTwitter } from 'react-icons/fa';
-import { isEmbedded } from '../../config';
-import env, { getBuildDate, IsCI, IsDev } from '../../utils/env';
+import {FaGithub} from 'react-icons/fa';
+import env, {getBuildDate, IsCI, IsDev} from '../../utils/env';
 
 export const VersionInfo = () => {
-  const appName = 'Redpanda Console';
+  const appName = 'Kafka Console';
   let mode = '';
   if (IsDev) mode = ' - DEV';
   if (IsCI) mode = ' - CI';
@@ -34,7 +33,7 @@ export const VersionInfo = () => {
         {appName} {mode}
       </div>
       <div className="versionDate">
-        (built {buildDate?.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' })})
+        (built {buildDate?.toLocaleDateString('en-US', {month: 'long', day: '2-digit', year: 'numeric'})})
       </div>
       <div className="versionGitData">
         {ref} {sha}
@@ -47,7 +46,7 @@ export const AppFooter = () => {
   const gitHub = (link: string, title: string) => (
     <>
       <a href={link} title={title} target="_blank" rel="noopener noreferrer">
-        <FaGithub />
+        <FaGithub/>
       </a>
     </>
   );
@@ -56,28 +55,13 @@ export const AppFooter = () => {
     <footer className="footer">
       {/* Social Media Links */}
       <div className="links">
-        {isEmbedded()
-          ? gitHub('https://github.com/redpanda-data/redpanda', "Visit Redpanda's GitHub repository")
-          : gitHub('https://github.com/xxxcrel/kafka-console', "Visit Redpanda Console's GitHub repository")}
-        <a href="https://redpanda.com/slack" title="Slack" target="_blank" rel="noopener noreferrer">
-          <FaSlack />
-        </a>
-        <a href="https://twitter.com/redpandadata" title="Twitter" target="_blank" rel="noopener noreferrer">
-          <FaTwitter />
-        </a>
-        <a
-          href="https://www.linkedin.com/company/redpanda-data"
-          title="LinkedIn"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <FaLinkedin />
-        </a>
+        {
+          gitHub('https://github.com/xxxcrel/kafka-console', "Visit Kafka Console's GitHub repository")
+        }
       </div>
-
       {/* Version Info */}
       <div className="versionText">
-        <VersionInfo />
+        <VersionInfo/>
       </div>
     </footer>
   );

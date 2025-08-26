@@ -12,10 +12,8 @@ package kconsole
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kmsg"
 	"go.uber.org/zap"
 )
@@ -69,11 +67,11 @@ func (s *Service) GetAllBrokerConfigs(ctx context.Context) (map[int32]BrokerConf
 
 	for _, broker := range metadata.Brokers {
 		go func(bID int32) {
-			cfg, restErr := s.GetBrokerConfig(ctx, bID)
+			cfg, err := s.GetBrokerConfig(ctx, bID)
 			errMsg := ""
-			if restErr != nil {
-				s.logger.Warn("failed to describe broker config", zap.Int32("broker_id", bID), zap.Error(restErr.Err))
-				errMsg = restErr.Err.Error()
+			if err != nil {
+				s.logger.Warn("failed to describe broker config", zap.Int32("broker_id", bID), zap.Error(err))
+				errMsg = err.Error()
 			}
 			resCh <- BrokerConfig{
 				brokerID: bID,
@@ -93,10 +91,10 @@ func (s *Service) GetAllBrokerConfigs(ctx context.Context) (map[int32]BrokerConf
 }
 
 // GetBrokerConfig retrieves a specifc broker's configurations.
-func (s *Service) GetBrokerConfig(ctx context.Context, brokerID int32) ([]BrokerConfigEntry, *rest.Error) {
+func (s *Service) GetBrokerConfig(ctx context.Context, brokerID int32) ([]BrokerConfigEntry, error) {
 	cl, _, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return nil, errorToRestError(err)
+		return nil, fmt.Errorf("failed to get kafka client: %w", err)
 	}
 
 	resourceReq := kmsg.NewDescribeConfigsRequestResource()
@@ -113,24 +111,14 @@ func (s *Service) GetBrokerConfig(ctx context.Context, brokerID int32) ([]Broker
 
 	res, err := req.RequestWith(ctx, cl)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:      fmt.Errorf("failed to request broker config: %w", err),
-			Status:   http.StatusServiceUnavailable,
-			Message:  fmt.Sprintf("Failed to request broker's config: %v", err.Error()),
-			IsSilent: false,
-		}
+		return nil, fmt.Errorf("failed to describe broker configs: %w", err)
 	}
 
 	// Resources should always be of length = 1
 	for _, resource := range res.Resources {
 		err := newKafkaErrorWithDynamicMessage(resource.ErrorCode, resource.ErrorMessage)
 		if err != nil {
-			return nil, &rest.Error{
-				Err:      err,
-				Status:   http.StatusServiceUnavailable,
-				Message:  fmt.Sprintf("Failed to describe broker config resource: %v", err.Error()),
-				IsSilent: false,
-			}
+			return nil, fmt.Errorf("failed to describe broker config resources: %w", err)
 		}
 
 		configEntries := make([]BrokerConfigEntry, len(resource.Configs))
@@ -175,10 +163,5 @@ func (s *Service) GetBrokerConfig(ctx context.Context, brokerID int32) ([]Broker
 		return configEntries, nil
 	}
 
-	return nil, &rest.Error{
-		Err:      fmt.Errorf("broker describe config response was empty"),
-		Status:   http.StatusInternalServerError,
-		Message:  "BrokerWithLogDirs config response was empty",
-		IsSilent: false,
-	}
+	return nil, fmt.Errorf("broker describe config response was empty")
 }

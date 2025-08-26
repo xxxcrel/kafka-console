@@ -12,10 +12,8 @@ package kconsole
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kmsg"
 )
@@ -44,29 +42,21 @@ type EditConsumerGroupOffsetsResponseTopicPartition struct {
 // EditConsumerGroupOffsets edits the group offsets of one or more partitions.
 //
 //nolint:cyclop // Eventually this should be refactored to use the franz-go admin client
-func (s *Service) EditConsumerGroupOffsets(ctx context.Context, groupID string, topics []kmsg.OffsetCommitRequestTopic) (*EditConsumerGroupOffsetsResponse, *rest.Error) {
+func (s *Service) EditConsumerGroupOffsets(ctx context.Context, groupID string, topics []kmsg.OffsetCommitRequestTopic) (*EditConsumerGroupOffsetsResponse, error) {
 	cl, adminCl, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return nil, errorToRestError(err)
+		return nil, err
 	}
 
 	// 0. Check if consumer group is empty, otherwise we can't edit the group offsets and want to provide a proper
 	// error message for the frontend.
 	describedGroups, err := adminCl.DescribeGroups(ctx, groupID)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:     fmt.Errorf("failed to check group state: %w", err),
-			Status:  http.StatusServiceUnavailable,
-			Message: fmt.Sprintf("Failed to check consumer group state before proceeding: %v", err.Error()),
-		}
+		return nil, fmt.Errorf("failed to check group state: %w", err)
 	}
 	describedGroup, exists := describedGroups[groupID]
 	if !exists {
-		return nil, &rest.Error{
-			Err:     fmt.Errorf("failed to check group state, group does not exist in response: %w", err),
-			Status:  http.StatusServiceUnavailable,
-			Message: fmt.Sprintf("Failed to check consumer group state before proceeding: %v", err.Error()),
-		}
+		return nil, fmt.Errorf("failed to check group state, group does not exist in response: %w", err)
 	}
 
 	if !strings.EqualFold(describedGroup.State, "empty") {
@@ -89,21 +79,11 @@ func (s *Service) EditConsumerGroupOffsets(ctx context.Context, groupID string, 
 
 	startOffsets, err := adminCl.ListStartOffsets(ctx, topicNames...)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:          err,
-			Status:       http.StatusServiceUnavailable,
-			Message:      fmt.Sprintf("Failed to list partition start offsets: %v", err.Error()),
-			InternalLogs: nil,
-		}
+		return nil, fmt.Errorf("Failed to list partition start offsets: %v", err.Error())
 	}
 	endOffsets, err := adminCl.ListEndOffsets(ctx, topicNames...)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:          err,
-			Status:       http.StatusServiceUnavailable,
-			Message:      fmt.Sprintf("Failed to list partition end offsets: %v", err.Error()),
-			InternalLogs: nil,
-		}
+		return nil, fmt.Errorf("Failed to list partition end offsets: %v", err.Error())
 	}
 
 	// Because topics is immutable and we want to replace special offsets
@@ -117,23 +97,13 @@ func (s *Service) EditConsumerGroupOffsets(ctx context.Context, groupID string, 
 			case TimestampLatest:
 				offset, exists := endOffsets.Lookup(topic.Topic, partition.Partition)
 				if !exists {
-					return nil, &rest.Error{
-						Err:          fmt.Errorf("end offset for topic '%v' and partition %d is missing", topic.Topic, partition.Partition),
-						Status:       http.StatusServiceUnavailable,
-						Message:      "Can't substitute end offset due to missing partition watermarks",
-						InternalLogs: nil,
-					}
+					return nil, fmt.Errorf("end offset for topic '%v' and partition %d is missing", topic.Topic, partition.Partition)
 				}
 				partition.Offset = offset.Offset
 			case TimestampEarliest:
 				offset, exists := startOffsets.Lookup(topic.Topic, partition.Partition)
 				if !exists {
-					return nil, &rest.Error{
-						Err:          fmt.Errorf("start offset for topic '%v' and partition %d is missing", topic.Topic, partition.Partition),
-						Status:       http.StatusServiceUnavailable,
-						Message:      "Can't substitute start offset due to missing partition watermarks",
-						InternalLogs: nil,
-					}
+					return nil, fmt.Errorf("start offset for topic '%v' and partition %d is missing", topic.Topic, partition.Partition)
 				}
 				partition.Offset = offset.Offset
 			default:
@@ -153,11 +123,7 @@ func (s *Service) EditConsumerGroupOffsets(ctx context.Context, groupID string, 
 	req.Topics = substitutedTopics
 	commitResponse, err := req.RequestWith(ctx, cl)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:     err,
-			Status:  http.StatusServiceUnavailable,
-			Message: fmt.Sprintf("Edit consumer group offsets failed: %v", err.Error()),
-		}
+		return nil, fmt.Errorf("Edit consumer group offsets failed: %v", err.Error())
 	}
 
 	editedTopics := make([]EditConsumerGroupOffsetsResponseTopic, len(commitResponse.Topics))

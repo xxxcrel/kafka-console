@@ -25,7 +25,6 @@ import {BrowserRouter} from 'react-router-dom';
 import AppContent from './components/layout/Content';
 import {ErrorBoundary} from './components/misc/ErrorBoundary';
 import HistorySetter from './components/misc/HistorySetter';
-import {UserProfile} from './components/misc/UserButton';
 import {APP_ROUTES, createVisibleSidebarItems} from './components/routes';
 import {setup} from './config';
 import {uiSettings} from './state/ui';
@@ -34,9 +33,7 @@ import {getBasePath} from './utils/env';
 const AppSidebar = observer(() => {
   const sidebarItems = createVisibleSidebarItems(APP_ROUTES);
   return (
-    <Sidebar items={sidebarItems} isCollapsed={!uiSettings.sideBarOpen}>
-      <UserProfile/>
-    </Sidebar>
+    <Sidebar items={sidebarItems} isCollapsed={!uiSettings.sideBarOpen}/>
   );
 });
 
@@ -47,12 +44,12 @@ const App = () => {
       <HistorySetter/>
       <ChakraProvider theme={redpandaTheme} toastOptions={redpandaToastOptions}>
         <ErrorBoundary>
-            <Grid templateColumns="auto 1fr" minH="100vh">
-              <AppSidebar/>
-              <Container width="full" maxWidth="1500px" as="main" pt="8" px="12">
-                <AppContent/>
-              </Container>
-            </Grid>
+          <Grid templateColumns="auto 1fr" minH="100vh">
+            <AppSidebar/>
+            <Container width="full" maxWidth="1500px" as="main" pt="8" px="12">
+              <AppContent/>
+            </Container>
+          </Grid>
         </ErrorBoundary>
       </ChakraProvider>
     </BrowserRouter>

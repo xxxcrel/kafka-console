@@ -9,21 +9,23 @@
  * by the Apache License, Version 2.0
  */
 
-import { Box, DataTable, Empty } from '@redpanda-data/ui';
-import { makeObservable, observable } from 'mobx';
-import { observer } from 'mobx-react';
-import { Component } from 'react';
-import { api } from '../../../state/backendApi';
-import type { Partition, PartitionReassignmentRequest, Topic, TopicAssignment } from '../../../state/restInterfaces';
-import { uiSettings } from '../../../state/ui';
-import { DefaultSkeleton, InfoText } from '../../../utils/tsxUtils';
-import { prettyBytesOrNA, prettyMilliseconds } from '../../../utils/utils';
-import { BrokerList } from '../../misc/BrokerList';
-import type ReassignPartitions from './ReassignPartitions';
-import type { PartitionSelection } from './ReassignPartitions';
-import { BandwidthSlider } from './components/BandwidthSlider';
+import {Box, DataTable, Empty} from '@redpanda-data/ui';
+import {makeObservable, observable} from 'mobx';
+import {observer} from 'mobx-react';
+import {Component} from 'react';
+import {api} from '../../../state/backendApi';
+import {uiSettings} from '../../../state/ui';
+import {DefaultSkeleton, InfoText} from '../../../utils/tsxUtils';
+import {prettyBytesOrNA, prettyMilliseconds} from '../../../utils/utils';
+import {BrokerList} from '../../misc/BrokerList';
+import {BandwidthSlider} from './components/BandwidthSlider';
+import {kconsole} from "../../../../wailsjs/go/models";
+import {PartitionReassignmentRequest, TopicAssignment} from "../../../state/restInterfaces";
+import ReassignPartitions, {PartitionSelection} from "./ReassignPartitions";
+import TopicPartitionDetails = kconsole.TopicPartitionDetails;
+import TopicSummary = kconsole.TopicSummary;
 
-export type PartitionWithMoves = Partition & {
+export type PartitionWithMoves = TopicPartitionDetails & {
   brokersBefore: number[];
   brokersAfter: number[];
   // numAddedBrokers = number of brokers that are "new" to the partition
@@ -35,8 +37,8 @@ export type PartitionWithMoves = Partition & {
 };
 export type TopicWithMoves = {
   topicName: string;
-  topic: Topic;
-  allPartitions: Partition[];
+  topic: TopicSummary;
+  allPartitions: TopicPartitionDetails[];
   selectedPartitions: PartitionWithMoves[];
 };
 
@@ -48,6 +50,7 @@ export class StepReview extends Component<{
   reassignPartitions: ReassignPartitions; // since api is still changing, we pass parent down so we can call functions on it directly
 }> {
   @observable unused = 0;
+
   constructor(p: any) {
     super(p);
     makeObservable(this);
@@ -55,11 +58,11 @@ export class StepReview extends Component<{
 
   render() {
     if (!api.topics) return DefaultSkeleton;
-    if (api.topicPartitions.size === 0) return <Empty />;
+    if (api.topicPartitions.size === 0) return <Empty/>;
 
     return (
       <>
-        <div style={{ margin: '2em 1em' }}>
+        <div style={{margin: '2em 1em'}}>
           <h2>Review Reassignment Plan</h2>
           <p>
             Kowl computed the following reassignment plan to distribute the selected partitions onto the selected
@@ -77,23 +80,23 @@ export class StepReview extends Component<{
             {
               header: 'Brokers Before',
               size: 50,
-              cell: ({ row: { original: topic } }) => {
+              cell: ({row: {original: topic}}) => {
                 const brokersBefore = topic.selectedPartitions
                   .flatMap((x) => x.brokersBefore)
                   .distinct()
                   .sort((a, b) => a - b);
-                return <BrokerList brokerIds={brokersBefore} />;
+                return <BrokerList brokerIds={brokersBefore}/>;
               },
             },
             {
               accessorKey: 'Brokers After',
               size: 50,
-              cell: ({ row: { original: topic } }) => {
+              cell: ({row: {original: topic}}) => {
                 const plannedBrokers = topic.selectedPartitions
                   .flatMap((x) => x.brokersAfter)
                   .distinct()
                   .sort((a, b) => a - b);
-                return <BrokerList brokerIds={plannedBrokers} />;
+                return <BrokerList brokerIds={plannedBrokers}/>;
               },
             },
             {
@@ -104,16 +107,16 @@ export class StepReview extends Component<{
                   Reassignments
                 </InfoText>
               ),
-              cell: ({ row: { original: topic } }) => topic.selectedPartitions.sum((p) => p.numAddedBrokers),
+              cell: ({row: {original: topic}}) => topic.selectedPartitions.sum((p) => p.numAddedBrokers),
             },
             {
               header: 'Estimated Traffic',
               size: 120,
-              cell: ({ row: { original: topic } }) =>
+              cell: ({row: {original: topic}}) =>
                 prettyBytesOrNA(topic.selectedPartitions.sum((p) => p.numAddedBrokers * p.replicaSize)),
             },
           ]}
-          subComponent={({ row: { original: topic } }) => (
+          subComponent={({row: {original: topic}}) => (
             <Box py={6} px={10}>
               {topic.selectedPartitions ? (
                 <ReviewPartitionTable
@@ -140,18 +143,18 @@ export class StepReview extends Component<{
     const settings = uiSettings.reassignment;
 
     return (
-      <div style={{ margin: '4em 1em 3em 1em' }}>
+      <div style={{margin: '4em 1em 3em 1em'}}>
         <h2>Bandwidth Throttle</h2>
         <p>Using throttling you can limit the network traffic for reassignments.</p>
 
-        <div style={{ marginTop: '2em', paddingBottom: '1em' }}>
-          <BandwidthSlider settings={settings} />
+        <div style={{marginTop: '2em', paddingBottom: '1em'}}>
+          <BandwidthSlider settings={settings}/>
         </div>
 
-        <ul style={{ marginTop: '0.5em' }}>
+        <ul style={{marginTop: '0.5em'}}>
           <li>Throttling applies to all replication traffic, not just to active reassignments.</li>
           <li>
-            Once the reassignment completes you'll have to remove the throttling configuration. <br />
+            Once the reassignment completes you'll have to remove the throttling configuration. <br/>
             Console will show a warning below the "Current Reassignments" table when there are throttled topics that are
             no longer being reassigned.
           </li>
@@ -215,20 +218,20 @@ export class StepReview extends Component<{
       ? '-'
       : estimatedTimeSec < 10
         ? '< 10 seconds'
-        : prettyMilliseconds(estimatedTimeSec * 1000, { secondsDecimalDigits: 0, unitCount: 2, verbose: true });
+        : prettyMilliseconds(estimatedTimeSec * 1000, {secondsDecimalDigits: 0, unitCount: 2, verbose: true});
 
     const data = [
       {
         title: 'Moved Replicas',
         value: this.props.topicsWithMoves.sum((t) => t.selectedPartitions.sum((p) => p.numAddedBrokers)),
       },
-      { title: 'Total Traffic', value: `~${prettyBytesOrNA(totalTraffic)}` },
-      { title: 'Traffic Throttle', value: trafficThrottle },
-      { title: 'Estimated Time', value: estimatedTime },
+      {title: 'Total Traffic', value: `~${prettyBytesOrNA(totalTraffic)}`},
+      {title: 'Traffic Throttle', value: trafficThrottle},
+      {title: 'Estimated Time', value: estimatedTime},
     ];
 
     return (
-      <div style={{ margin: '2em 1em 5em 1em' }}>
+      <div style={{margin: '2em 1em 5em 1em'}}>
         <h2>Summary</h2>
         <div
           style={{
@@ -241,8 +244,8 @@ export class StepReview extends Component<{
         >
           {data.map((item) => (
             <div key={item.title}>
-              <div style={{ opacity: 0.6 }}>{item.title}</div>
-              <div style={{ fontSize: 'calc(1em * 24 / 14)' }}>{item.value}</div>
+              <div style={{opacity: 0.6}}>{item.title}</div>
+              <div style={{fontSize: 'calc(1em * 24 / 14)'}}>{item.value}</div>
             </div>
           ))}
         </div>
@@ -252,9 +255,9 @@ export class StepReview extends Component<{
 }
 
 const ReviewPartitionTable = observer(
-  (props: { topic: Topic; topicPartitions: Partition[]; assignments: TopicAssignment }) => (
+  (props: { topic: TopicSummary; topicPartitions: TopicPartitionDetails[]; assignments: TopicAssignment }) => (
     <Box py={2} width="full">
-      <DataTable<Partition>
+      <DataTable<TopicPartitionDetails>
         data={props.topicPartitions}
         columns={[
           {
@@ -263,17 +266,17 @@ const ReviewPartitionTable = observer(
           },
           {
             header: 'Brokers Before',
-            cell: ({ row: { original: partition } }) => (
-              <BrokerList brokerIds={partition.replicas} leaderId={partition.leader} />
+            cell: ({row: {original: partition}}) => (
+              <BrokerList brokerIds={partition.replicas} leaderId={partition.leader}/>
             ),
           },
           {
             header: 'Brokers After',
-            cell: ({ row: { original: partition } }) => {
+            cell: ({row: {original: partition}}) => {
               const partitionAssignments = props.assignments.partitions.first((p) => p.partitionId === partition.id);
               if (partitionAssignments == null || partitionAssignments.replicas == null) return '??';
               return (
-                <BrokerList brokerIds={partitionAssignments.replicas} leaderId={partitionAssignments.replicas[0]} />
+                <BrokerList brokerIds={partitionAssignments.replicas} leaderId={partitionAssignments.replicas[0]}/>
               );
             },
           },

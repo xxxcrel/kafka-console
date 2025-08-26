@@ -3,7 +3,6 @@ package kconsole
 import (
 	"context"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -19,22 +18,22 @@ type Servicer interface {
 
 	GetAPIVersions(ctx context.Context) ([]APIVersion, error)
 	GetAllBrokerConfigs(ctx context.Context) (map[int32]BrokerConfig, error)
-	GetBrokerConfig(ctx context.Context, brokerID int32) ([]BrokerConfigEntry, *rest.Error)
+	GetBrokerConfig(ctx context.Context, brokerID int32) ([]BrokerConfigEntry, error)
 	GetBrokersWithLogDirs(ctx context.Context) ([]BrokerWithLogDirs, error)
 	GetClusterInfo(ctx context.Context) (*ClusterInfo, error)
 	DeleteConsumerGroup(ctx context.Context, groupID string) error
-	GetConsumerGroupsOverview(ctx context.Context, groupIDs []string) ([]ConsumerGroupOverview, *rest.Error)
-	CreateACL(ctx context.Context, createReq kmsg.CreateACLsRequestCreation) *rest.Error
-	CreateTopic(ctx context.Context, createTopicReq kmsg.CreateTopicsRequestTopic) (CreateTopicResponse, *rest.Error)
-	DeleteACLs(ctx context.Context, filter kmsg.DeleteACLsRequestFilter) (DeleteACLsResponse, *rest.Error)
+	GetConsumerGroupsOverview(ctx context.Context, groupIDs []string) ([]ConsumerGroupOverview, error)
+	CreateACL(ctx context.Context, createReq kmsg.CreateACLsRequestCreation) error
+	CreateTopic(ctx context.Context, createTopicReq kmsg.CreateTopicsRequestTopic) (CreateTopicResponse, error)
+	DeleteACLs(ctx context.Context, filter kmsg.DeleteACLsRequestFilter) (DeleteACLsResponse, error)
 	DeleteConsumerGroupOffsets(ctx context.Context, groupID string, topics []kmsg.OffsetDeleteRequestTopic) ([]DeleteConsumerGroupOffsetsResponseTopic, error)
-	DeleteTopic(ctx context.Context, topicName string) *rest.Error
-	DeleteTopicRecords(ctx context.Context, deleteReq kmsg.DeleteRecordsRequestTopic) (DeleteTopicRecordsResponse, *rest.Error)
+	DeleteTopic(ctx context.Context, topicName string) error
+	DeleteTopicRecords(ctx context.Context, deleteReq kmsg.DeleteRecordsRequestTopic) (DeleteTopicRecordsResponse, error)
 	DescribeQuotas(ctx context.Context) QuotaResponse
-	EditConsumerGroupOffsets(ctx context.Context, groupID string, topics []kmsg.OffsetCommitRequestTopic) (*EditConsumerGroupOffsetsResponse, *rest.Error)
+	EditConsumerGroupOffsets(ctx context.Context, groupID string, topics []kmsg.OffsetCommitRequestTopic) (*EditConsumerGroupOffsetsResponse, error)
 	EditTopicConfig(ctx context.Context, topicName string, configs []kmsg.IncrementalAlterConfigsRequestResourceConfig) error
 	GetEndpointCompatibility(ctx context.Context) (EndpointCompatibility, error)
-	IncrementalAlterConfigs(ctx context.Context, alterConfigs []kmsg.IncrementalAlterConfigsRequestResource) ([]IncrementalAlterConfigsResourceResponse, *rest.Error)
+	IncrementalAlterConfigs(ctx context.Context, alterConfigs []kmsg.IncrementalAlterConfigsRequestResource) ([]IncrementalAlterConfigsResourceResponse, error)
 	ListAllACLs(ctx context.Context, req kmsg.DescribeACLsRequest) (*ACLOverview, error)
 	ListMessages(ctx context.Context, listReq ListMessageRequest, progress IListMessagesProgress) error
 	ListOffsets(ctx context.Context, topicNames []string, timestamp int64) ([]TopicOffset, error)
@@ -45,13 +44,13 @@ type Servicer interface {
 	ProduceRecord(context.Context, string, int32, []kgo.RecordHeader, *serde.RecordPayloadInput, *serde.RecordPayloadInput, bool, []kgo.CompressionCodec) (*ProduceRecordResponse, error)
 	Start(ctx context.Context) error
 	Stop()
-	GetTopicConfigs(ctx context.Context, topicName string, configNames []string) (*TopicConfig, *rest.Error)
+	GetTopicConfigs(ctx context.Context, topicName string, configNames []string) (*TopicConfig, error)
 	GetTopicsConfigs(ctx context.Context, topicNames []string, configNames []string) (map[string]*TopicConfig, error)
 	ListTopicConsumers(ctx context.Context, topicName string) ([]*TopicConsumerGroup, error)
 	GetTopicDocumentation(topicName string) *TopicDocumentation
 	GetTopicsOverview(ctx context.Context) ([]*TopicSummary, error)
 	GetAllTopicNames(ctx context.Context) ([]string, error)
-	GetTopicDetails(ctx context.Context, topicNames []string) ([]TopicDetails, *rest.Error)
+	GetTopicDetails(ctx context.Context, topicNames []string) ([]TopicDetails, error)
 
 	// ------------------------------------------------------------------
 	// Plain Kafka requests, used by Connect API.

@@ -144,13 +144,13 @@ func (api *API) handleDeleteACLs() http.HandlerFunc {
 			return
 		}
 
-		aclDeleteRes, restErr := api.ConsoleSvc.DeleteACLs(r.Context(), req.ToKafkaRequest())
+		//aclDeleteRes, restErr := api.ConsoleSvc.DeleteACLs(r.Context(), req.ToKafkaRequest())
 		if restErr != nil {
 			rest.SendRESTError(w, r, api.Logger, restErr)
 			return
 		}
 
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, aclDeleteRes)
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, aclDeleteRes)
 	}
 }
 
@@ -239,11 +239,11 @@ func (api *API) handleCreateACL() http.HandlerFunc {
 			return
 		}
 
-		restErr = api.ConsoleSvc.CreateACL(r.Context(), req.ToKafkaRequest())
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
+		//restErr = api.ConsoleSvc.CreateACL(r.Context(), req.ToKafkaRequest())
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
 
 		rest.SendResponse(w, r, api.Logger, http.StatusOK, nil)
 	}

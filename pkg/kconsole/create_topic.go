@@ -12,12 +12,8 @@ package kconsole
 import (
 	"context"
 	"fmt"
-	"net/http"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kmsg"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // CreateTopicResponse is the response that is sent after creating a topic successfully.
@@ -36,17 +32,10 @@ type CreateTopicResponseConfig struct {
 }
 
 // CreateTopic creates a Kafka topic.
-func (s *Service) CreateTopic(ctx context.Context, createTopicReq kmsg.CreateTopicsRequestTopic) (CreateTopicResponse, *rest.Error) {
+func (s *Service) CreateTopic(ctx context.Context, createTopicReq kmsg.CreateTopicsRequestTopic) (CreateTopicResponse, error) {
 	cl, _, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return CreateTopicResponse{}, errorToRestError(err)
-	}
-
-	internalLogs := []zapcore.Field{
-		zap.String("topic_name", createTopicReq.Topic),
-		zap.Int32("partition_count", createTopicReq.NumPartitions),
-		zap.Int16("replication_factor", createTopicReq.ReplicationFactor),
-		zap.Int("configuration_count", len(createTopicReq.Configs)),
+		return CreateTopicResponse{}, err
 	}
 
 	req := kmsg.NewCreateTopicsRequest()
@@ -54,35 +43,17 @@ func (s *Service) CreateTopic(ctx context.Context, createTopicReq kmsg.CreateTop
 
 	createRes, err := req.RequestWith(ctx, cl)
 	if err != nil {
-		return CreateTopicResponse{}, &rest.Error{
-			Err:          fmt.Errorf("failed to create topic: %w", err),
-			Status:       http.StatusServiceUnavailable,
-			Message:      fmt.Sprintf("Failed to create topic: %v", err.Error()),
-			InternalLogs: internalLogs,
-			IsSilent:     false,
-		}
+		return CreateTopicResponse{}, fmt.Errorf("failed to create topic: %w", err)
 	}
 
 	if len(createRes.Topics) != 1 {
-		return CreateTopicResponse{}, &rest.Error{
-			Err:          fmt.Errorf("unexpected number of topic responses, expected exactly one but got '%v'", len(createRes.Topics)),
-			Status:       http.StatusInternalServerError,
-			Message:      fmt.Sprintf("unexpected number of topic responses, expected exactly one but got '%v'", len(createRes.Topics)),
-			InternalLogs: internalLogs,
-			IsSilent:     false,
-		}
+		return CreateTopicResponse{}, fmt.Errorf("unexpected number of topic responses, expected exactly one but got '%v'", len(createRes.Topics))
 	}
 
 	createTopicRes := createRes.Topics[0]
 	kafkaErr := newKafkaErrorWithDynamicMessage(createTopicRes.ErrorCode, createTopicRes.ErrorMessage)
 	if kafkaErr != nil {
-		return CreateTopicResponse{}, &rest.Error{
-			Err:          fmt.Errorf("failed to create topic, inner kafka error: %w", kafkaErr),
-			Status:       http.StatusServiceUnavailable,
-			Message:      fmt.Sprintf("Failed to create topic, kafka responded with the following error: %v", kafkaErr.Error()),
-			InternalLogs: internalLogs,
-			IsSilent:     false,
-		}
+		return CreateTopicResponse{}, fmt.Errorf("failed to create topic, inner kafka error: %w", kafkaErr)
 	}
 
 	configs := make([]CreateTopicResponseConfig, len(createTopicRes.Configs))

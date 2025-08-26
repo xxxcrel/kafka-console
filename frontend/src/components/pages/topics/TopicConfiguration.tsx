@@ -38,6 +38,8 @@ import { MdInfoOutline } from 'react-icons/md';
 import { isServerless } from '../../../config';
 import { api } from '../../../state/backendApi';
 import { SingleSelect } from '../../misc/Select';
+import {kconsole, kmsg} from "../../../../wailsjs/go/models";
+import IncrementalAlterConfigsRequestResourceConfig = kmsg.IncrementalAlterConfigsRequestResourceConfig;
 
 type ConfigurationEditorProps = {
   targetTopic: string; // topic name, or null if default configs
@@ -92,7 +94,7 @@ const ConfigEditorForm: FC<{
   });
 
   const onSubmit: SubmitHandler<Inputs> = async ({ valueType, customValue }) => {
-    const operation = valueType === 'infinite' || valueType === 'custom' ? 'SET' : 'DELETE';
+    const operation = valueType === 'infinite' || valueType === 'custom' ? 0 : 1;
 
     let value: number | string | undefined | null = undefined;
     if (valueType === 'infinite') {
@@ -103,11 +105,11 @@ const ConfigEditorForm: FC<{
 
     try {
       await api.changeTopicConfig(targetTopic, [
-        {
-          key: editedEntry.name,
-          op: operation,
-          value: operation === 'SET' ? String(value) : undefined,
-        },
+        IncrementalAlterConfigsRequestResourceConfig.createFrom({
+          Name: editedEntry.name,
+          Op: operation,
+          Value: operation == 0 ? String(value) : undefined,
+        }),
       ]);
       toast({
         status: 'success',

@@ -100,12 +100,12 @@ func (api *API) handleCreateTopic() http.HandlerFunc {
 		}
 
 		// 3. Try to create topic
-		createTopicResponse, restErr := api.ConsoleSvc.CreateTopic(r.Context(), req.ToKmsg())
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
-
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, createTopicResponse)
+		//createTopicResponse, restErr := api.ConsoleSvc.CreateTopic(r.Context(), req.ToKmsg())
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
+		//
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, createTopicResponse)
 	}
 }

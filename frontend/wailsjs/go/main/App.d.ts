@@ -3,7 +3,6 @@
 import {kadm} from '../models';
 import {kmsg} from '../models';
 import {kconsole} from '../models';
-import {rest} from '../models';
 import {sr} from '../models';
 import {clusterstatus} from '../models';
 import {kgo} from '../models';
@@ -15,17 +14,17 @@ export function AlterConfigs(arg1:kmsg.AlterConfigsRequest):Promise<kmsg.AlterCo
 
 export function AlterPartitionAssignments(arg1:Array<kmsg.AlterPartitionAssignmentsRequestTopic>):Promise<Array<kconsole.AlterPartitionReassignmentsResponse>>;
 
-export function CreateACL(arg1:kmsg.CreateACLsRequestCreation):Promise<rest.Error>;
+export function CreateACL(arg1:kmsg.CreateACLsRequestCreation):Promise<void>;
 
 export function CreateACLs(arg1:kmsg.CreateACLsRequest):Promise<kmsg.CreateACLsResponse>;
 
 export function CreateSchemaRegistrySchema(arg1:string,arg2:sr.Schema):Promise<kconsole.CreateSchemaResponse>;
 
-export function CreateTopic(arg1:kmsg.CreateTopicsRequestTopic):Promise<kconsole.CreateTopicResponse|rest.Error>;
+export function CreateTopic(arg1:kmsg.CreateTopicsRequestTopic):Promise<kconsole.CreateTopicResponse>;
 
 export function CreateTopics(arg1:kmsg.CreateTopicsRequest):Promise<kmsg.CreateTopicsResponse>;
 
-export function DeleteACLs(arg1:kmsg.DeleteACLsRequestFilter):Promise<kconsole.DeleteACLsResponse|rest.Error>;
+export function DeleteACLs(arg1:kmsg.DeleteACLsRequestFilter):Promise<kconsole.DeleteACLsResponse>;
 
 export function DeleteACLsKafka(arg1:kmsg.DeleteACLsRequest):Promise<kmsg.DeleteACLsResponse>;
 
@@ -39,9 +38,9 @@ export function DeleteSchemaRegistrySubjectConfig(arg1:string):Promise<void>;
 
 export function DeleteSchemaRegistrySubjectVersion(arg1:string,arg2:number,arg3:boolean):Promise<kconsole.SchemaRegistryDeleteSubjectVersionResponse>;
 
-export function DeleteTopic(arg1:string):Promise<rest.Error>;
+export function DeleteTopic(arg1:string):Promise<void>;
 
-export function DeleteTopicRecords(arg1:kmsg.DeleteRecordsRequestTopic):Promise<kconsole.DeleteTopicRecordsResponse|rest.Error>;
+export function DeleteTopicRecords(arg1:kmsg.DeleteRecordsRequestTopic):Promise<kconsole.DeleteTopicRecordsResponse>;
 
 export function DeleteTopics(arg1:kmsg.DeleteTopicsRequest):Promise<kmsg.DeleteTopicsResponse>;
 
@@ -49,7 +48,7 @@ export function DescribeConfigs(arg1:kmsg.DescribeConfigsRequest):Promise<kmsg.D
 
 export function DescribeQuotas():Promise<kconsole.QuotaResponse>;
 
-export function EditConsumerGroupOffsets(arg1:string,arg2:Array<kmsg.OffsetCommitRequestTopic>):Promise<kconsole.EditConsumerGroupOffsetsResponse|rest.Error>;
+export function EditConsumerGroupOffsets(arg1:string,arg2:Array<kmsg.OffsetCommitRequestTopic>):Promise<kconsole.EditConsumerGroupOffsetsResponse>;
 
 export function EditTopicConfig(arg1:string,arg2:Array<kmsg.IncrementalAlterConfigsRequestResourceConfig>):Promise<void>;
 
@@ -59,7 +58,7 @@ export function GetAllBrokerConfigs():Promise<Record<number, kconsole.BrokerConf
 
 export function GetAllTopicNames():Promise<Array<string>>;
 
-export function GetBrokerConfig(arg1:number):Promise<Array<kconsole.BrokerConfigEntry>|rest.Error>;
+export function GetBrokerConfig(arg1:number):Promise<Array<kconsole.BrokerConfigEntry>>;
 
 export function GetBrokersWithLogDirs():Promise<Array<kconsole.BrokerWithLogDirs>>;
 
@@ -67,7 +66,7 @@ export function GetClusterInfo():Promise<kconsole.ClusterInfo>;
 
 export function GetConsoleInfo():Promise<string>;
 
-export function GetConsumerGroupsOverview(arg1:Array<string>):Promise<Array<kconsole.ConsumerGroupOverview>|rest.Error>;
+export function GetConsumerGroupsOverview(arg1:Array<string>):Promise<Array<kconsole.ConsumerGroupOverview>>;
 
 export function GetEndpointCompatibility():Promise<kconsole.EndpointCompatibility>;
 
@@ -97,9 +96,9 @@ export function GetSchemaRegistrySubjects():Promise<Array<kconsole.SchemaRegistr
 
 export function GetSchemaUsagesByID(arg1:number):Promise<Array<kconsole.SchemaVersion>>;
 
-export function GetTopicConfigs(arg1:string,arg2:Array<string>):Promise<kconsole.TopicConfig|rest.Error>;
+export function GetTopicConfigs(arg1:string,arg2:Array<string>):Promise<kconsole.TopicConfig>;
 
-export function GetTopicDetails(arg1:Array<string>):Promise<Array<kconsole.TopicDetails>|rest.Error>;
+export function GetTopicDetails(arg1:Array<string>):Promise<Array<kconsole.TopicDetails>>;
 
 export function GetTopicDocumentation(arg1:string):Promise<kconsole.TopicDocumentation>;
 
@@ -107,7 +106,7 @@ export function GetTopicsConfigs(arg1:Array<string>,arg2:Array<string>):Promise<
 
 export function GetTopicsOverview():Promise<Array<kconsole.TopicSummary>>;
 
-export function IncrementalAlterConfigs(arg1:Array<kmsg.IncrementalAlterConfigsRequestResource>):Promise<Array<kconsole.IncrementalAlterConfigsResourceResponse>|rest.Error>;
+export function IncrementalAlterConfigs(arg1:Array<kmsg.IncrementalAlterConfigsRequestResource>):Promise<Array<kconsole.IncrementalAlterConfigsResourceResponse>>;
 
 export function IncrementalAlterConfigsKafka(arg1:kmsg.IncrementalAlterConfigsRequest):Promise<kmsg.IncrementalAlterConfigsResponse>;
 

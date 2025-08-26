@@ -12,9 +12,7 @@ package kconsole
 import (
 	"context"
 	"fmt"
-	"net/http"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kmsg"
 	"go.uber.org/zap"
@@ -118,25 +116,15 @@ func (t *TopicConfig) GetConfigEntryByName(configName string) *TopicConfigEntry 
 }
 
 // GetTopicConfigs calls GetTopicsConfigs for a single Topic and returns a single response
-func (s *Service) GetTopicConfigs(ctx context.Context, topicName string, configNames []string) (*TopicConfig, *rest.Error) {
+func (s *Service) GetTopicConfigs(ctx context.Context, topicName string, configNames []string) (*TopicConfig, error) {
 	response, err := s.GetTopicsConfigs(ctx, []string{topicName}, configNames)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:      err,
-			Status:   http.StatusInternalServerError,
-			Message:  fmt.Sprintf("Failed to get topic's config: %v", err.Error()),
-			IsSilent: false,
-		}
+		return nil, fmt.Errorf("Failed to get topic's config: %v", err.Error())
 	}
 
 	if val, exists := response[topicName]; exists {
 		if val.Error != nil && val.Error.Code == kerr.UnknownTopicOrPartition.Code {
-			return nil, &rest.Error{
-				Err:      fmt.Errorf("the requested topic does not exist"),
-				Status:   http.StatusNotFound,
-				Message:  fmt.Sprintf("Could not fetch topic config because the requested topic '%v' does not exist.", topicName),
-				IsSilent: false,
-			}
+			return nil, fmt.Errorf("the requested topic does not exist")
 		}
 	}
 

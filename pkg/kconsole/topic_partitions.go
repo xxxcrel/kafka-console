@@ -12,11 +12,9 @@ package kconsole
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sync"
 	"time"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -33,7 +31,8 @@ type TopicDetails struct {
 
 	// Partitions is an array of all the available partition details. If there's an error on the topic level this
 	// array will be nil.
-	Partitions []TopicPartitionDetails `json:"partitions"`
+	Partitions        []TopicPartitionDetails `json:"partitions"`
+	ReplicationFactor uint32                  `json:"replicationFactor"`
 }
 
 // TopicPartitionDetails consists of some (not all) information about a single partition of a topic.
@@ -108,10 +107,10 @@ type TopicPartitionLogDirRequestError struct {
 
 // GetTopicDetails returns information about the partitions in the specified topics. Pass nil for topicNames in order
 // to describe partitions from all topics.
-func (s *Service) GetTopicDetails(ctx context.Context, topicNames []string) ([]TopicDetails, *rest.Error) {
+func (s *Service) GetTopicDetails(ctx context.Context, topicNames []string) ([]TopicDetails, error) {
 	cl, adminCl, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return nil, errorToRestError(err)
+		return nil, err
 	}
 
 	// 1. Request metadata for all topics and partitions
@@ -145,22 +144,12 @@ func (s *Service) GetTopicDetails(ctx context.Context, topicNames []string) ([]T
 
 	startOffsets, err := adminCl.ListStartOffsets(ctx, topicNames...)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:          err,
-			Status:       http.StatusInternalServerError,
-			Message:      fmt.Sprintf("Failed to list topic start offsets: %v", err.Error()),
-			InternalLogs: nil,
-		}
+		return nil, fmt.Errorf("Failed to list topic start offsets: %v", err.Error())
 	}
 
 	endOffsets, err := adminCl.ListEndOffsets(ctx, topicNames...)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:          err,
-			Status:       http.StatusInternalServerError,
-			Message:      fmt.Sprintf("Failed to list topic start offsets: %v", err.Error()),
-			InternalLogs: nil,
-		}
+		return nil, fmt.Errorf("Failed to list topic start offsets: %v", err.Error())
 	}
 
 	// Wait for the log dir response if necessary
@@ -221,15 +210,10 @@ func (s *Service) GetTopicDetails(ctx context.Context, topicNames []string) ([]T
 	return topicsDetails, nil
 }
 
-func (s *Service) getTopicPartitionMetadata(ctx context.Context, adminCl *kadm.Client, topicNames []string) (map[string]TopicDetails, *rest.Error) {
+func (s *Service) getTopicPartitionMetadata(ctx context.Context, adminCl *kadm.Client, topicNames []string) (map[string]TopicDetails, error) {
 	metadata, err := adminCl.Metadata(ctx, topicNames...)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:      err,
-			Status:   http.StatusServiceUnavailable,
-			Message:  fmt.Sprintf("Failed to get topic metadata from cluster: '%v'", err.Error()),
-			IsSilent: false,
-		}
+		return nil, fmt.Errorf("Failed to get topic metadata from cluster: '%v'", err.Error())
 	}
 
 	overviewByTopic := make(map[string]TopicDetails)

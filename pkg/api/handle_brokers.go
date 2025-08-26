@@ -12,7 +12,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/cloudhut/common/rest"
 
@@ -55,27 +54,27 @@ func (api *API) handleBrokerConfig() http.HandlerFunc {
 			rest.SendRESTError(w, r, api.Logger, restErr)
 			return
 		}
-		brokerID, err := strconv.ParseInt(brokerIDStr, 10, 32)
-		if err != nil {
-			restErr := &rest.Error{
-				Err:      fmt.Errorf("broker id in URL not set"),
-				Status:   http.StatusBadRequest,
-				Message:  "BrokerWithLogDirs ID must be a valid int32",
-				IsSilent: true,
-			}
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
+		//brokerID, err := strconv.ParseInt(brokerIDStr, 10, 32)
+		//if err != nil {
+		//	restErr := &rest.Error{
+		//		Err:      fmt.Errorf("broker id in URL not set"),
+		//		Status:   http.StatusBadRequest,
+		//		Message:  "BrokerWithLogDirs ID must be a valid int32",
+		//		IsSilent: true,
+		//	}
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
 
-		cfgs, restErr := api.ConsoleSvc.GetBrokerConfig(r.Context(), int32(brokerID))
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
-
-		response := response{
-			BrokerConfigs: cfgs,
-		}
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, response)
+		//cfgs, restErr := api.ConsoleSvc.GetBrokerConfig(r.Context(), int32(brokerID))
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
+		//
+		//response := response{
+		//	BrokerConfigs: cfgs,
+		//}
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, response)
 	}
 }

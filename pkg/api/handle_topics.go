@@ -56,31 +56,31 @@ func (api *API) handleGetPartitions() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		topicName := rest.GetURLParam(r, "topicName")
-		logger := api.Logger.With(zap.String("topic_name", topicName))
-
-		topicDetails, restErr := api.ConsoleSvc.GetTopicDetails(r.Context(), []string{topicName})
-		if restErr != nil {
-			rest.SendRESTError(w, r, logger, restErr)
-			return
-		}
-
-		if len(topicDetails) != 1 {
-			restErr := &rest.Error{
-				Err:      fmt.Errorf("expected exactly one topic detail in response, but got '%d'", len(topicDetails)),
-				Status:   http.StatusInternalServerError,
-				Message:  "Internal server error in RP Console, please file a issue in GitHub if you face this issue. The backend logs will contain more information.",
-				IsSilent: false,
-			}
-			rest.SendRESTError(w, r, logger, restErr)
-			return
-		}
-
-		res := response{
-			TopicName:  topicName,
-			Partitions: topicDetails[0].Partitions,
-		}
-		rest.SendResponse(w, r, logger, http.StatusOK, res)
+		//topicName := rest.GetURLParam(r, "topicName")
+		//logger := api.Logger.With(zap.String("topic_name", topicName))
+		//
+		//topicDetails, restErr := api.ConsoleSvc.GetTopicDetails(r.Context(), []string{topicName})
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, logger, restErr)
+		//	return
+		//}
+		//
+		//if len(topicDetails) != 1 {
+		//	restErr := &rest.Error{
+		//		Err:      fmt.Errorf("expected exactly one topic detail in response, but got '%d'", len(topicDetails)),
+		//		Status:   http.StatusInternalServerError,
+		//		Message:  "Internal server error in RP Console, please file a issue in GitHub if you face this issue. The backend logs will contain more information.",
+		//		IsSilent: false,
+		//	}
+		//	rest.SendRESTError(w, r, logger, restErr)
+		//	return
+		//}
+		//
+		//res := response{
+		//	TopicName:  topicName,
+		//	Partitions: topicDetails[0].Partitions,
+		//}
+		//rest.SendResponse(w, r, logger, http.StatusOK, res)
 	}
 }
 
@@ -91,19 +91,19 @@ func (api *API) handleGetTopicConfig() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		topicName := rest.GetURLParam(r, "topicName")
-		logger := api.Logger.With(zap.String("topic_name", topicName))
+		//topicName := rest.GetURLParam(r, "topicName")
+		//logger := api.Logger.With(zap.String("topic_name", topicName))
 
-		description, restErr := api.ConsoleSvc.GetTopicConfigs(r.Context(), topicName, nil)
-		if restErr != nil {
-			rest.SendRESTError(w, r, logger, restErr)
-			return
-		}
-
-		res := response{
-			TopicDescription: description,
-		}
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, res)
+		//description, restErr := api.ConsoleSvc.GetTopicConfigs(r.Context(), topicName, nil)
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, logger, restErr)
+		//	return
+		//}
+		//
+		//res := response{
+		//	TopicDescription: description,
+		//}
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, res)
 	}
 }
 
@@ -113,15 +113,15 @@ func (api *API) handleDeleteTopic() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		topicName := rest.GetURLParam(r, "topicName")
-
-		restErr := api.ConsoleSvc.DeleteTopic(r.Context(), topicName)
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
-
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, response{Status: "Success"})
+		//topicName := rest.GetURLParam(r, "topicName")
+		//
+		//restErr := api.ConsoleSvc.DeleteTopic(r.Context(), topicName)
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
+		//
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, response{Status: "Success"})
 	}
 }
 
@@ -178,13 +178,13 @@ func (api *API) handleDeleteTopicRecords() http.HandlerFunc {
 			deleteReq.Partitions[i] = pReq
 		}
 
-		deleteRes, restErr := api.ConsoleSvc.DeleteTopicRecords(r.Context(), deleteReq)
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
-
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, deleteRes)
+		//deleteRes, restErr := api.ConsoleSvc.DeleteTopicRecords(r.Context(), deleteReq)
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
+		//
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, deleteRes)
 	}
 }
 

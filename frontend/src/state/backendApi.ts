@@ -12,100 +12,22 @@
 /*eslint block-scoped-var: "error"*/
 
 import {createStandaloneToast, redpandaTheme, redpandaToastOptions} from '@redpanda-data/ui';
-import {comparer, computed, observable, runInAction, transaction} from 'mobx';
-import {config as appConfig, isEmbedded} from '../config';
-import {LazyMap} from '../utils/LazyMap';
-import {getBasePath} from '../utils/env';
-import fetchWithTimeout from '../utils/fetchWithTimeout';
-import {toJson} from '../utils/jsonUtils';
-import {ObjToKv} from '../utils/tsxUtils';
-import {decodeBase64, getOidcSubject, TimeSince} from '../utils/utils';
-import {appGlobal} from './appGlobal';
-import {
-  AclRequestDefault,
-  type AclResource,
-  type AdminInfo,
-  AlterConfigOperation,
-  type AlterPartitionReassignmentsResponse,
-  type ApiError,
-  type ClusterAdditionalInfo,
-  type ClusterConnectors,
-  type ClusterOverview,
-  CompressionType,
-  ConfigResourceType,
-  type ConnectorValidationResult,
-  type CreateACLRequest,
-  type CreateSecretResponse,
-  type CreateTopicRequest,
-  type CreateTopicResponse,
-  type CreateUserRequest,
-  type DeleteACLsRequest,
-  type DeleteConsumerGroupOffsetsRequest,
-  type DeleteConsumerGroupOffsetsResponse,
-  type DeleteConsumerGroupOffsetsResponseTopic,
-  type DeleteConsumerGroupOffsetsTopic,
-  type EditConsumerGroupOffsetsRequest,
-  type EditConsumerGroupOffsetsResponse,
-  type EditConsumerGroupOffsetsResponseTopic,
-  type EditConsumerGroupOffsetsTopic,
-  type EndpointCompatibility,
-  type GetAclOverviewResponse,
-  type GetAclsRequest,
-  type GetUsersResponse,
-  isApiError,
-  type KafkaConnectors,
-  type PartialTopicConfigsResponse,
-  type Partition,
-  type PartitionReassignmentRequest,
-  type PartitionReassignments,
-  type PartitionReassignmentsResponse,
-  type PatchConfigsRequest,
-  type PatchConfigsResponse,
-  type PatchTopicConfigsRequest,
-  type Payload,
-  type ProduceRecordsResponse,
-  type PublishRecordsRequest,
-  type QuotaResponse,
-  type ResourceConfig,
-  type SchemaReferencedByEntry,
-  type SchemaRegistryCompatibilityMode,
-  type SchemaRegistryConfigResponse,
-  type SchemaRegistryCreateSchema,
-  type SchemaRegistryCreateSchemaResponse,
-  type SchemaRegistryDeleteSubjectResponse,
-  type SchemaRegistryDeleteSubjectVersionResponse,
-  type SchemaRegistryModeResponse,
-  type SchemaRegistrySchemaTypesResponse,
-  type SchemaRegistrySetCompatibilityModeRequest,
-  type SchemaRegistrySubject,
-  type SchemaRegistrySubjectDetails,
-  type SchemaRegistryValidateSchemaResponse,
-  type SchemaVersion,
-  type Topic,
-  type TopicMessage,
-  type TopicPermissions,
-  type UserData,
-  WrappedApiError,
-} from './restInterfaces';
-import {uiState} from './uiState';
+import {comparer, computed, observable, transaction} from 'mobx';
+import {config as appConfig} from '../config';
+import {decodeBase64} from '../utils/utils';
 
 import {proto3} from '@bufbuild/protobuf';
 import type {ConnectError} from '@connectrpc/connect';
-import {Code} from '@connectrpc/connect';
-import {AuthenticationMethod, type GetIdentityResponse, KafkaAclOperation, RedpandaCapability, SchemaRegistryCapability,} from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
+import {AuthenticationMethod,} from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
 import {CompressionType as ProtoCompressionType, PayloadEncoding,} from '../protogen/redpanda/api/console/v1alpha1/common_pb';
-import {type CreateDebugBundleRequest, type CreateDebugBundleResponse, type DebugBundleStatus, DebugBundleStatus_Status, type GetClusterHealthResponse, type GetDebugBundleStatusResponse_DebugBundleBrokerStatus,} from '../protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
-import type {License, ListEnterpriseFeaturesResponse_Feature, SetLicenseRequest, SetLicenseResponse,} from '../protogen/redpanda/api/console/v1alpha1/license_pb';
+import {type GetClusterHealthResponse, type GetDebugBundleStatusResponse_DebugBundleBrokerStatus,} from '../protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
 import {ListMessagesRequest} from '../protogen/redpanda/api/console/v1alpha1/list_messages_pb';
 import type {PublishMessageRequest, PublishMessageResponse,} from '../protogen/redpanda/api/console/v1alpha1/publish_messages_pb';
-import type {ListTransformsResponse} from '../protogen/redpanda/api/console/v1alpha1/transform_pb';
-import {GetPipelinesBySecretsRequest, type Pipeline, type PipelineCreate, type PipelineUpdate,} from '../protogen/redpanda/api/dataplane/v1/pipeline_pb';
-import {type CreateSecretRequest, type DeleteSecretRequest, type ListSecretScopesRequest, ListSecretsRequest, Scope, type Secret, type UpdateSecretRequest,} from '../protogen/redpanda/api/dataplane/v1/secret_pb';
-import type {TransformMetadata} from '../protogen/redpanda/api/dataplane/v1alpha2/transform_pb';
 import {Features} from './supportedFeatures';
 import {PartitionOffsetOrigin} from './ui';
-import {DeleteTopic, DeleteTopicRecords, GetBrokerConfig, GetBrokersWithLogDirs, GetClusterInfo, GetConsoleInfo, GetConsumerGroupsOverview, GetEndpointCompatibility, GetKafkaAuthorizerInfo, GetKafkaConnectInfo, GetKafkaInfo, GetSchemaRegistryInfo, GetTopicConfigs, GetTopicDetails, GetTopicDocumentation, GetTopicsOverview, ListOffsets, ListTopicConsumers} from "../../wailsjs/go/main/App";
-import {kconsole, kmsg} from "../../wailsjs/go/models";
+import {CreateACL, CreateTopic, DeleteACLs, DeleteConsumerGroup, DeleteConsumerGroupOffsets, DeleteTopic, DeleteTopicRecords, DescribeQuotas, EditConsumerGroupOffsets, EditTopicConfig, GetBrokerConfig, GetBrokersWithLogDirs, GetClusterInfo, GetConsoleInfo, GetConsumerGroupsOverview, GetEndpointCompatibility, GetKafkaAuthorizerInfo, GetKafkaConnectInfo, GetKafkaInfo, GetSchemaRegistryInfo, GetTopicConfigs, GetTopicDetails, GetTopicDocumentation, GetTopicsOverview, ListAllACLs, ListOffsets, ListTopicConsumers, ProducePlainRecords} from "../../wailsjs/go/main/App";
+import {kconsole, kgo, kmsg} from "../../wailsjs/go/models";
+import {AclRequestDefault, ClusterOverview, GetAclsRequest, PublishRecordsRequest, TopicPermissions, UserData} from "./restInterfaces";
 import BrokerConfigEntry = kconsole.BrokerConfigEntry;
 import ClusterInfo = kconsole.ClusterInfo;
 import BrokerWithLogDirs = kconsole.BrokerWithLogDirs;
@@ -114,8 +36,18 @@ import TopicPartitionDetails = kconsole.TopicPartitionDetails;
 import ConsumerGroupOverview = kconsole.ConsumerGroupOverview;
 import DeleteRecordsRequestTopic = kmsg.DeleteRecordsRequestTopic;
 import TopicConfig = kconsole.TopicConfig;
+import TopicDocumentation = kconsole.TopicDocumentation;
+import TopicConsumerGroup = kconsole.TopicConsumerGroup;
+import EndpointCompatibility = kconsole.EndpointCompatibility;
+import CompressionCodec = kgo.CompressionCodec;
+import ProduceRecordsResponse = kconsole.ProduceRecordsResponse;
+import CreateTopicResponse = kconsole.CreateTopicResponse;
+import CreateTopicsRequestTopic = kmsg.CreateTopicsRequestTopic;
+import DeleteACLsRequestFilter = kmsg.DeleteACLsRequestFilter;
+import CreateACLsRequestCreation = kmsg.CreateACLsRequestCreation;
+import QuotaResponse = kconsole.QuotaResponse;
+import DescribeACLsRequest = kmsg.DescribeACLsRequest;
 
-const REST_TIMEOUT_SEC = 25;
 export const REST_CACHE_DURATION_SEC = 20;
 
 const {toast} = createStandaloneToast({
@@ -127,196 +59,6 @@ const {toast} = createStandaloneToast({
     - If statusCode is not 2xx (any sort of error) -> response content will always be an `ApiError` json object
     - 2xx does not mean complete success, for some endpoints (e.g.: broker log dirs) we can get partial responses (array with some result entries and some error entries)
 */
-
-/*
- * allow custom fetch or websocket interceptors
- * */
-export async function rest<T>(url: string, requestInit?: RequestInit): Promise<T | null> {
-  const res = await fetchWithTimeout(url, REST_TIMEOUT_SEC * 1000, requestInit);
-
-  if (res.status === 401) {
-    // Unauthorized
-    await handle401(res);
-    return null;
-  }
-  if (res.status === 403) {
-    // Forbidden
-    return null;
-  }
-
-  const text = await res.text();
-
-  processVersionInfo(res.headers);
-
-  return parseOrUnwrap<T>(res, text);
-}
-
-async function handle401(res: Response) {
-  // Logout
-  //   Clear our 'User' data if we have any
-  //   Any old/invalid JWT will be cleared by the server
-  api.userData = null;
-
-  try {
-    const text = await res.text();
-    const obj = JSON.parse(text);
-    console.log(`unauthorized message: ${text}`);
-
-    const err = obj as ApiError;
-    uiState.loginError = String(err.message);
-  } catch (err) {
-    uiState.loginError = String(err);
-  }
-
-  // Save current location url
-  // store.urlBeforeLogin = window.location.href;
-  // get current path
-
-  // if (isEmbedded()) {
-  //   const path = window.location.pathname.removePrefix(getBasePath() ?? '');
-  //   // get path you want to redirect to
-  //   const targetPath = `/clusters/${appConfig.clusterId}/unauthorized`;
-  //   // when is embedded redirect to the cloud-ui
-  //   if (path !== targetPath) {
-  //     window.location.replace(`/clusters/${appConfig.clusterId}/unauthorized`);
-  //   }
-  // } else {
-    // Redirect to login
-    appGlobal.history.push('/login');
-  // }
-}
-
-function processVersionInfo(headers: Headers) {
-  try {
-    for (const [k, v] of headers) {
-      if (k.toLowerCase() !== 'app-build-timestamp') continue;
-
-      const serverBuildTimestamp = Number(v);
-      if (v != null && v !== '' && Number.isFinite(serverBuildTimestamp)) {
-        if (uiState.serverBuildTimestamp !== serverBuildTimestamp) uiState.serverBuildTimestamp = serverBuildTimestamp;
-      }
-
-      return;
-    }
-  } catch {
-  } // Catch malformed json (old versions where info is not sent as json yet)
-}
-
-const cache = new LazyMap<string, CacheEntry>((u) => new CacheEntry(u));
-
-class CacheEntry {
-  url: string;
-
-  private timeSinceLastResult = new TimeSince(); // set automatically
-  /** How long ago (in seconds) the data was last updated */
-  get resultAge() {
-    return this.timeSinceLastResult.value / 1000;
-  }
-
-  private promise: Promise<any>;
-
-  get lastPromise() {
-    return this.promise;
-  }
-
-  setPromise<T>(promise: Promise<T>) {
-    this.timeSinceRequestStarted.reset();
-
-    this.isPending = true;
-    this.error = null;
-    this.promise = promise;
-
-    promise
-      .then((result) => {
-        this.timeSinceLastResult.reset();
-        this.lastResult = result;
-      })
-      .catch((err) => {
-        this.lastResult = undefined;
-        this.error = err;
-      })
-      .finally(() => {
-        this.lastRequestDurationMs = this.timeSinceRequestStarted.value;
-        const index = api.activeRequests.indexOf(this);
-        if (index > -1) {
-          api.activeRequests.splice(index, 1);
-        }
-        this.isPending = false;
-      });
-
-    api.activeRequests.push(this);
-  }
-
-  error: any | null = null;
-  lastResult: any | undefined; // set automatically
-  isPending: boolean; // set automatically
-
-  private timeSinceRequestStarted = new TimeSince(); // set automatically
-  private lastRequestDurationMs: number; // set automatically
-  /** How long (in seconds) the last request took (or is currently taking so far) */
-  get requestTime() {
-    if (this.isPending) {
-      return this.timeSinceRequestStarted.value / 1000;
-    }
-    return this.lastRequestDurationMs / 1000;
-  }
-
-  constructor(url: string) {
-    this.url = url;
-    const sec = 1000;
-    const min = 60 * sec;
-    const h = 60 * min;
-    this.timeSinceLastResult.reset(100 * h);
-  }
-}
-
-function cachedApiRequest<T>(url: string, force = false): Promise<T> {
-  const entry = cache.get(url);
-
-  if (entry.isPending) {
-    // return already running request
-    return entry.lastPromise;
-  }
-
-  if (entry.resultAge > REST_CACHE_DURATION_SEC || force) {
-    // expired or force refresh
-    const promise = rest<T>(url);
-    entry.setPromise(promise);
-  }
-
-  // Return last result (can be still pending, or completed but not yet expired)
-  return entry.lastPromise;
-}
-
-export async function handleExpiredLicenseError(r: Response) {
-  const data = await r.json();
-  if (data.message.includes('license expired')) {
-    uiState.isUsingDebugUserLogin = true;
-    api.userData = {
-      canViewConsoleUsers: false,
-      canListAcls: true,
-      canListQuotas: true,
-      canPatchConfigs: true,
-      canCreateRoles: true,
-      canReassignPartitions: true,
-      canCreateSchemas: true,
-      canDeleteSchemas: true,
-      canManageSchemaRegistry: true,
-      canManageLicense: true,
-      canViewPermissionsList: true,
-      canManageUsers: true,
-      canViewSchemas: true,
-      canListTransforms: true,
-      canCreateTransforms: true,
-      canDeleteTransforms: true,
-      canViewDebugBundle: true,
-      displayName: '',
-      avatarUrl: '',
-      authenticationMethod: AuthenticationMethod.UNSPECIFIED,
-    };
-    appGlobal.history.replace('/trial-expired');
-  }
-}
 
 //
 // BackendAPI
@@ -333,8 +75,6 @@ const apiStore = {
 
   brokerConfigs: new Map<number, BrokerConfigEntry[] | string>(), // config entries, or error string
 
-  adminInfo: undefined as AdminInfo | undefined | null,
-
   schemaOverviewIsConfigured: undefined as boolean | undefined,
 
   schemaMode: undefined as string | null | undefined, // undefined = not yet known, null = got not configured response
@@ -347,17 +87,13 @@ const apiStore = {
 
   topics: null as TopicSummary[] | null,
   topicConfig: new Map<string, TopicConfig | null>(), // null = not allowed to view config of this topic
-  topicDocumentation: new Map<string, kconsole.TopicDocumentation>(),
+  topicDocumentation: new Map<string, TopicDocumentation>(),
   topicPermissions: new Map<string, TopicPermissions | null>(),
   topicPartitions: new Map<string, TopicPartitionDetails[] | null>(), // null = not allowed to view partitions of this config
   topicPartitionErrors: new Map<string, Array<{ id: number; partitionError: string }>>(),
   topicWatermarksErrors: new Map<string, Array<{ id: number; waterMarksError: string }>>(),
-  topicConsumers: new Map<string, kconsole.TopicConsumerGroup[]>(),
+  topicConsumers: new Map<string, TopicConsumerGroup[]>(),
   topicAcls: new Map<string, GetAclOverviewResponse | null>(),
-
-  serviceAccounts: undefined as GetUsersResponse | undefined | null,
-  serviceAccountsLoading: false,
-  serviceAccountsError: null as WrappedApiError | null,
 
   ACLs: undefined as GetAclOverviewResponse | undefined | null,
 
@@ -367,16 +103,6 @@ const apiStore = {
   consumerGroupAcls: new Map<string, GetAclOverviewResponse | null>(),
 
   partitionReassignments: undefined as PartitionReassignments[] | null | undefined,
-
-  connectConnectors: undefined as KafkaConnectors | undefined,
-  connectConnectorsError: null as WrappedApiError | null,
-  connectAdditionalClusterInfo: new Map<string, ClusterAdditionalInfo>(), // clusterName => additional info (plugins)
-
-  licenses: [] as License[],
-  licenseViolation: false,
-  licensesLoaded: undefined as 'loaded' | 'failed' | undefined,
-
-  enterpriseFeaturesUsed: [] as ListEnterpriseFeaturesResponse_Feature[],
 
   clusterHealth: undefined as GetClusterHealthResponse | undefined,
   debugBundleStatuses: [] as GetDebugBundleStatusResponse_DebugBundleBrokerStatus[],
@@ -391,114 +117,28 @@ const apiStore = {
     this.userData = null;
   },
   async refreshUserData() {
-    const client = appConfig.authenticationClient;
-    if (!client) throw new Error('security client is not initialized');
-
-    await client
-      .getIdentity({})
-      .then((r: GetIdentityResponse) => {
-        api.userData = {
-          displayName: r.displayName,
-          avatarUrl: r.avatarUrl,
-          authenticationMethod: r.authenticationMethod,
-
-          canListAcls: r.permissions?.kafkaClusterOperations.includes(KafkaAclOperation.DESCRIBE),
-          canListQuotas: r.permissions?.kafkaClusterOperations.includes(KafkaAclOperation.DESCRIBE_CONFIGS),
-          canPatchConfigs: r.permissions?.kafkaClusterOperations.includes(KafkaAclOperation.ALTER_CONFIGS),
-          canReassignPartitions:
-            r.permissions?.kafkaClusterOperations.includes(KafkaAclOperation.ALTER_CONFIGS) &&
-            r.permissions?.kafkaClusterOperations.includes(KafkaAclOperation.DESCRIBE_CONFIGS),
-          canCreateRoles:
-            r.permissions?.kafkaClusterOperations.includes(KafkaAclOperation.ALTER) &&
-            r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_RBAC),
-          canViewPermissionsList:
-            r.permissions?.kafkaClusterOperations.includes(KafkaAclOperation.DESCRIBE) &&
-            r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_REDPANDA_USERS),
-
-          canManageLicense: r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_LICENSE),
-          canManageUsers: r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_REDPANDA_USERS),
-          canCreateSchemas: r.permissions?.schemaRegistry.includes(SchemaRegistryCapability.WRITE),
-          canDeleteSchemas: r.permissions?.schemaRegistry.includes(SchemaRegistryCapability.DELETE),
-          canManageSchemaRegistry: r.permissions?.schemaRegistry.includes(SchemaRegistryCapability.WRITE),
-          canViewSchemas: r.permissions?.schemaRegistry.includes(SchemaRegistryCapability.READ),
-          canListTransforms: r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_TRANSFORMS),
-          canCreateTransforms: r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_TRANSFORMS),
-          canDeleteTransforms: r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_TRANSFORMS),
-          canViewDebugBundle: r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_DEBUG_BUNDLE),
-          canViewConsoleUsers: r.permissions?.redpanda.includes(RedpandaCapability.MANAGE_RBAC),
-        } as UserData;
-        // if (r.status === 401) {
-        //   // unauthorized / not logged in
-        //   api.userData = null;
-        // } else if (r.status === 404) {
-        //   // not found: frontend is configured as business-version, but backend is non-business-version
-        //   // -> create a local fake user for debugging
-        //   uiState.isUsingDebugUserLogin = true;
-        //   api.userData = {
-        //     canViewConsoleUsers: false,
-        //     canListAcls: true,
-        //     canListQuotas: true,
-        //     canPatchConfigs: true,
-        //     canReassignPartitions: true,
-        //     canCreateSchemas: true,
-        //     canDeleteSchemas: true,
-        //     canManageSchemaRegistry: true,
-        //     canViewSchemas: true,
-        //     canListTransforms: true,
-        //     canCreateTransforms: true,
-        //     canDeleteTransforms: true,
-        //     canViewDebugBundle: true,
-        //     seat: null as any,
-        //     user: {
-        //       providerID: -1,
-        //       providerName: 'debug provider',
-        //       id: 'debug',
-        //       internalIdentifier: 'debug',
-        //       meta: { avatarUrl: '', email: '', name: 'local fake user for debugging' },
-        //     },
-        //   };
-        // } else if (r.status === 403) {
-        //   void handleExpiredLicenseError(r);
-        // }
-      })
-      .catch((err) => {
-        this.userData = null;
-
-        if (isEmbedded()) {
-          // Create a mocked empty userData with all permissions set to false
-          this.userData = {
-            displayName: 'Kafka Console',
-            avatarUrl: '',
-            authenticationMethod: AuthenticationMethod.NONE,
-            canListAcls: true,
-            canListQuotas: true,
-            canPatchConfigs: true,
-            canReassignPartitions: true,
-            canCreateRoles: true,
-            canViewPermissionsList: true,
-            canManageLicense: true,
-            canManageUsers: true,
-            canCreateSchemas: true,
-            canDeleteSchemas: true,
-            canManageSchemaRegistry: true,
-            canViewSchemas: true,
-            canListTransforms: true,
-            canCreateTransforms: true,
-            canDeleteTransforms: true,
-            canViewDebugBundle: true,
-            canViewConsoleUsers: true,
-          };
-          return;
-        }
-
-        // if (err.code === Code.PermissionDenied) {
-        //   // TODO - solve typings, provide corresponding Reason type
-        //   const subject = getOidcSubject(err);
-        //   appGlobal.history.push(`/login?error_code=permission_denied&oidc_subject=${subject}`);
-        // } else {
-          appGlobal.history.push('/login');
-        // }
-      });
+    this.userData = {
+      displayName: 'Kafka Console',
+      avatarUrl: '',
+      authenticationMethod: AuthenticationMethod.NONE,
+      canListAcls: true,
+      canListQuotas: true,
+      canPatchConfigs: true,
+      canReassignPartitions: true,
+      canCreateRoles: true,
+      canViewPermissionsList: true,
+      canManageLicense: true,
+      canManageUsers: true,
+      canCreateSchemas: true,
+      canDeleteSchemas: true,
+      canManageSchemaRegistry: true,
+      canViewSchemas: true,
+      canListTransforms: true,
+      canCreateTransforms: true,
+      canDeleteTransforms: true,
+      canViewDebugBundle: true,
+      canViewConsoleUsers: true,
+    }
   },
 
   // Make currently running requests observable
@@ -748,17 +388,17 @@ const apiStore = {
     return result;
   },
 
-  refreshTopicAcls(topicName: string, force?: boolean) {
-    const query = aclRequestToQuery({
+  refreshTopicAcls(topicName: string) {
+    ListAllACLs(DescribeACLsRequest.createFrom({
       ...AclRequestDefault,
-      resourcePatternTypeFilter: 'Match',
-      resourceType: 'Topic',
-      resourceName: topicName,
-    });
-    cachedApiRequest<GetAclOverviewResponse | null>(`${appConfig.restBasePath}/acls?${query}`, force).then((v) => {
-      if (v) normalizeAcls(v.aclResources);
-      this.topicAcls.set(topicName, v);
-    });
+      ResourcePatternType: 2,
+      ResourceType: 2,
+      ResourceName: topicName
+    }))
+      .then((v) => {
+        if (v) normalizeAcls(v.aclResources);
+        this.topicAcls.set(topicName, v);
+      });
   },
 
   refreshTopicConsumers(topicName: string) {
@@ -766,26 +406,28 @@ const apiStore = {
       .then((consumerGroups) => this.topicConsumers.set(topicName, consumerGroups), addError);
   },
 
-  async refreshAcls(request: GetAclsRequest, force?: boolean): Promise<void> {
-    const query = aclRequestToQuery(request);
-    await cachedApiRequest<GetAclOverviewResponse | null>(`${appConfig.restBasePath}/acls?${query}`, force).then(
-      (v) => {
-        if (v) {
-          normalizeAcls(v.aclResources);
-          this.ACLs = v;
-        } else {
-          this.ACLs = null;
-        }
-      },
-      addError,
-    );
+  async refreshAcls(request: GetAclsRequest): Promise<void> {
+    await
+      ListAllACLs(DescribeACLsRequest.createFrom(request))
+        .then(
+          (v) => {
+            if (v) {
+              normalizeAcls(v.aclResources);
+              this.ACLs = v;
+            } else {
+              this.ACLs = null;
+            }
+          },
+          addError,
+        );
   },
 
-  refreshQuotas(force?: boolean) {
-    cachedApiRequest<QuotaResponse | null>(`${appConfig.restBasePath}/quotas`, force).then(
-      (v) => (this.Quotas = v ?? null),
-      addError,
-    );
+  refreshQuotas() {
+    DescribeQuotas()
+      .then(
+        (v) => (this.Quotas = v ?? null),
+        addError,
+      );
   },
 
   async refreshSupportedEndpoints() {
@@ -841,10 +483,6 @@ const apiStore = {
       schemaRegistry: schemaRegistryResponse,
       kafkaConnect: kafkaConnectResponse,
     };
-  },
-
-  get isRedpanda() {
-    return false;
   },
 
   get isAdminApiConfigured() {
@@ -918,756 +556,459 @@ const apiStore = {
       }, addError);
   },
 
-  refreshConsumerGroupAcls(groupName: string, force?: boolean) {
-    const query = aclRequestToQuery({
-      ...AclRequestDefault,
-      resourcePatternTypeFilter: 'Match',
-      resourceType: 'Group',
-      resourceName: groupName,
-    });
-    cachedApiRequest<GetAclOverviewResponse | null>(`${appConfig.restBasePath}/acls?${query}`, force).then((v) => {
-      if (v) {
-        normalizeAcls(v.aclResources);
-      }
-      this.consumerGroupAcls.set(groupName, v);
-    });
-  },
+  // refreshConsumerGroupAcls(groupName: string, force?: boolean) {
+  //   const query = aclRequestToQuery({
+  //     ...AclRequestDefault,
+  //     resourcePatternTypeFilter: 'Match',
+  //     resourceType: 'Group',
+  //     resourceName: groupName,
+  //   });
+  //   cachedApiRequest<GetAclOverviewResponse | null>(`${appConfig.restBasePath}/acls?${query}`, force).then((v) => {
+  //     if (v) {
+  //       normalizeAcls(v.aclResources);
+  //     }
+  //     this.consumerGroupAcls.set(groupName, v);
+  //   });
+  // },
 
   async editConsumerGroupOffsets(
     groupId: string,
-    topics: EditConsumerGroupOffsetsTopic[],
-  ): Promise<EditConsumerGroupOffsetsResponseTopic[]> {
-    const request: EditConsumerGroupOffsetsRequest = {
-      groupId: groupId,
-      topics: topics,
-    };
-
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/consumer-groups/${encodeURIComponent(groupId)}`, {
-      method: 'PATCH',
-      headers: [['Content-Type', 'application/json']],
-      body: toJson(request),
-    });
-
-    const r = await parseOrUnwrap<EditConsumerGroupOffsetsResponse>(response, null);
-    return r.topics;
+    topics: kmsg.OffsetCommitRequestTopic[],
+  ): Promise<kconsole.EditConsumerGroupOffsetsResponse> {
+    return await EditConsumerGroupOffsets(groupId, topics);
   },
 
   async deleteConsumerGroupOffsets(
     groupId: string,
-    topics: DeleteConsumerGroupOffsetsTopic[],
-  ): Promise<DeleteConsumerGroupOffsetsResponseTopic[]> {
-    const request: DeleteConsumerGroupOffsetsRequest = {
-      groupId: groupId,
-      topics: topics,
-    };
-
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/consumer-groups/${encodeURIComponent(groupId)}/offsets`,
-      {
-        method: 'DELETE',
-        headers: [['Content-Type', 'application/json']],
-        body: toJson(request),
-      },
-    );
-
-    const r = await parseOrUnwrap<DeleteConsumerGroupOffsetsResponse>(response, null);
-    return r.topics;
+    topics: kmsg.OffsetDeleteRequestTopic[],
+  ): Promise<Array<kconsole.DeleteConsumerGroupOffsetsResponseTopic>> {
+    return DeleteConsumerGroupOffsets(groupId, topics);
   },
 
   async deleteConsumerGroup(groupId: string): Promise<void> {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/consumer-groups/${encodeURIComponent(groupId)}`, {
-      method: 'DELETE',
-      headers: [['Content-Type', 'application/json']],
-    });
-
-    await parseOrUnwrap<void>(response, null);
+    return DeleteConsumerGroup(groupId);
   },
-
-  refreshAdminInfo(force?: boolean) {
-    cachedApiRequest<AdminInfo | null>(`${appConfig.restBasePath}/admin`, force).then((info) => {
-      if (info == null) {
-        this.adminInfo = null;
-        return;
-      }
-
-      // normalize responses (missing arrays, or arrays with an empty string)
-      // todo: not needed anymore, responses are always correct now
-      for (const role of info.roles)
-        for (const permission of role.permissions)
-          for (const k of ['allowedActions', 'includes', 'excludes']) {
-            const ar: string[] = (permission as any)[k] ?? [];
-            (permission as any)[k] = ar.filter((x) => x.length > 0);
-          }
-
-      // resolve role of each binding
-      for (const binding of info.roleBindings) {
-        // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-        binding.resolvedRole = info.roles.first((r) => r.name === binding.roleName)!;
-        if (binding.resolvedRole == null) console.error(`could not resolve roleBinding to role: ${toJson(binding)}`);
-      }
-
-      // resolve bindings, and roles of each user
-      for (const user of info.users) {
-        // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-        user.bindings = user.bindingIds.map((id) => info.roleBindings.first((rb) => rb.ephemeralId === id)!);
-        if (user.bindings.any((b) => b == null))
-          console.error(`one or more rolebindings could not be resolved for user: ${toJson(user)}`);
-
-        user.grantedRoles = [];
-        for (const roleName in user.audits)
-          user.grantedRoles.push({
-            // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-            role: info.roles.first((r) => r.name === roleName)!,
-            grantedBy: user.audits[roleName].map(
-              // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-              (bindingId) => info.roleBindings.first((b) => b.ephemeralId === bindingId)!,
-            ),
-          });
-      }
-
-      this.adminInfo = info;
-    }, addError);
-  },
-
-  async refreshSchemaMode() {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/mode`, {
-      method: 'GET',
-      headers: [['Content-Type', 'application/json']],
-    });
-    const rq = parseOrUnwrap<SchemaRegistryModeResponse>(response, null);
-
-    return rq
-      .then((r) => {
-        if (r.isConfigured === false) {
-          this.schemaOverviewIsConfigured = false;
-          this.schemaMode = null;
-        } else {
-          this.schemaOverviewIsConfigured = true;
-          this.schemaMode = r.mode;
-        }
-      })
-      .catch((err) => {
-        this.schemaMode = 'Unknown';
-        console.warn('failed to request schema mode', err);
-      });
-  },
-
-  async refreshSchemaCompatibilityConfig() {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/config`, {
-      method: 'GET',
-      headers: [['Content-Type', 'application/json']],
-    });
-    const rq = parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
-
-    return rq
-      .then((r) => {
-        if (r.isConfigured === false) {
-          this.schemaOverviewIsConfigured = false;
-          this.schemaCompatibility = null;
-        } else {
-          this.schemaOverviewIsConfigured = true;
-          this.schemaCompatibility = r.compatibility;
-        }
-      })
-      .catch(addError);
-  },
-
-  refreshSchemaSubjects(force?: boolean) {
-    cachedApiRequest<SchemaRegistrySubject[]>(`${appConfig.restBasePath}/schema-registry/subjects`, force).then(
-      (subjects) => {
-        // could also be a "not configured" response
-        if (Array.isArray(subjects)) {
-          this.schemaSubjects = subjects;
-        }
-      },
-      addError,
-    );
-  },
-
-  refreshSchemaTypes(force?: boolean) {
-    cachedApiRequest<SchemaRegistrySchemaTypesResponse>(
-      `${appConfig.restBasePath}/schema-registry/schemas/types`,
-      force,
-    )
-      .then((types) => {
-        // could also be a "not configured" response
-        if (types.schemaTypes) {
-          this.schemaTypes = types.schemaTypes;
-        }
-      })
-      .catch((err) => {
-        this.schemaTypes = undefined;
-        console.warn('failed to request schema type', err);
-      });
-  },
-
-  refreshSchemaDetails(subjectName: string, force?: boolean) {
-    // Always refresh all versions, otherwise we cannot know wether or not we have to refresh with 'all,
-    // If we refresh with 'latest' or specific number, we'd need to keep track of what information we're missing
-    const version = 'all';
-    const rq = cachedApiRequest(
-      `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${version}`,
-      force,
-    ) as Promise<SchemaRegistrySubjectDetails>;
-
-    return rq
-      .then((details) => {
-        this.schemaDetails.set(subjectName, details);
-      })
-      .catch(addError);
-  },
-
-  refreshSchemaReferencedBy(subjectName: string, version: number, force?: boolean) {
-    const rq = cachedApiRequest<SchemaReferencedByEntry[]>(
-      `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${version}/referencedby`,
-      force,
-    );
-
-    return rq
-      .then((references) => {
-        const cleanedReferences = [] as SchemaReferencedByEntry[];
-        for (const ref of references) {
-          if (ref.error) {
-            console.error('error in refreshSchemaReferencedBy, reference entry has error', {
-              subjectName,
-              version,
-              error: ref.error,
-              refRaw: ref,
-            });
-            continue;
-          }
-          cleanedReferences.push(ref);
-        }
-
-        let subjectVersions = this.schemaReferencedBy.get(subjectName);
-        if (!subjectVersions) {
-          // @ts-ignore MobX does not play nice with TypeScript 5: Type 'ObservableMap<number, SchemaReferencedByEntry[]>' is not assignable to type 'Map<number, SchemaReferencedByEntry[]>'.
-          subjectVersions = observable(new Map<number, SchemaReferencedByEntry[]>());
-          if (subjectVersions) {
-            this.schemaReferencedBy.set(subjectName, subjectVersions);
-          }
-        }
-
-        subjectVersions?.set(version, cleanedReferences);
-      })
-      .catch(() => {
-      });
-  },
-
-  async refreshSchemaUsagesById(schemaId: number, force?: boolean): Promise<void> {
-    type SchemaNotConfiguredType = { isConfigured: false };
-
-    function isSchemaVersionArray(r: SchemaVersion[] | SchemaNotConfiguredType): r is SchemaVersion[] {
-      return Array.isArray(r);
-    }
-
-    await cachedApiRequest<SchemaVersion[] | { isConfigured: false }>(
-      `${appConfig.restBasePath}/schema-registry/schemas/ids/${schemaId}/versions`,
-      force,
-    ).then(
-      (r) => {
-        if (isSchemaVersionArray(r)) {
-          this.schemaUsagesById.set(schemaId, r);
-        }
-      },
-      (err) => {
-        if (err instanceof Error) {
-          // Currently we don't get helpful status codes (502) so we have to inspect the message
-          if (err.message.includes('404') && err.message.includes('not found')) {
-            // Do nothing, most likely cause is that the user has entered a value into the search box that doesn't exist
-            return null;
-          }
-        }
-        throw err;
-      },
-    );
-  },
-
-  async setSchemaRegistryCompatibilityMode(
-    mode: SchemaRegistryCompatibilityMode,
-  ): Promise<SchemaRegistryConfigResponse> {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/config`, {
-      method: 'PUT',
-      headers: [['Content-Type', 'application/json']],
-      body: JSON.stringify({compatibility: mode} as SchemaRegistrySetCompatibilityModeRequest),
-    });
-    return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
-  },
-
-  async setSchemaRegistrySubjectCompatibilityMode(
-    subjectName: string,
-    mode: 'DEFAULT' | SchemaRegistryCompatibilityMode,
-  ): Promise<SchemaRegistryConfigResponse> {
-    if (mode === 'DEFAULT') {
-      const response = await appConfig.fetch(
-        `${appConfig.restBasePath}/schema-registry/config/${encodeURIComponent(subjectName)}`,
-        {
-          method: 'DELETE',
-        },
-      );
-      return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
-    }
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/schema-registry/config/${encodeURIComponent(subjectName)}`,
-      {
-        method: 'PUT',
-        headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify({compatibility: mode} as SchemaRegistrySetCompatibilityModeRequest),
-      },
-    );
-    return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
-  },
-
-  async validateSchema(
-    subjectName: string,
-    version: number | 'latest',
-    request: SchemaRegistryCreateSchema,
-  ): Promise<SchemaRegistryValidateSchemaResponse> {
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${version}/validate`,
-      {
-        method: 'POST',
-        headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify(request),
-      },
-    );
-    return parseOrUnwrap<SchemaRegistryValidateSchemaResponse>(response, null);
-  },
-  async createSchema(
-    subjectName: string,
-    request: SchemaRegistryCreateSchema,
-  ): Promise<SchemaRegistryCreateSchemaResponse> {
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions`,
-      {
-        method: 'POST',
-        headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify(request),
-      },
-    );
-    return parseOrUnwrap<SchemaRegistryCreateSchemaResponse>(response, null);
-  },
-
-  async deleteSchemaSubject(subjectName: string, permanent: boolean): Promise<SchemaRegistryDeleteSubjectResponse> {
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}?permanent=${permanent ? 'true' : 'false'}`,
-      {
-        method: 'DELETE',
-        headers: [['Content-Type', 'application/json']],
-      },
-    );
-    return parseOrUnwrap<SchemaRegistryDeleteSubjectResponse>(response, null);
-  },
-
-  async deleteSchemaSubjectVersion(
-    subjectName: string,
-    version: 'latest' | number,
-    permanent: boolean,
-  ): Promise<SchemaRegistryDeleteSubjectVersionResponse> {
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${encodeURIComponent(version)}?permanent=${permanent ? 'true' : 'false'}`,
-      {
-        method: 'DELETE',
-        headers: [['Content-Type', 'application/json']],
-      },
-    );
-    return parseOrUnwrap<SchemaRegistryDeleteSubjectVersionResponse>(response, null);
-  },
-
-  refreshPartitionReassignments(force?: boolean): Promise<void> {
-    return cachedApiRequest<PartitionReassignmentsResponse | null>(
-      `${appConfig.restBasePath}/operations/reassign-partitions`,
-      force,
-    ).then((v) => {
-      if (v === null) this.partitionReassignments = null;
-      else this.partitionReassignments = v.topics;
-    }, addError);
-  },
-
-  async startPartitionReassignment(
-    request: PartitionReassignmentRequest,
-  ): Promise<AlterPartitionReassignmentsResponse> {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/operations/reassign-partitions`, {
-      method: 'PATCH',
-      headers: [['Content-Type', 'application/json']],
-      body: toJson(request),
-    });
-    return await parseOrUnwrap<AlterPartitionReassignmentsResponse>(response, null);
-  },
-
-  async setReplicationThrottleRate(brokerIds: number[], maxBytesPerSecond: number): Promise<PatchConfigsResponse> {
-    maxBytesPerSecond = Math.ceil(maxBytesPerSecond);
-
-    const configRequest: PatchConfigsRequest = {resources: []};
-
-    for (const b of brokerIds) {
-      configRequest.resources.push({
-        resourceType: ConfigResourceType.Broker,
-        resourceName: String(b),
-        configs: [
-          {name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Set, value: String(maxBytesPerSecond)},
-          {
-            name: 'follower.replication.throttled.rate',
-            op: AlterConfigOperation.Set,
-            value: String(maxBytesPerSecond),
-          },
-        ],
-      });
-    }
-
-    return await this.changeConfig(configRequest);
-  },
-
-  async setThrottledReplicas(
-    topicReplicas: {
-      topicName: string;
-      leaderReplicas: { brokerId: number; partitionId: number }[];
-      followerReplicas: { brokerId: number; partitionId: number }[];
-    }[],
-  ): Promise<PatchConfigsResponse> {
-    const configRequest: PatchConfigsRequest = {resources: []};
-
-    for (const t of topicReplicas) {
-      const res: ResourceConfig = {
-        // Set which topics to throttle
-        resourceType: ConfigResourceType.Topic,
-        resourceName: t.topicName,
-        configs: [],
-      };
-
-      const leaderReplicas = t.leaderReplicas.map((e) => `${e.partitionId}:${e.brokerId}`).join(',');
-      res.configs.push({
-        name: 'leader.replication.throttled.replicas',
-        op: AlterConfigOperation.Set,
-        value: leaderReplicas,
-      });
-      const followerReplicas = t.followerReplicas.map((e) => `${e.partitionId}:${e.brokerId}`).join(',');
-      res.configs.push({
-        name: 'follower.replication.throttled.replicas',
-        op: AlterConfigOperation.Set,
-        value: followerReplicas,
-      });
-
-      // individual request for each topic
-      configRequest.resources.push(res);
-    }
-
-    return await this.changeConfig(configRequest);
-  },
-
-  async resetThrottledReplicas(topicNames: string[]): Promise<PatchConfigsResponse> {
-    const configRequest: PatchConfigsRequest = {resources: []};
-
-    // reset throttled replicas for those topics
-    for (const t of topicNames) {
-      configRequest.resources.push({
-        resourceType: ConfigResourceType.Topic,
-        resourceName: t,
-        configs: [
-          {name: 'leader.replication.throttled.replicas', op: AlterConfigOperation.Delete},
-          {name: 'follower.replication.throttled.replicas', op: AlterConfigOperation.Delete},
-        ],
-      });
-    }
-
-    return await this.changeConfig(configRequest);
-  },
-
-  async resetReplicationThrottleRate(brokerIds: number[]): Promise<PatchConfigsResponse> {
-    const configRequest: PatchConfigsRequest = {resources: []};
-
-    // We currently only set replication throttle on each broker, instead of cluster-wide (same effect, but different kind of 'ConfigSource')
-    // So we don't remove the cluster-wide setting, only the ones we've set (the per-broker) settings
-
-    // remove throttle configs from all brokers (DYNAMIC_DEFAULT_BROKER_CONFIG)
-    // configRequest.resources.push({
-    //     resourceType: ConfigResourceType.Broker,
-    //     resourceName: "", // empty = all brokers
-    //     configs: [
-    //         { name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Delete },
-    //         { name: 'follower.replication.throttled.rate', op: AlterConfigOperation.Delete },
-    //     ]
-    // });
-
-    // remove throttle configs from each broker individually (DYNAMIC_BROKER_CONFIG)
-    for (const b of brokerIds) {
-      configRequest.resources.push({
-        resourceType: ConfigResourceType.Broker,
-        resourceName: String(b),
-        configs: [
-          {name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Delete},
-          {name: 'follower.replication.throttled.rate', op: AlterConfigOperation.Delete},
-        ],
-      });
-    }
-
-    return await this.changeConfig(configRequest);
-  },
-
-  async changeConfig(request: PatchConfigsRequest): Promise<PatchConfigsResponse> {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/operations/configs`, {
-      method: 'PATCH',
-      headers: [['Content-Type', 'application/json']],
-      body: toJson(request),
-    });
-    return await parseOrUnwrap<PatchConfigsResponse>(response, null);
-  },
-
-  async refreshConnectClusters(): Promise<void> {
-    this.connectConnectorsError = null;
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/kafka-connect/connectors`, {
-      method: 'GET',
-      headers: [['Content-Type', 'application/json']],
-    });
-
-    return await parseOrUnwrap<KafkaConnectors | null>(response, null).then(
-      (v) => {
-        // backend error
-        if (!v) {
-          this.connectConnectors = undefined;
-          return;
-        }
-
-        // not configured
-        if (!v.clusters) {
-          this.connectConnectors = v;
-          return;
-        }
-
-        // prepare helper properties
-        for (const cluster of v.clusters) addFrontendFieldsForConnectCluster(cluster);
-
-        this.connectConnectors = v;
-      },
-      (error: WrappedApiError) => {
-        this.connectConnectorsError = error;
-      },
-    );
-  },
+  //
+  // async refreshSchemaMode() {
+  //   const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/mode`, {
+  //     method: 'GET',
+  //     headers: [['Content-Type', 'application/json']],
+  //   });
+  //   const rq = parseOrUnwrap<SchemaRegistryModeResponse>(response, null);
+  //
+  //   return rq
+  //     .then((r) => {
+  //       if (r.isConfigured === false) {
+  //         this.schemaOverviewIsConfigured = false;
+  //         this.schemaMode = null;
+  //       } else {
+  //         this.schemaOverviewIsConfigured = true;
+  //         this.schemaMode = r.mode;
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       this.schemaMode = 'Unknown';
+  //       console.warn('failed to request schema mode', err);
+  //     });
+  // },
+  //
+  // async refreshSchemaCompatibilityConfig() {
+  //   const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/config`, {
+  //     method: 'GET',
+  //     headers: [['Content-Type', 'application/json']],
+  //   });
+  //   const rq = parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
+  //
+  //   return rq
+  //     .then((r) => {
+  //       if (r.isConfigured === false) {
+  //         this.schemaOverviewIsConfigured = false;
+  //         this.schemaCompatibility = null;
+  //       } else {
+  //         this.schemaOverviewIsConfigured = true;
+  //         this.schemaCompatibility = r.compatibility;
+  //       }
+  //     })
+  //     .catch(addError);
+  // },
+  //
+  // refreshSchemaSubjects(force?: boolean) {
+  //   cachedApiRequest<SchemaRegistrySubject[]>(`${appConfig.restBasePath}/schema-registry/subjects`, force).then(
+  //     (subjects) => {
+  //       // could also be a "not configured" response
+  //       if (Array.isArray(subjects)) {
+  //         this.schemaSubjects = subjects;
+  //       }
+  //     },
+  //     addError,
+  //   );
+  // },
+  //
+  // refreshSchemaTypes(force?: boolean) {
+  //   cachedApiRequest<SchemaRegistrySchemaTypesResponse>(
+  //     `${appConfig.restBasePath}/schema-registry/schemas/types`,
+  //     force,
+  //   )
+  //     .then((types) => {
+  //       // could also be a "not configured" response
+  //       if (types.schemaTypes) {
+  //         this.schemaTypes = types.schemaTypes;
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       this.schemaTypes = undefined;
+  //       console.warn('failed to request schema type', err);
+  //     });
+  // },
+  //
+  // refreshSchemaDetails(subjectName: string, force?: boolean) {
+  //   // Always refresh all versions, otherwise we cannot know wether or not we have to refresh with 'all,
+  //   // If we refresh with 'latest' or specific number, we'd need to keep track of what information we're missing
+  //   const version = 'all';
+  //   const rq = cachedApiRequest(
+  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${version}`,
+  //     force,
+  //   ) as Promise<SchemaRegistrySubjectDetails>;
+  //
+  //   return rq
+  //     .then((details) => {
+  //       this.schemaDetails.set(subjectName, details);
+  //     })
+  //     .catch(addError);
+  // },
+  //
+  // refreshSchemaReferencedBy(subjectName: string, version: number, force?: boolean) {
+  //   const rq = cachedApiRequest<SchemaReferencedByEntry[]>(
+  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${version}/referencedby`,
+  //     force,
+  //   );
+  //
+  //   return rq
+  //     .then((references) => {
+  //       const cleanedReferences = [] as SchemaReferencedByEntry[];
+  //       for (const ref of references) {
+  //         if (ref.error) {
+  //           console.error('error in refreshSchemaReferencedBy, reference entry has error', {
+  //             subjectName,
+  //             version,
+  //             error: ref.error,
+  //             refRaw: ref,
+  //           });
+  //           continue;
+  //         }
+  //         cleanedReferences.push(ref);
+  //       }
+  //
+  //       let subjectVersions = this.schemaReferencedBy.get(subjectName);
+  //       if (!subjectVersions) {
+  //         // @ts-ignore MobX does not play nice with TypeScript 5: Type 'ObservableMap<number, SchemaReferencedByEntry[]>' is not assignable to type 'Map<number, SchemaReferencedByEntry[]>'.
+  //         subjectVersions = observable(new Map<number, SchemaReferencedByEntry[]>());
+  //         if (subjectVersions) {
+  //           this.schemaReferencedBy.set(subjectName, subjectVersions);
+  //         }
+  //       }
+  //
+  //       subjectVersions?.set(version, cleanedReferences);
+  //     })
+  //     .catch(() => {
+  //     });
+  // },
+  //
+  // async refreshSchemaUsagesById(schemaId: number, force?: boolean): Promise<void> {
+  //   type SchemaNotConfiguredType = { isConfigured: false };
+  //
+  //   function isSchemaVersionArray(r: SchemaVersion[] | SchemaNotConfiguredType): r is SchemaVersion[] {
+  //     return Array.isArray(r);
+  //   }
+  //
+  //   await cachedApiRequest<SchemaVersion[] | { isConfigured: false }>(
+  //     `${appConfig.restBasePath}/schema-registry/schemas/ids/${schemaId}/versions`,
+  //     force,
+  //   ).then(
+  //     (r) => {
+  //       if (isSchemaVersionArray(r)) {
+  //         this.schemaUsagesById.set(schemaId, r);
+  //       }
+  //     },
+  //     (err) => {
+  //       if (err instanceof Error) {
+  //         // Currently we don't get helpful status codes (502) so we have to inspect the message
+  //         if (err.message.includes('404') && err.message.includes('not found')) {
+  //           // Do nothing, most likely cause is that the user has entered a value into the search box that doesn't exist
+  //           return null;
+  //         }
+  //       }
+  //       throw err;
+  //     },
+  //   );
+  // },
+  //
+  // async setSchemaRegistryCompatibilityMode(
+  //   mode: SchemaRegistryCompatibilityMode,
+  // ): Promise<SchemaRegistryConfigResponse> {
+  //   const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/config`, {
+  //     method: 'PUT',
+  //     headers: [['Content-Type', 'application/json']],
+  //     body: JSON.stringify({compatibility: mode} as SchemaRegistrySetCompatibilityModeRequest),
+  //   });
+  //   return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
+  // },
+  //
+  // async setSchemaRegistrySubjectCompatibilityMode(
+  //   subjectName: string,
+  //   mode: 'DEFAULT' | SchemaRegistryCompatibilityMode,
+  // ): Promise<SchemaRegistryConfigResponse> {
+  //   if (mode === 'DEFAULT') {
+  //     const response = await appConfig.fetch(
+  //       `${appConfig.restBasePath}/schema-registry/config/${encodeURIComponent(subjectName)}`,
+  //       {
+  //         method: 'DELETE',
+  //       },
+  //     );
+  //     return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
+  //   }
+  //   const response = await appConfig.fetch(
+  //     `${appConfig.restBasePath}/schema-registry/config/${encodeURIComponent(subjectName)}`,
+  //     {
+  //       method: 'PUT',
+  //       headers: [['Content-Type', 'application/json']],
+  //       body: JSON.stringify({compatibility: mode} as SchemaRegistrySetCompatibilityModeRequest),
+  //     },
+  //   );
+  //   return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
+  // },
+  //
+  // async validateSchema(
+  //   subjectName: string,
+  //   version: number | 'latest',
+  //   request: SchemaRegistryCreateSchema,
+  // ): Promise<SchemaRegistryValidateSchemaResponse> {
+  //   const response = await appConfig.fetch(
+  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${version}/validate`,
+  //     {
+  //       method: 'POST',
+  //       headers: [['Content-Type', 'application/json']],
+  //       body: JSON.stringify(request),
+  //     },
+  //   );
+  //   return parseOrUnwrap<SchemaRegistryValidateSchemaResponse>(response, null);
+  // },
+  // async createSchema(
+  //   subjectName: string,
+  //   request: SchemaRegistryCreateSchema,
+  // ): Promise<SchemaRegistryCreateSchemaResponse> {
+  //   const response = await appConfig.fetch(
+  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions`,
+  //     {
+  //       method: 'POST',
+  //       headers: [['Content-Type', 'application/json']],
+  //       body: JSON.stringify(request),
+  //     },
+  //   );
+  //   return parseOrUnwrap<SchemaRegistryCreateSchemaResponse>(response, null);
+  // },
+  //
+  // async deleteSchemaSubject(subjectName: string, permanent: boolean): Promise<SchemaRegistryDeleteSubjectResponse> {
+  //   const response = await appConfig.fetch(
+  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}?permanent=${permanent ? 'true' : 'false'}`,
+  //     {
+  //       method: 'DELETE',
+  //       headers: [['Content-Type', 'application/json']],
+  //     },
+  //   );
+  //   return parseOrUnwrap<SchemaRegistryDeleteSubjectResponse>(response, null);
+  // },
+  //
+  // async deleteSchemaSubjectVersion(
+  //   subjectName: string,
+  //   version: 'latest' | number,
+  //   permanent: boolean,
+  // ): Promise<SchemaRegistryDeleteSubjectVersionResponse> {
+  //   const response = await appConfig.fetch(
+  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${encodeURIComponent(version)}?permanent=${permanent ? 'true' : 'false'}`,
+  //     {
+  //       method: 'DELETE',
+  //       headers: [['Content-Type', 'application/json']],
+  //     },
+  //   );
+  //   return parseOrUnwrap<SchemaRegistryDeleteSubjectVersionResponse>(response, null);
+  // },
+  //
+  // refreshPartitionReassignments(force?: boolean): Promise<void> {
+  //   return cachedApiRequest<PartitionReassignmentsResponse | null>(
+  //     `${appConfig.restBasePath}/operations/reassign-partitions`,
+  //     force,
+  //   ).then((v) => {
+  //     if (v === null) this.partitionReassignments = null;
+  //     else this.partitionReassignments = v.topics;
+  //   }, addError);
+  // },
+  //
+  // async startPartitionReassignment(
+  //   request: AlterPartitionAssignmentsRequestTopic[],
+  // ): Promise<Array<AlterPartitionReassignmentsResponse>> {
+  //   return await AlterPartitionAssignments(request);
+  // },
+  //
+  // async setReplicationThrottleRate(brokerIds: number[], maxBytesPerSecond: number): Promise<PatchConfigsResponse> {
+  //   maxBytesPerSecond = Math.ceil(maxBytesPerSecond);
+  //
+  //   const configRequest: PatchConfigsRequest = {resources: []};
+  //
+  //   for (const b of brokerIds) {
+  //     configRequest.resources.push({
+  //       resourceType: ConfigResourceType.Broker,
+  //       resourceName: String(b),
+  //       configs: [
+  //         {name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Set, value: String(maxBytesPerSecond)},
+  //         {
+  //           name: 'follower.replication.throttled.rate',
+  //           op: AlterConfigOperation.Set,
+  //           value: String(maxBytesPerSecond),
+  //         },
+  //       ],
+  //     });
+  //   }
+  //
+  //   return await this.changeConfig(configRequest);
+  // },
+  //
+  // async setThrottledReplicas(
+  //   topicReplicas: {
+  //     topicName: string;
+  //     leaderReplicas: { brokerId: number; partitionId: number }[];
+  //     followerReplicas: { brokerId: number; partitionId: number }[];
+  //   }[],
+  // ): Promise<PatchConfigsResponse> {
+  //   const configRequest: PatchConfigsRequest = {resources: []};
+  //
+  //   for (const t of topicReplicas) {
+  //     const res: ResourceConfig = {
+  //       // Set which topics to throttle
+  //       resourceType: ConfigResourceType.Topic,
+  //       resourceName: t.topicName,
+  //       configs: [],
+  //     };
+  //
+  //     const leaderReplicas = t.leaderReplicas.map((e) => `${e.partitionId}:${e.brokerId}`).join(',');
+  //     res.configs.push({
+  //       name: 'leader.replication.throttled.replicas',
+  //       op: AlterConfigOperation.Set,
+  //       value: leaderReplicas,
+  //     });
+  //     const followerReplicas = t.followerReplicas.map((e) => `${e.partitionId}:${e.brokerId}`).join(',');
+  //     res.configs.push({
+  //       name: 'follower.replication.throttled.replicas',
+  //       op: AlterConfigOperation.Set,
+  //       value: followerReplicas,
+  //     });
+  //
+  //     // individual request for each topic
+  //     configRequest.resources.push(res);
+  //   }
+  //
+  //   return await this.changeConfig(configRequest);
+  // },
+  //
+  // async resetThrottledReplicas(topicNames: string[]): Promise<PatchConfigsResponse> {
+  //   const configRequest: PatchConfigsRequest = {resources: []};
+  //
+  //   // reset throttled replicas for those topics
+  //   for (const t of topicNames) {
+  //     configRequest.resources.push({
+  //       resourceType: ConfigResourceType.Topic,
+  //       resourceName: t,
+  //       configs: [
+  //         {name: 'leader.replication.throttled.replicas', op: AlterConfigOperation.Delete},
+  //         {name: 'follower.replication.throttled.replicas', op: AlterConfigOperation.Delete},
+  //       ],
+  //     });
+  //   }
+  //
+  //   return await this.changeConfig(configRequest);
+  // },
+  //
+  // async resetReplicationThrottleRate(brokerIds: number[]): Promise<PatchConfigsResponse> {
+  //   const configRequest: PatchConfigsRequest = {resources: []};
+  //
+  //   // We currently only set replication throttle on each broker, instead of cluster-wide (same effect, but different kind of 'ConfigSource')
+  //   // So we don't remove the cluster-wide setting, only the ones we've set (the per-broker) settings
+  //
+  //   // remove throttle configs from all brokers (DYNAMIC_DEFAULT_BROKER_CONFIG)
+  //   // configRequest.resources.push({
+  //   //     resourceType: ConfigResourceType.Broker,
+  //   //     resourceName: "", // empty = all brokers
+  //   //     configs: [
+  //   //         { name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Delete },
+  //   //         { name: 'follower.replication.throttled.rate', op: AlterConfigOperation.Delete },
+  //   //     ]
+  //   // });
+  //
+  //   // remove throttle configs from each broker individually (DYNAMIC_BROKER_CONFIG)
+  //   for (const b of brokerIds) {
+  //     configRequest.resources.push({
+  //       resourceType: ConfigResourceType.Broker,
+  //       resourceName: String(b),
+  //       configs: [
+  //         {name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Delete},
+  //         {name: 'follower.replication.throttled.rate', op: AlterConfigOperation.Delete},
+  //       ],
+  //     });
+  //   }
+  //
+  //   return await this.changeConfig(configRequest);
+  // },
+  //
+  // async changeConfig(request: PatchConfigsRequest): Promise<PatchConfigsResponse> {
+  //   const response = await appConfig.fetch(`${appConfig.restBasePath}/operations/configs`, {
+  //     method: 'PATCH',
+  //     headers: [['Content-Type', 'application/json']],
+  //     body: toJson(request),
+  //   });
+  //   return await parseOrUnwrap<PatchConfigsResponse>(response, null);
+  // },
+  //
+  // async refreshConnectClusters(): Promise<void> {
+  //   this.connectConnectorsError = null;
+  //   const response = await appConfig.fetch(`${appConfig.restBasePath}/kafka-connect/connectors`, {
+  //     method: 'GET',
+  //     headers: [['Content-Type', 'application/json']],
+  //   });
+  //
+  //   return await parseOrUnwrap<KafkaConnectors | null>(response, null).then(
+  //     (v) => {
+  //       // backend error
+  //       if (!v) {
+  //         this.connectConnectors = undefined;
+  //         return;
+  //       }
+  //
+  //       // not configured
+  //       if (!v.clusters) {
+  //         this.connectConnectors = v;
+  //         return;
+  //       }
+  //
+  //       // prepare helper properties
+  //       for (const cluster of v.clusters) addFrontendFieldsForConnectCluster(cluster);
+  //
+  //       this.connectConnectors = v;
+  //     },
+  //     (error: WrappedApiError) => {
+  //       this.connectConnectorsError = error;
+  //     },
+  //   );
+  // },
 
   // PATCH /topics/{topicName}/configuration   //
   // PATCH /topics/configuration               // default config
-  async changeTopicConfig(topicName: string | null, configs: PatchTopicConfigsRequest['configs']): Promise<void> {
-    const url = topicName
-      ? `${appConfig.restBasePath}/topics/${encodeURIComponent(topicName)}/configuration`
-      : `${appConfig.restBasePath}/topics/configuration`;
-
-    const response = await appConfig.fetch(url, {
-      method: 'PATCH',
-      headers: [['Content-Type', 'application/json']],
-      body: toJson({configs}),
-    });
-    await parseOrUnwrap<void>(response, null);
-  },
-
-  // AdditionalInfo = list of plugins
-  refreshClusterAdditionalInfo(clusterName: string, force?: boolean): Promise<void> {
-    return cachedApiRequest<ClusterAdditionalInfo | null>(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}`,
-      force,
-    ).then((v) => {
-      if (!v) {
-        this.connectAdditionalClusterInfo.delete(clusterName);
-      } else {
-        this.connectAdditionalClusterInfo.set(clusterName, v);
-      }
-    }, addError);
-  },
-
-  /*
-    Commented out for now!
-    There are some issues with refreshing a single connector:
-        - We might not have the cluster/connector cached (can happen when a user visits the details page directly)
-        - Updating the inner details (e.g. running tasks) won't update the cached total/running tasks in the cluster object
-          which might make things pretty confusing for a user (pausing a connector, then going back to the overview page).
-          One solution would be to update all clusters/connectors, which defeats the purpose of refreshing only one.
-          The real solution would be to not have pre-computed fields.
-
-
-    // Details for one connector
-    async refreshConnectorDetails(clusterName: string, connectorName: string, force?: boolean): Promise<void> {
-
-        const existingCluster = this.connectConnectors?.clusters?.find(x => x.clusterName == clusterName);
-        if (!existingCluster)
-            // if we don't have any info yet, or we don't know about that cluster, we need a full refresh
-            return this.refreshConnectClusters(force);
-
-        return cachedApiRequest<ClusterConnectorInfo | null>(`${appConfig.restBasePath}/kafka-connect/clusters/${clusterName}/connectors/${connectorName}`, force)
-            .then(v => {
-                if (!v) return; // backend error
-
-                const cluster = this.connectConnectors?.clusters?.find(x => x.clusterName == clusterName);
-                if (!cluster) return; // did we forget about the cluster somehow?
-
-                const connector = cluster.connectors.
-
-                // update given clusters
-                runInAction(() => {
-                    const clusters = this.connectConnectors?.clusters;
-                    if (!v.clusters) return; // shouldn't happen: this method shouldn't get called if we don't already have info cached
-                    if (!clusters) return; // shouldn't happen: if we don't have clusters locally we'd have refreshed them
-
-                    for (const updatedCluster of v.clusters) {
-                        addFrontendFieldsForConnectCluster(updatedCluster);
-
-                        const index = clusters.findIndex(x => x.clusterName == updatedCluster.clusterName);
-                        if (index < 0) {
-                            // shouldn't happen, if we don't know the cluster, then how would we have requested new info for it?
-                            clusters.push(updatedCluster);
-                        } else {
-                            // overwrite existing cluster with new data
-                            clusters[index] = updatedCluster;
-                        }
-                    }
-                });
-
-            }, addError);
-    },
-*/
-  /*
-        // All, or for specific cluster
-        refreshConnectors(clusterName?: string, force?: boolean): Promise<void> {
-            const url = clusterName == null
-                ? './api/kafka-connect/connectors'
-                : `${appConfig.restBasePath}/kafka-connect/clusters/${clusterName}/connectors`;
-            return cachedApiRequest<KafkaConnectors | null>(url, force)
-                .then(v => {
-                    if (v == null) {
-
-                    }
-                }, addError);
-        },
-
-
-
-    */
-
-  async deleteConnector(clusterName: string, connector: string): Promise<void> {
-    // DELETE "/kafka-connect/clusters/{clusterName}/connectors/{connector}"
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/connectors/${encodeURIComponent(connector)}`,
-      {
-        method: 'DELETE',
-        headers: [['Content-Type', 'application/json']],
-      },
-    );
-    return parseOrUnwrap<void>(response, null);
-  },
-
-  async pauseConnector(clusterName: string, connector: string): Promise<void> {
-    // PUT  "/kafka-connect/clusters/{clusterName}/connectors/{connector}/pause"  (idempotent)
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/connectors/${encodeURIComponent(connector)}/pause`,
-      {
-        method: 'PUT',
-        headers: [['Content-Type', 'application/json']],
-      },
-    );
-    return parseOrUnwrap<void>(response, null);
-  },
-
-  async resumeConnector(clusterName: string, connector: string): Promise<void> {
-    // PUT  "/kafka-connect/clusters/{clusterName}/connectors/{connector}/resume" (idempotent)
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/connectors/${encodeURIComponent(connector)}/resume`,
-      {
-        method: 'PUT',
-        headers: [['Content-Type', 'application/json']],
-      },
-    );
-    return parseOrUnwrap<void>(response, null);
-  },
-
-  async restartConnector(clusterName: string, connector: string): Promise<void> {
-    // POST "/kafka-connect/clusters/{clusterName}/connectors/{connector}/restart"
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/connectors/${encodeURIComponent(connector)}/restart`,
-      {
-        method: 'POST',
-        headers: [['Content-Type', 'application/json']],
-      },
-    );
-    return parseOrUnwrap<void>(response, null);
-  },
-
-  async updateConnector(clusterName: string, connector: string, config: object): Promise<void> {
-    // PUT "/kafka-connect/clusters/{clusterName}/connectors/{connector}"
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/connectors/${encodeURIComponent(connector)}`,
-      {
-        method: 'PUT',
-        headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify({config: config}),
-      },
-    );
-    return parseOrUnwrap<void>(response, null);
-  },
-
-  async restartTask(clusterName: string, connector: string, taskID: number): Promise<void> {
-    // POST "/kafka-connect/clusters/{clusterName}/connectors/{connector}/tasks/{taskID}/restart"
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/connectors/${encodeURIComponent(connector)}/tasks/${String(taskID)}/restart`,
-      {
-        method: 'POST',
-        headers: [['Content-Type', 'application/json']],
-      },
-    );
-
-    return parseOrUnwrap<void>(response, null);
-  },
-
-  async validateConnectorConfig(
-    clusterName: string,
-    pluginClassName: string,
-    config: object,
-  ): Promise<ConnectorValidationResult> {
-    // PUT "/kafka-connect/clusters/{clusterName}/connector-plugins/{pluginClassName}/config/validate"
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/connector-plugins/${encodeURIComponent(pluginClassName)}/config/validate`,
-      {
-        method: 'PUT',
-        headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify(config),
-      },
-    );
-    const result = await parseOrUnwrap<ConnectorValidationResult>(response, null);
-
-    for (let i = 0; i < result.steps.length; i++) {
-      result.steps[i].stepIndex = i;
-    }
-
-    return result;
-  },
-
-  async createConnector(
-    clusterName: string,
-    connectorName: string,
-    _pluginClassName: string, // needs to be kept to avoid larger refactor despite not being used.
-    config: object,
-  ): Promise<void> {
-    // POST "/kafka-connect/clusters/{clusterName}/connectors"
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/connectors`,
-      {
-        method: 'POST',
-        headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify({
-          connectorName: connectorName,
-          config: config,
-        }),
-      },
-    );
-    return parseOrUnwrap<void>(response, null);
+  async changeTopicConfig(topicName: string, configs: kmsg.IncrementalAlterConfigsRequestResourceConfig[]): Promise<void> {
+    return EditTopicConfig(topicName, configs);
   },
 
   async publishRecords(request: PublishRecordsRequest): Promise<ProduceRecordsResponse> {
     // POST "/topics-records"
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/topics-records`, {
-      method: 'POST',
-      headers: [['Content-Type', 'application/json']],
-      body: JSON.stringify(request),
-    });
-    return parseOrUnwrap<ProduceRecordsResponse>(response, null);
+    return ProducePlainRecords(request.records, request.useTransactions, [CompressionCodec.createFrom(request.compressionType)])
   },
 
   // New version of "publishRecords"
@@ -1683,282 +1024,16 @@ const apiStore = {
     return r;
   },
 
-  async createTopic(request: CreateTopicRequest): Promise<CreateTopicResponse> {
-    // POST "/topics"
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/topics`, {
-      method: 'POST',
-      headers: [['Content-Type', 'application/json']],
-      body: JSON.stringify(request),
-    });
-    return parseOrUnwrap<CreateTopicResponse>(response, null);
+  async createTopic(request: CreateTopicsRequestTopic): Promise<CreateTopicResponse> {
+    return CreateTopic(request);
   },
 
-  async createACL(request: CreateACLRequest): Promise<void> {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/acls`, {
-      method: 'POST',
-      headers: [['Content-Type', 'application/json']],
-      body: JSON.stringify(request),
-    });
-
-    return parseOrUnwrap<void>(response, null);
+  async createACL(request: CreateACLsRequestCreation): Promise<void> {
+    return CreateACL(request);
   },
 
-  async deleteACLs(request: DeleteACLsRequest): Promise<void> {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/acls`, {
-      method: 'DELETE',
-      headers: [['Content-Type', 'application/json']],
-      body: JSON.stringify(request),
-    });
-
-    return parseOrUnwrap<void>(response, null);
-  },
-
-  async refreshServiceAccounts(): Promise<void> {
-    this.serviceAccountsLoading = true;
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/users`, {
-      method: 'GET',
-      headers: [['Content-Type', 'application/json']],
-    });
-    return parseOrUnwrap<void>(response, null)
-      .then((v) => {
-        this.serviceAccounts = v ?? null;
-      })
-      .catch((err: WrappedApiError) => {
-        this.serviceAccountsError = err;
-      })
-      .finally(() => {
-        this.serviceAccountsLoading = false;
-      });
-  },
-
-  async createServiceAccount(request: CreateUserRequest): Promise<void> {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/users`, {
-      method: 'POST',
-      headers: [['Content-Type', 'application/json']],
-      body: JSON.stringify(request),
-    });
-
-    return parseOrUnwrap<void>(response, null);
-  },
-
-  async deleteServiceAccount(principalId: string): Promise<void> {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/users/${encodeURIComponent(principalId)}`, {
-      method: 'DELETE',
-    });
-
-    return parseOrUnwrap<void>(response, null);
-  },
-
-  async createSecret(clusterName: string, connectorName: string, secretValue: string): Promise<CreateSecretResponse> {
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/secrets`,
-      {
-        method: 'POST',
-        headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify({
-          connectorName,
-          clusterName,
-          secretData: secretValue,
-          labels: {
-            component: 'connectors',
-          },
-        }),
-      },
-    );
-    return parseOrUnwrap<any>(response, null);
-  },
-
-  async updateSecret(clusterName: string, secretId: string, secretValue: string): Promise<void> {
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/secrets/${encodeURIComponent(secretId)}`,
-      {
-        method: 'PUT',
-        headers: [['Content-Type', 'application/json']],
-        body: JSON.stringify({
-          secretData: secretValue,
-        }),
-      },
-    );
-    return parseOrUnwrap<any>(response, null);
-  },
-
-  async deleteSecret(clusterName: string, secretId: string): Promise<void> {
-    const response = await appConfig.fetch(
-      `${appConfig.restBasePath}/kafka-connect/clusters/${encodeURIComponent(clusterName)}/secrets/${encodeURIComponent(secretId)}`,
-      {
-        method: 'DELETE',
-      },
-    );
-    return parseOrUnwrap<void>(response, null);
-  },
-
-  async uploadLicense(request: SetLicenseRequest): Promise<SetLicenseResponse> {
-    // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-    const client = appConfig.licenseClient!;
-    if (!client) {
-      // this shouldn't happen but better to explicitly throw
-      throw new Error('Console client is not initialized');
-    }
-    const r = await client.setLicense(request);
-
-    return r;
-  },
-
-  async listLicenses(): Promise<void> {
-    // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-    const client = appConfig.licenseClient!;
-    if (!client) {
-      // this shouldn't happen but better to explicitly throw
-      throw new Error('License client is not initialized');
-    }
-
-    await Promise.all([
-      client.listEnterpriseFeatures({}).then((enterpriseFeaturesResponse) => {
-        this.enterpriseFeaturesUsed = enterpriseFeaturesResponse.features;
-        this.licenseViolation = enterpriseFeaturesResponse.violation;
-      }),
-      client
-        .listLicenses({})
-        .then((licensesResponse) => {
-          this.licenses = licensesResponse.licenses;
-
-          this.licensesLoaded = 'loaded';
-        })
-        .catch((err) => {
-          this.licensesLoaded = 'failed';
-          const errorText = err instanceof Error ? err.message : String(err);
-
-          console.log(`error refreshing licenses: ${errorText}`);
-          return err;
-        }),
-    ]);
-  },
-
-  async refreshClusterHealth() {
-    // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-    const client = appConfig.debugBundleClient!;
-    if (!client) {
-      // this shouldn't happen but better to explicitly throw
-      throw new Error('Debug bundle client is not initialized');
-    }
-
-    client.getClusterHealth({}).then((response) => {
-      this.clusterHealth = response;
-    });
-  },
-
-  async refreshDebugBundleStatuses() {
-    // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-    const client = appConfig.debugBundleClient!;
-    if (!client) {
-      // this shouldn't happen but better to explicitly throw
-      throw new Error('Debug bundle client is not initialized');
-    }
-
-    await client
-      .getDebugBundleStatus({})
-      .then((response) => {
-        this.debugBundleStatuses = response.brokerStatuses;
-        this.hasDebugProcess = response.hasDebugProcess;
-        return response;
-      })
-      .catch((e) => {
-        this.debugBundleStatuses = [];
-        return e;
-      });
-  },
-
-  get isDebugBundleReady() {
-    return api.debugBundleStatuses.length > 0 && !this.isDebugBundleInProgress;
-  },
-
-  get canDownloadDebugBundle() {
-    return (
-      this.isDebugBundleReady &&
-      this.debugBundleStatuses.some(
-        (status) =>
-          status.value.case === 'bundleStatus' && status.value.value.status === DebugBundleStatus_Status.SUCCESS,
-      )
-    );
-  },
-
-  get isDebugBundleError() {
-    return (
-      this.isDebugBundleReady &&
-      this.debugBundleStatuses.all(
-        (status) =>
-          status.value.case === 'bundleStatus' && status.value.value.status === DebugBundleStatus_Status.ERROR,
-      )
-    );
-  },
-
-  get isDebugBundleExpired() {
-    return (
-      this.isDebugBundleReady &&
-      this.debugBundleStatuses.some(
-        (status) =>
-          status.value.case === 'bundleStatus' && status.value.value.status === DebugBundleStatus_Status.EXPIRED,
-      )
-    );
-  },
-
-  get isDebugBundleInProgress() {
-    return this.debugBundleStatuses.some(
-      (status) =>
-        status.value.case === 'bundleStatus' && status.value.value.status === DebugBundleStatus_Status.RUNNING,
-    );
-  },
-
-  get debugBundleStatus(): DebugBundleStatus | undefined {
-    return this.debugBundleStatuses
-      .filter((status) => status.value.case === 'bundleStatus')
-      .map((x) => x.value.value as DebugBundleStatus)[0];
-  },
-
-  async createDebugBundle(request: CreateDebugBundleRequest): Promise<CreateDebugBundleResponse> {
-    // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-    const client = appConfig.debugBundleClient!;
-    if (!client) {
-      // this shouldn't happen but better to explicitly throw
-      throw new Error('Debug bundle client is not initialized');
-    }
-
-    return await client.createDebugBundle(request).finally(() => {
-      this.refreshDebugBundleStatuses();
-    });
-  },
-
-  async cancelDebugBundleProcess({jobId}: { jobId: string }) {
-    // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-    const client = appConfig.debugBundleClient!;
-    if (!client) {
-      // this shouldn't happen but better to explicitly throw
-      throw new Error('Debug bundle client is not initialized');
-    }
-
-    await client
-      .cancelDebugBundleProcess({
-        jobId,
-      })
-      .finally(() => {
-        this.refreshDebugBundleStatuses();
-      });
-  },
-
-  async deleteDebugBundleFile() {
-    // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-    const client = appConfig.debugBundleClient!;
-    if (!client) {
-      // this shouldn't happen but better to explicitly throw
-      throw new Error('Debug bundle client is not initialized');
-    }
-    await client
-      .deleteDebugBundleFile({
-        deleteAll: true,
-      })
-      .finally(() => {
-        this.refreshDebugBundleStatuses();
-      });
+  async deleteACLs(request: DeleteACLsRequestFilter): Promise<void> {
+    DeleteACLs(request);
   },
 };
 
@@ -2070,216 +1145,6 @@ export const rolesApi = observable({
       remove: removeUsers.map((u) => ({principal: `User:${u}`})),
       create,
     });
-  },
-});
-
-export const pipelinesApi = observable({
-  pipelines: undefined as undefined | Pipeline[],
-  pipelinesError: null as ConnectError | null,
-
-  // async lintConfig(config: string): Promise<LintConfigResponse> {
-  //     const client = appConfig.pipelinesClient;
-  //     if (!client) throw new Error('pipelines client is not initialized');
-  //
-  //     const r = await client.lintConfig({ yamlConfig: config }, { timeoutMs: 3000 });
-  //     return r;
-  // },
-
-  async refreshPipelines(_force: boolean): Promise<void> {
-    const client = appConfig.pipelinesClient;
-    if (!client) throw new Error('pipelines client is not initialized');
-
-    const pipelines = [];
-    this.pipelinesError = null;
-
-    let nextPageToken = '';
-    while (true) {
-      const res = await client
-        .listPipelines({request: {pageSize: 500, pageToken: nextPageToken}})
-        .catch((error: ConnectError) => {
-          this.pipelinesError = error;
-        });
-      const response = res?.response;
-      if (!response) break;
-
-      pipelines.push(...response.pipelines);
-
-      if (!response.nextPageToken || response.nextPageToken.length === 0) break;
-      nextPageToken = response.nextPageToken;
-    }
-
-    this.pipelines = pipelines;
-  },
-
-  async deletePipeline(id: string) {
-    const client = appConfig.pipelinesClient;
-    if (!client) throw new Error('pipelines client is not initialized');
-
-    await client.deletePipeline({request: {id: id}});
-  },
-  async createPipeline(pipeline: PipelineCreate) {
-    const client = appConfig.pipelinesClient;
-    if (!client) throw new Error('pipelines client is not initialized');
-
-    await client.createPipeline({request: {pipeline}});
-  },
-  async updatePipeline(id: string, pipelineUpdate: PipelineUpdate) {
-    const client = appConfig.pipelinesClient;
-    if (!client) throw new Error('pipelines client is not initialized');
-
-    await client.updatePipeline({
-      request: {
-        id,
-        pipeline: pipelineUpdate,
-      },
-    });
-  },
-  async startPipeline(id: string) {
-    const client = appConfig.pipelinesClient;
-    if (!client) throw new Error('pipelines client is not initialized');
-
-    await client.startPipeline({request: {id}});
-  },
-  async stopPipeline(id: string) {
-    const client = appConfig.pipelinesClient;
-    if (!client) throw new Error('pipelines client is not initialized');
-
-    await client.stopPipeline({request: {id}});
-  },
-});
-
-export const rpcnSecretManagerApi = observable({
-  secrets: undefined as undefined | Secret[],
-  secretsByPipeline: undefined as { secretId: string; pipelines: Pipeline[] }[] | undefined,
-  isEnable: true,
-
-  async refreshSecrets(_force: boolean): Promise<void> {
-    const client = appConfig.rpcnSecretsClient;
-    if (!client) throw new Error('redpanda connect secret client is not initialized');
-
-    // handle error in order to avoid crash app for this request
-    this.secretsByPipeline = await this.getPipelinesBySecret().catch(() => []);
-
-    const secrets = [];
-
-    let nextPageToken = '';
-    while (true) {
-      const res = await client.listSecrets({
-        request: new ListSecretsRequest({
-          pageToken: nextPageToken,
-          pageSize: 100,
-        }),
-      });
-
-      const response = res.response;
-      if (!response) break;
-
-      secrets.push(...response.secrets);
-
-      if (!res || response.nextPageToken.length === 0) break;
-      nextPageToken = response.nextPageToken;
-    }
-
-    this.secrets = secrets;
-  },
-
-  async delete(secret: DeleteSecretRequest) {
-    const client = appConfig.rpcnSecretsClient;
-    if (!client) throw new Error('redpanda connect secret client is not initialized');
-
-    await client.deleteSecret({request: secret});
-  },
-  async create(secret: CreateSecretRequest) {
-    const client = appConfig.rpcnSecretsClient;
-    if (!client) throw new Error('redpanda connect secret client is not initialized');
-
-    await client.createSecret({request: secret});
-  },
-  async update(_id: string, updateSecretRequest: UpdateSecretRequest) {
-    const client = appConfig.rpcnSecretsClient;
-    if (!client) throw new Error('redpanda connect secret client is not initialized');
-
-    await client.updateSecret({request: updateSecretRequest});
-  },
-  async checkScope(listSecretScopesRequest: ListSecretScopesRequest) {
-    const client = appConfig.rpcnSecretsClient;
-    if (!client) throw new Error('redpanda connect secret client is not initialized');
-
-    const res = await client.listSecretScopes({request: listSecretScopesRequest});
-
-    if (!res.response) {
-      this.isEnable = false;
-      return;
-    }
-
-    const isEnable = res.response?.scopes.some((scope) => scope === Scope.REDPANDA_CONNECT);
-    this.isEnable = isEnable;
-    return isEnable;
-  },
-  async getPipelinesBySecret() {
-    const client = appConfig.pipelinesClientV2;
-    if (!client) throw new Error('redpanda connect dataplane pipeline is not initialized');
-
-    const pipelinesBySecrets = await client.getPipelinesBySecrets({request: new GetPipelinesBySecretsRequest()});
-    return pipelinesBySecrets.response?.pipelinesForSecret.map(({secretId, pipelines}) => {
-      return {
-        secretId: secretId,
-        pipelines: pipelines,
-      };
-    });
-  },
-});
-
-export const transformsApi = observable({
-  transforms: undefined as undefined | TransformMetadata[],
-  transformDetails: new Map<string, TransformMetadata>(),
-
-  async refreshTransforms(_force: boolean): Promise<void> {
-    const client = appConfig.transformsClient;
-    if (!client) throw new Error('transforms client is not initialized');
-    const transforms: TransformMetadata[] = [];
-    let nextPageToken = '';
-    while (true) {
-      let res: ListTransformsResponse;
-      try {
-        res = await client.listTransforms({request: {pageSize: 500, pageToken: nextPageToken}});
-      } catch (err) {
-        break;
-      }
-      const r = res.response;
-      if (!r) break;
-
-      transforms.push(...r.transforms);
-
-      if (!r.nextPageToken || r.nextPageToken.length === 0) break;
-      nextPageToken = r.nextPageToken;
-    }
-
-    runInAction(() => {
-      this.transforms = transforms;
-      this.transformDetails.clear();
-      for (const t of transforms) this.transformDetails.set(t.name, t);
-    });
-  },
-
-  async refreshTransformDetails(name: string, _force: boolean): Promise<void> {
-    const client = appConfig.transformsClient;
-    if (!client) throw new Error('transforms client is not initialized');
-
-    const res = await client.getTransform({request: {name}});
-    const r = res.response;
-    if (!r) throw new Error('got empty response from getTransform');
-
-    if (!r.transform) return;
-
-    this.transformDetails.set(r.transform.name, r.transform);
-  },
-
-  async deleteTransform(name: string) {
-    const client = appConfig.transformsClient;
-    if (!client) throw new Error('transforms client is not initialized');
-
-    await client.deleteTransform({request: {name}});
   },
 });
 
@@ -2631,18 +1496,6 @@ export function createMessageSearch() {
 
 export type MessageSearch = ReturnType<typeof createMessageSearch>;
 
-function addFrontendFieldsForConnectCluster(cluster: ClusterConnectors) {
-  const allowedActions = cluster.allowedActions ?? ['all'];
-  const allowAll = allowedActions.includes('all');
-
-  cluster.canViewCluster = allowAll || allowedActions.includes('viewConnectCluster');
-  cluster.canEditCluster = allowAll || allowedActions.includes('editConnectCluster');
-  cluster.canDeleteCluster = allowAll || allowedActions.includes('deleteConnectCluster');
-
-  for (const connector of cluster.connectors)
-    if (connector.config) connector.jsonConfig = JSON.stringify(connector.config, undefined, 4);
-    else connector.jsonConfig = '';
-}
 
 function addFrontendFieldsForConsumerGroup(g: ConsumerGroupOverview) {
   g.lagSum = g.topicOffsets.sum((o) => o.summedLag);
@@ -2721,14 +1574,6 @@ function normalizeAcls(acls: AclResource[]) {
   }
 }
 
-export function aclRequestToQuery(request: GetAclsRequest): string {
-  const filters = ObjToKv(request)
-    .filter((kv) => !!kv.value)
-    .map((x) => [x.key, x.value]);
-
-  const searchParams = new URLSearchParams(filters);
-  return searchParams.toString();
-}
 
 export async function partialTopicConfigs(
   configKeys: string[],

@@ -9,65 +9,40 @@
  * by the Apache License, Version 2.0
  */
 
-import { ChevronLeftIcon, ChevronRightIcon } from '@primer/octicons-react';
-import { StepSeparator } from '@redpanda-data/ui';
-import {
-  Box,
-  Button,
-  Flex,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Step,
-  StepIcon,
-  StepIndicator,
-  StepNumber,
-  StepStatus,
-  Stepper,
-  createStandaloneToast,
-  redpandaTheme,
-  redpandaToastOptions,
-} from '@redpanda-data/ui';
-import { motion } from 'framer-motion';
-import { type IReactionDisposer, autorun, computed, makeObservable, observable, transaction } from 'mobx';
-import { observer } from 'mobx-react';
-import { MdOutlineErrorOutline } from 'react-icons/md';
-import { appGlobal } from '../../../state/appGlobal';
-import { api, partialTopicConfigs } from '../../../state/backendApi';
-import type {
-  AlterPartitionReassignmentsPartitionResponse,
-  Broker,
-  Partition,
-  PartitionReassignmentRequest,
-  Topic,
-} from '../../../state/restInterfaces';
-import { uiSettings } from '../../../state/ui';
-import { animProps } from '../../../utils/animationProps';
-import { IsDev } from '../../../utils/env';
-import { clone, toJson } from '../../../utils/jsonUtils';
-import { DefaultSkeleton } from '../../../utils/tsxUtils';
-import { scrollTo, scrollToTop } from '../../../utils/utils';
-import { FeatureLicenseNotification } from '../../license/FeatureLicenseNotification';
-import { showErrorModal } from '../../misc/ErrorModal';
-import { NullFallbackBoundary } from '../../misc/NullFallbackBoundary';
+import {ChevronLeftIcon, ChevronRightIcon} from '@primer/octicons-react';
+import {Box, Button, createStandaloneToast, Flex, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, ModalOverlay, redpandaTheme, redpandaToastOptions, Step, StepIcon, StepIndicator, StepNumber, Stepper, StepSeparator, StepStatus} from '@redpanda-data/ui';
+import {motion} from 'framer-motion';
+import {autorun, computed, type IReactionDisposer, makeObservable, observable, transaction} from 'mobx';
+import {observer} from 'mobx-react';
+import {MdOutlineErrorOutline} from 'react-icons/md';
+import {appGlobal} from '../../../state/appGlobal';
+import {api, partialTopicConfigs} from '../../../state/backendApi';
+import {uiSettings} from '../../../state/ui';
+import {animProps} from '../../../utils/animationProps';
+import {IsDev} from '../../../utils/env';
+import {clone, toJson} from '../../../utils/jsonUtils';
+import {DefaultSkeleton} from '../../../utils/tsxUtils';
+import {scrollTo, scrollToTop} from '../../../utils/utils';
+import {showErrorModal} from '../../misc/ErrorModal';
 import PageContent from '../../misc/PageContent';
 import Section from '../../misc/Section';
-import { Statistic } from '../../misc/Statistic';
-import { PageComponent, type PageInitHelper } from '../Page';
-import { StepSelectPartitions } from './Step1.Partitions';
-import { StepSelectBrokers } from './Step2.Brokers';
-import { StepReview, type TopicWithMoves } from './Step3.Review';
-import { ActiveReassignments } from './components/ActiveReassignments';
-import { type ApiData, type TopicPartitions, computeReassignments } from './logic/reassignLogic';
-import { ReassignmentTracker } from './logic/reassignmentTracker';
-import {
-  computeMovedReplicas,
-  partitionSelectionToTopicPartitions,
-  topicAssignmentsToReassignmentRequest,
-} from './logic/utils';
+import {Statistic} from '../../misc/Statistic';
+import {PageComponent, type PageInitHelper} from '../Page';
+import {StepSelectPartitions} from './Step1.Partitions';
+import {StepSelectBrokers} from './Step2.Brokers';
+import {StepReview, type TopicWithMoves} from './Step3.Review';
+import {ActiveReassignments} from './components/ActiveReassignments';
+import {type ApiData, computeReassignments, type TopicPartitions} from './logic/reassignLogic';
+import {ReassignmentTracker} from './logic/reassignmentTracker';
+import {computeMovedReplicas, partitionSelectionToTopicPartitions, topicAssignmentsToReassignmentRequest,} from './logic/utils';
+import {kconsole, kmsg} from "../../../../wailsjs/go/models";
+import TopicSummary = kconsole.TopicSummary;
+import BrokerConfigEntry = kconsole.BrokerConfigEntry;
+import TopicPartitionDetails = kconsole.TopicPartitionDetails;
+import {PartitionReassignmentRequest} from "../../../state/restInterfaces";
+import AlterPartitionReassignmentsPartitionResponse = kconsole.AlterPartitionReassignmentsPartitionResponse;
+import Broker = kconsole.Broker;
+import AlterPartitionAssignmentsRequestTopic = kmsg.AlterPartitionAssignmentsRequestTopic;
 
 export interface PartitionSelection {
   // Which partitions are selected?
@@ -75,10 +50,10 @@ export interface PartitionSelection {
 }
 
 const reassignmentTracker = new ReassignmentTracker();
-export { reassignmentTracker };
+export {reassignmentTracker};
 
 // TODO - once ReassignPartitions is migrated to FC, we could should move this code to use useToast()
-const { ToastContainer, toast } = createStandaloneToast({
+const {ToastContainer, toast} = createStandaloneToast({
   theme: redpandaTheme,
   defaultOptions: {
     ...redpandaToastOptions.defaultOptions,
@@ -105,7 +80,7 @@ class ReassignPartitions extends PageComponent {
 
   @observable _debug_apiData: ApiData | null = null;
   @observable _debug_topicPartitions: TopicPartitions[] | null = null;
-  @observable _debug_brokers: Broker[] | null = null;
+  @observable _debug_brokers: BrokerConfigEntry[] | null = null;
 
   refreshTopicConfigsTimer: number | null = null;
   refreshTopicConfigsRequestsInProgress = 0;
@@ -174,9 +149,9 @@ class ReassignPartitions extends PageComponent {
   }
 
   refreshData(force: boolean) {
-    api.refreshCluster(force); // need to know brokers for reassignment calculation, will also refresh config
-    api.refreshTopics(force);
-    api.refreshPartitions('all', force);
+    api.refreshCluster(); // need to know brokers for reassignment calculation, will also refresh config
+    api.refreshTopics();
+    api.refreshPartitions('all');
     api.refreshPartitionReassignments(force);
   }
 
@@ -213,19 +188,16 @@ class ReassignPartitions extends PageComponent {
 
     return (
       <>
-        <ToastContainer />
-        <div className="reassignPartitions" style={{ paddingBottom: '12em' }}>
+        <ToastContainer/>
+        <div className="reassignPartitions" style={{paddingBottom: '12em'}}>
           <PageContent>
-            <NullFallbackBoundary>
-              <FeatureLicenseNotification featureName="reassignPartitions" />
-            </NullFallbackBoundary>
 
             {/* Statistics */}
             <Section py={4}>
               <Flex>
-                <Statistic title="Broker Count" value={api.clusterInfo?.brokers.length} />
-                <Statistic title="Leader Partitions" value={partitionCountLeaders ?? '...'} />
-                <Statistic title="Replica Partitions" value={partitionCountOnlyReplicated ?? '...'} />
+                <Statistic title="Broker Count" value={api.clusterInfo?.brokers.length}/>
+                <Statistic title="Leader Partitions" value={partitionCountLeaders ?? '...'}/>
+                <Statistic title="Replica Partitions" value={partitionCountOnlyReplicated ?? '...'}/>
                 <Statistic
                   title="Total Partitions"
                   value={
@@ -248,15 +220,15 @@ class ReassignPartitions extends PageComponent {
             {/* Content */}
             <Section id="wizard">
               {/* Steps */}
-              <div style={{ margin: '.75em 1em 1em 1em' }}>
+              <div style={{margin: '.75em 1em 1em 1em'}}>
                 <Stepper index={this.currentStep} colorScheme="brand">
                   {steps.map((item, index) => (
                     <Step key={index} title={item.title}>
                       <StepIndicator>
-                        <StepStatus complete={<StepIcon />} incomplete={<StepNumber />} active={<StepNumber />} />
+                        <StepStatus complete={<StepIcon/>} incomplete={<StepNumber/>} active={<StepNumber/>}/>
                       </StepIndicator>
                       <Box>{item.title}</Box>
-                      <StepSeparator />
+                      <StepSeparator/>
                     </Step>
                   ))}
                 </Stepper>
@@ -309,28 +281,28 @@ class ReassignPartitions extends PageComponent {
                   <Button
                     onClick={this.onPreviousPage}
                     isDisabled={this.currentStep <= 0 || this.requestInProgress}
-                    style={{ minWidth: '14em' }}
+                    style={{minWidth: '14em'}}
                   >
                     <span>
-                      <ChevronLeftIcon />
+                      <ChevronLeftIcon/>
                     </span>
                     <span>{step.backButton}</span>
                   </Button>
                 )}
 
                 {/* Next */}
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '2em' }}>
+                <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '2em'}}>
                   <div>{nextButtonHelp}</div>
                   <Button
                     variant="solid"
-                    style={{ minWidth: '14em', marginLeft: 'auto' }}
+                    style={{minWidth: '14em', marginLeft: 'auto'}}
                     isDisabled={!nextButtonEnabled || this.requestInProgress}
                     onClick={this.onNextPage}
                     autoFocus={true}
                   >
                     <span>{step.nextButton.text}</span>
                     <span>
-                      <ChevronRightIcon />
+                      <ChevronRightIcon/>
                     </span>
                   </Button>
                 </div>
@@ -343,11 +315,11 @@ class ReassignPartitions extends PageComponent {
               this.removeThrottleFromTopicsContent = null;
             }}
           >
-            <ModalOverlay />
+            <ModalOverlay/>
             <ModalContent minW="5xl">
               <ModalHeader>
                 <Flex gap={2} alignItems="center">
-                  <MdOutlineErrorOutline size={18} />
+                  <MdOutlineErrorOutline size={18}/>
                   Remove throttle config from topics
                 </Flex>
               </ModalHeader>
@@ -355,27 +327,27 @@ class ReassignPartitions extends PageComponent {
                 <div>
                   <div>
                     There are {this.topicsWithThrottle.length} topics with throttling applied to their replicas.
-                    <br />
+                    <br/>
                     Kowl implements throttling of reassignments by setting{' '}
-                    <span className="tooltip" style={{ textDecoration: 'dotted underline' }}>
+                    <span className="tooltip" style={{textDecoration: 'dotted underline'}}>
                       two configuration values
-                      <span className="tooltiptext" style={{ textAlign: 'left', width: '500px' }}>
+                      <span className="tooltiptext" style={{textAlign: 'left', width: '500px'}}>
                         Kowl sets those two configuration entries when throttling a topic reassignment:
-                        <div style={{ marginTop: '.5em' }}>
+                        <div style={{marginTop: '.5em'}}>
                           <code>leader.replication.throttled.replicas</code>
-                          <br />
+                          <br/>
                           <code>follower.replication.throttled.replicas</code>
                         </div>
                       </span>
                     </span>{' '}
                     in a topics configuration.
-                    <br />
+                    <br/>
                     So if you previously used Kowl to reassign any of the partitions of the following topics, the
                     throttling config might still be active.
                   </div>
-                  <div style={{ margin: '1em 0' }}>
+                  <div style={{margin: '1em 0'}}>
                     <h4>Throttled Topics</h4>
-                    <ul style={{ maxHeight: '145px', overflowY: 'auto' }}>
+                    <ul style={{maxHeight: '145px', overflowY: 'auto'}}>
                       {this.removeThrottleFromTopicsContent?.map((t) => (
                         <li key={t}>{t}</li>
                       ))}
@@ -483,7 +455,7 @@ class ReassignPartitions extends PageComponent {
       if (targetBrokers.any((b) => b == null))
         throw new Error('one or more broker ids could not be mapped to broker entries');
 
-      const apiTopicPartitions = new Map<string, Partition[]>();
+      const apiTopicPartitions = new Map<string, TopicPartitionDetails[]>();
       for (const [topicName, partitions] of api.topicPartitions) {
         if (!partitions) continue;
         const validOnly = partitions.filter((x) => !x.hasErrors);
@@ -493,7 +465,7 @@ class ReassignPartitions extends PageComponent {
       // error checking will happen inside computeReassignments
       const apiData = {
         brokers: api.clusterInfo?.brokers ?? [],
-        topics: api.topics as Topic[],
+        topics: api.topics as TopicSummary[],
         topicPartitions: apiTopicPartitions,
       };
 
@@ -535,7 +507,7 @@ class ReassignPartitions extends PageComponent {
             description: 'Error starting partition reassignment.\nSee kconsole for more information.',
             duration: 3000,
           });
-          console.error('error starting partition reassignment', { error: err });
+          console.error('error starting partition reassignment', {error: err});
         } finally {
           this.requestInProgress = false;
         }
@@ -546,11 +518,12 @@ class ReassignPartitions extends PageComponent {
 
     this.currentStep++;
   }
+
   onPreviousPage() {
     this.currentStep--;
   }
 
-  async startReassignment(request: PartitionReassignmentRequest): Promise<boolean> {
+  async startReassignment(request: AlterPartitionAssignmentsRequestTopic): Promise<boolean> {
     if (uiSettings.reassignment.maxReplicationTraffic != null && uiSettings.reassignment.maxReplicationTraffic > 0) {
       const success = await this.setTrafficLimit(request);
       if (!success) return false;
@@ -568,7 +541,7 @@ class ReassignPartitions extends PageComponent {
         .map((e) => {
           const partErrors = e.partitions.filter((p) => p.errorMessage != null);
           if (partErrors.length === 0) return null;
-          return { topicName: e.topicName, partitions: partErrors };
+          return {topicName: e.topicName, partitions: partErrors};
         })
         .filterNull();
       const startedCount = response.reassignPartitionsResponses.sum((x) => x.partitions.count((p) => !p.errorCode));
@@ -606,7 +579,7 @@ class ReassignPartitions extends PageComponent {
     }
   }
 
-  async setTrafficLimit(request: PartitionReassignmentRequest): Promise<boolean> {
+  async setTrafficLimit(request: kmsg.AlterPartitionAssignmentsRequestTopic): Promise<boolean> {
     const maxBytesPerSecond = Math.round(uiSettings.reassignment.maxReplicationTraffic ?? 0);
 
     const topicReplicas: {
@@ -636,12 +609,12 @@ class ReassignPartitions extends PageComponent {
 
         // leader throttling is applied to all sources (all brokers that have a replica of this partition)
         for (const sourceBroker of brokersOld)
-          leaderReplicas.push({ partitionId: partitionId, brokerId: sourceBroker });
+          leaderReplicas.push({partitionId: partitionId, brokerId: sourceBroker});
 
         // follower throttling is applied only to target brokers that do not yet have a copy
         const newBrokers = brokersNew.except(brokersOld);
         for (const targetBroker of newBrokers)
-          followerReplicas.push({ partitionId: partitionId, brokerId: targetBroker });
+          followerReplicas.push({partitionId: partitionId, brokerId: targetBroker});
       }
 
       topicReplicas.push({
@@ -694,7 +667,7 @@ class ReassignPartitions extends PageComponent {
     showErrorModal(
       'Reassign Partitions',
       `Reassignment request returned errors for ${errors.sum((e) => e.partitions.length)} / ${startedCount} partitions.`,
-      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+      <div style={{maxHeight: '300px', overflowY: 'auto'}}>
         {errors.map((r, i) => (
           <div key={i}>
             <div>
@@ -714,12 +687,13 @@ class ReassignPartitions extends PageComponent {
   }
 
   startRefreshingTopicConfigs() {
-    if (IsDev) console.log('starting refreshTopicConfigs', { stack: new Error().stack });
+    if (IsDev) console.log('starting refreshTopicConfigs', {stack: new Error().stack});
     if (this.refreshTopicConfigsTimer == null)
       this.refreshTopicConfigsTimer = window.setInterval(this.refreshTopicConfigs, 6000);
   }
+
   stopRefreshingTopicConfigs() {
-    if (IsDev) console.log('stopping refreshTopicConfigs', { stack: new Error().stack });
+    if (IsDev) console.log('stopping refreshTopicConfigs', {stack: new Error().stack});
     if (this.refreshTopicConfigsTimer) {
       window.clearInterval(this.refreshTopicConfigsTimer);
       this.refreshTopicConfigsTimer = null;
@@ -751,7 +725,7 @@ class ReassignPartitions extends PageComponent {
       // if (changes.added || changes.removed)
       //     if (IsDev) kconsole.log('refreshTopicConfigs updated', changes);
     } catch (err) {
-      console.error('error while refreshing topic configs, stopping auto refresh', { error: err });
+      console.error('error while refreshing topic configs, stopping auto refresh', {error: err});
       this.stopRefreshingTopicConfigs();
     } finally {
       this.refreshTopicConfigsRequestsInProgress--;
@@ -790,6 +764,7 @@ class ReassignPartitions extends PageComponent {
     return api.partitionReassignments?.map((r) => r.topicName) ?? [];
   }
 }
+
 export default ReassignPartitions;
 
 interface WizardStep {
@@ -802,6 +777,7 @@ interface WizardStep {
     computeWarning?: (rp: ReassignPartitions) => string | undefined;
   };
 }
+
 const steps: WizardStep[] = [
   {
     step: 0,

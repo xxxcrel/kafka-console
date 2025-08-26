@@ -1725,6 +1725,7 @@ export namespace kconsole {
 	    topicName: string;
 	    error?: string;
 	    partitions: TopicPartitionDetails[];
+	    replicationFactor: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new TopicDetails(source);
@@ -1735,6 +1736,7 @@ export namespace kconsole {
 	        this.topicName = source["topicName"];
 	        this.error = source["error"];
 	        this.partitions = this.convertValues(source["partitions"], TopicPartitionDetails);
+	        this.replicationFactor = source["replicationFactor"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -4110,25 +4112,6 @@ export namespace kmsg {
 
 }
 
-export namespace rest {
-	
-	export class Error {
-	    statusCode: number;
-	    message: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new Error(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.statusCode = source["statusCode"];
-	        this.message = source["message"];
-	    }
-	}
-
-}
-
 export namespace serde {
 	
 	export class RecordPayloadInput {
@@ -4347,31 +4330,6 @@ export namespace sr {
 		    }
 		    return a;
 		}
-	}
-
-}
-
-export namespace zapcore {
-	
-	export class Field {
-	    Key: string;
-	    Type: number;
-	    Integer: number;
-	    String: string;
-	    Interface: any;
-	
-	    static createFrom(source: any = {}) {
-	        return new Field(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Key = source["Key"];
-	        this.Type = source["Type"];
-	        this.Integer = source["Integer"];
-	        this.String = source["String"];
-	        this.Interface = source["Interface"];
-	    }
 	}
 
 }

@@ -28,16 +28,16 @@ type GetConsumerGroupsResponse struct {
 
 func (api *API) handleGetConsumerGroups() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		describedGroups, restErr := api.ConsoleSvc.GetConsumerGroupsOverview(r.Context(), nil)
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
+		//describedGroups, restErr := api.ConsoleSvc.GetConsumerGroupsOverview(r.Context(), nil)
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
 
-		response := GetConsumerGroupsResponse{
-			ConsumerGroups: describedGroups,
-		}
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, response)
+		//response := GetConsumerGroupsResponse{
+		//	ConsumerGroups: describedGroups,
+		//}
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, response)
 	}
 }
 
@@ -46,20 +46,20 @@ func (api *API) handleGetConsumerGroup() http.HandlerFunc {
 		ConsumerGroup kconsole.ConsumerGroupOverview `json:"consumerGroup"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		groupID := rest.GetURLParam(r, "groupId")
+		//groupID := rest.GetURLParam(r, "groupId")
 
-		describedGroups, restErr := api.ConsoleSvc.GetConsumerGroupsOverview(r.Context(), []string{groupID})
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
-
-		var res response
-		if len(describedGroups) == 1 {
-			res = response{ConsumerGroup: describedGroups[0]}
-		}
-
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, res)
+		//describedGroups, restErr := api.ConsoleSvc.GetConsumerGroupsOverview(r.Context(), []string{groupID})
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
+		//
+		//var res response
+		//if len(describedGroups) == 1 {
+		//	res = response{ConsumerGroup: describedGroups[0]}
+		//}
+		//
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, res)
 	}
 }
 
@@ -125,14 +125,14 @@ func (api *API) handlePatchConsumerGroup() http.HandlerFunc {
 			kmsgReq[i] = topicReq
 		}
 
-		// 4. Check response and pass it to the frontend
-		res, restErr := api.ConsoleSvc.EditConsumerGroupOffsets(r.Context(), req.GroupID, kmsgReq)
-		if restErr != nil {
-			rest.SendRESTError(w, r, api.Logger, restErr)
-			return
-		}
-
-		rest.SendResponse(w, r, api.Logger, http.StatusOK, response{res})
+		//// 4. Check response and pass it to the frontend
+		//res, restErr := api.ConsoleSvc.EditConsumerGroupOffsets(r.Context(), req.GroupID, kmsgReq)
+		//if restErr != nil {
+		//	rest.SendRESTError(w, r, api.Logger, restErr)
+		//	return
+		//}
+		//
+		//rest.SendResponse(w, r, api.Logger, http.StatusOK, response{res})
 	}
 }
 

@@ -30,10 +30,10 @@ type IncrementalAlterConfigsResourceResponse struct {
 // via the Kafka API.
 func (s *Service) IncrementalAlterConfigs(ctx context.Context,
 	alterConfigs []kmsg.IncrementalAlterConfigsRequestResource,
-) ([]IncrementalAlterConfigsResourceResponse, *rest.Error) {
+) ([]IncrementalAlterConfigsResourceResponse, error) {
 	cl, _, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return nil, errorToRestError(err)
+		return nil, err
 	}
 
 	req := kmsg.NewIncrementalAlterConfigsRequest()
@@ -41,12 +41,7 @@ func (s *Service) IncrementalAlterConfigs(ctx context.Context,
 
 	configRes, err := req.RequestWith(ctx, cl)
 	if err != nil {
-		return nil, &rest.Error{
-			Err:      err,
-			Status:   http.StatusServiceUnavailable,
-			Message:  fmt.Sprintf("Incremental Alter Config request has failed: %v", err.Error()),
-			IsSilent: false,
-		}
+		return nil, fmt.Errorf("Incremental Alter Config request has failed: %v", err.Error())
 	}
 
 	patchedConfigs := make([]IncrementalAlterConfigsResourceResponse, len(configRes.Resources))

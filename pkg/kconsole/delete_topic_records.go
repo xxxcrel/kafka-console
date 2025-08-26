@@ -12,39 +12,27 @@ package kconsole
 import (
 	"context"
 	"fmt"
-	"net/http"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kmsg"
 )
 
 // DeleteTopicRecords deletes records within a Kafka topic until a certain offset.
-func (s *Service) DeleteTopicRecords(ctx context.Context, deleteReq kmsg.DeleteRecordsRequestTopic) (DeleteTopicRecordsResponse, *rest.Error) {
+func (s *Service) DeleteTopicRecords(ctx context.Context, deleteReq kmsg.DeleteRecordsRequestTopic) (DeleteTopicRecordsResponse, error) {
 	cl, _, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return DeleteTopicRecordsResponse{}, errorToRestError(err)
+		return DeleteTopicRecordsResponse{}, err
 	}
 
 	req := kmsg.NewDeleteRecordsRequest()
 	req.Topics = []kmsg.DeleteRecordsRequestTopic{deleteReq}
 	res, err := req.RequestWith(ctx, cl)
 	if err != nil {
-		return DeleteTopicRecordsResponse{}, &rest.Error{
-			Err:      err,
-			Status:   http.StatusServiceUnavailable,
-			Message:  fmt.Sprintf("Failed to execute delete topic command: %v", err.Error()),
-			IsSilent: false,
-		}
+		return DeleteTopicRecordsResponse{}, fmt.Errorf("Failed to execute delete topic command: %v", err.Error())
 	}
 
 	if len(res.Topics) != 1 {
-		return DeleteTopicRecordsResponse{}, &rest.Error{
-			Err:      fmt.Errorf("topics array in response is empty"),
-			Status:   http.StatusServiceUnavailable,
-			Message:  "Unexpected Kafka response: No topics set in the response",
-			IsSilent: false,
-		}
+		return DeleteTopicRecordsResponse{}, fmt.Errorf("topics array in response is empty")
 	}
 
 	topicRes := res.Topics[0]

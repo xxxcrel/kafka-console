@@ -240,7 +240,6 @@ setTimeout(() => {
 }, 50);
 
 export function isEmbedded() {
-  // return config.jwt != null;
   return true;
 }
 

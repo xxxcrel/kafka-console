@@ -12,12 +12,8 @@ package kconsole
 import (
 	"context"
 	"fmt"
-	"net/http"
 
-	"github.com/cloudhut/common/rest"
 	"github.com/twmb/franz-go/pkg/kmsg"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // DeleteACLsResponse is the response to deleting ACL resources.
@@ -28,10 +24,10 @@ type DeleteACLsResponse struct {
 }
 
 // DeleteACLs deletes Kafka ACLs based on a given filter.
-func (s *Service) DeleteACLs(ctx context.Context, filter kmsg.DeleteACLsRequestFilter) (DeleteACLsResponse, *rest.Error) {
+func (s *Service) DeleteACLs(ctx context.Context, filter kmsg.DeleteACLsRequestFilter) (DeleteACLsResponse, error) {
 	cl, _, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return DeleteACLsResponse{}, errorToRestError(err)
+		return DeleteACLsResponse{}, err
 	}
 
 	req := kmsg.NewDeleteACLsRequest()
@@ -39,13 +35,7 @@ func (s *Service) DeleteACLs(ctx context.Context, filter kmsg.DeleteACLsRequestF
 
 	res, err := req.RequestWith(ctx, cl)
 	if err != nil {
-		return DeleteACLsResponse{}, &rest.Error{
-			Err:          err,
-			Status:       http.StatusServiceUnavailable,
-			Message:      fmt.Sprintf("Failed to execute delete topic command: %v", err.Error()),
-			InternalLogs: []zapcore.Field{zap.Any("delete_acl_req", filter)},
-			IsSilent:     false,
-		}
+		return DeleteACLsResponse{}, fmt.Errorf("Failed to execute delete topic command: %v", err.Error())
 	}
 
 	deleteAclsRes := DeleteACLsResponse{
@@ -56,13 +46,7 @@ func (s *Service) DeleteACLs(ctx context.Context, filter kmsg.DeleteACLsRequestF
 	for _, aclRes := range res.Results {
 		err := newKafkaErrorWithDynamicMessage(aclRes.ErrorCode, aclRes.ErrorMessage)
 		if err != nil {
-			return DeleteACLsResponse{}, &rest.Error{
-				Err:          err,
-				Status:       http.StatusServiceUnavailable,
-				Message:      fmt.Sprintf("Failed to delete Kafka ACL: %v", err.Error()),
-				InternalLogs: []zapcore.Field{zap.Any("delete_acl_req", filter)},
-				IsSilent:     false,
-			}
+			return DeleteACLsResponse{}, fmt.Errorf("Failed to delete Kafka ACL: %v", err.Error())
 		}
 
 		for _, item := range aclRes.MatchingACLs {

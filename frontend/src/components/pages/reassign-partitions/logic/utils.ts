@@ -9,16 +9,19 @@
  * by the Apache License, Version 2.0
  */
 
-import type { Partition, PartitionReassignmentRequest, Topic } from '../../../../state/restInterfaces';
 import { clone } from '../../../../utils/jsonUtils';
 import type { PartitionSelection } from '../ReassignPartitions';
 import type { PartitionWithMoves, TopicWithMoves } from '../Step3.Review';
 import type { ApiData, TopicAssignments, TopicPartitions } from './reassignLogic';
+import {kconsole} from "../../../../../wailsjs/go/models";
+import TopicPartitionDetails = kconsole.TopicPartitionDetails;
+import {PartitionReassignmentRequest} from "../../../../state/restInterfaces";
+import TopicSummary = kconsole.TopicSummary;
 
 export function partitionSelectionToTopicPartitions(
   partitionSelection: PartitionSelection,
-  apiTopicPartitions: Map<string, Partition[] | null>,
-  apiTopics: Topic[],
+  apiTopicPartitions: Map<string, TopicPartitionDetails[] | null>,
+  apiTopics: TopicSummary[],
 ): TopicPartitions[] | undefined {
   const ar: TopicPartitions[] = [];
 
@@ -35,7 +38,7 @@ export function partitionSelectionToTopicPartitions(
 
     // we've checked that there can't be any falsy partitions
     // so we assert that 'relevantPartitions' is the right type
-    ar.push({ topic: topic, partitions: relevantPartitions as Partition[] });
+    ar.push({ topic: topic, partitions: relevantPartitions as TopicPartitionDetails[] });
   }
 
   return ar;
@@ -44,8 +47,8 @@ export function partitionSelectionToTopicPartitions(
 export function computeMovedReplicas(
   partitionSelection: PartitionSelection,
   assignments: PartitionReassignmentRequest,
-  apiTopics: Topic[],
-  apiTopicPartitions: Map<string, Partition[] | null>,
+  apiTopics: TopicSummary[],
+  apiTopicPartitions: Map<string, TopicPartitionDetails[] | null>,
 ): TopicWithMoves[] {
   const ar = [];
   // For each partition in each topic:
@@ -92,6 +95,9 @@ export function computeMovedReplicas(
         numRemovedBrokers: removed,
         changedLeader: changedLeader,
         anyChanges: anyChanges,
+        convertValues: function (_a: any, _classs: any, _asMap?: boolean) {
+          throw new Error("Function not implemented.");
+        }
       });
     }
 

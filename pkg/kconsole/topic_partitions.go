@@ -49,6 +49,10 @@ type TopicPartitionDetails struct {
 	// PartitionLogDirs return the size per partition for each replica. If a partition replica fails to respond the
 	// log dirs an entry for it should still exist along with a descriptive error.
 	PartitionLogDirs []TopicPartitionLogDirs `json:"partitionLogDirs"`
+
+	// for frontend
+	TopicName   string `json:"topicName"`
+	ReplicaSize int32  `json:"replicaSize"`
 }
 
 // TopicPartitionMetadata represents the available metadata for a partition.
@@ -259,6 +263,8 @@ func (s *Service) getTopicPartitionMetadata(ctx context.Context, adminCl *kadm.C
 					&partitionMetadata,
 					&TopicPartitionMarks{},
 					nil,
+					"",
+					0,
 				}
 				continue
 			}
@@ -271,6 +277,8 @@ func (s *Service) getTopicPartitionMetadata(ctx context.Context, adminCl *kadm.C
 				&partitionMetadata,
 				&TopicPartitionMarks{},
 				[]TopicPartitionLogDirs{},
+				"",
+				0,
 			}
 		}
 		topicOverview.Partitions = partitionInfo

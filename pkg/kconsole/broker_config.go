@@ -48,6 +48,7 @@ type BrokerConfigSynonym struct {
 	Name   string  `json:"name"`
 	Value  *string `json:"value"`
 	Source string  `json:"source"`
+	Type   string  `json:"type"`
 }
 
 // GetAllBrokerConfigs retrieves broker configs.

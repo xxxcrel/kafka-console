@@ -51,9 +51,7 @@ import {
   type EndpointCompatibility,
   type GetAclOverviewResponse,
   type GetAclsRequest,
-  type GetConsumerGroupsResponse,
   type GetUsersResponse,
-  type GroupDescription,
   isApiError,
   type KafkaConnectors,
   type PartialTopicConfigsResponse,
@@ -107,14 +105,15 @@ import type {TransformMetadata} from '../protogen/redpanda/api/dataplane/v1alpha
 import {Features} from './supportedFeatures';
 import {PartitionOffsetOrigin} from './ui';
 import {DeleteTopic, DeleteTopicRecords, GetBrokerConfig, GetBrokersWithLogDirs, GetClusterInfo, GetConsoleInfo, GetConsumerGroupsOverview, GetEndpointCompatibility, GetKafkaAuthorizerInfo, GetKafkaConnectInfo, GetKafkaInfo, GetSchemaRegistryInfo, GetTopicConfigs, GetTopicDetails, GetTopicDocumentation, GetTopicsOverview, ListOffsets, ListTopicConsumers} from "../../wailsjs/go/main/App";
-import {kconsole} from "../../wailsjs/go/models";
+import {kconsole, kmsg} from "../../wailsjs/go/models";
 import BrokerConfigEntry = kconsole.BrokerConfigEntry;
 import ClusterInfo = kconsole.ClusterInfo;
 import BrokerWithLogDirs = kconsole.BrokerWithLogDirs;
-import TopicConfig = kconsole.TopicConfig;
 import TopicSummary = kconsole.TopicSummary;
 import TopicPartitionDetails = kconsole.TopicPartitionDetails;
 import ConsumerGroupOverview = kconsole.ConsumerGroupOverview;
+import DeleteRecordsRequestTopic = kmsg.DeleteRecordsRequestTopic;
+import TopicConfig = kconsole.TopicConfig;
 
 const REST_TIMEOUT_SEC = 25;
 export const REST_CACHE_DURATION_SEC = 20;
@@ -173,18 +172,18 @@ async function handle401(res: Response) {
   // store.urlBeforeLogin = window.location.href;
   // get current path
 
-  if (isEmbedded()) {
-    const path = window.location.pathname.removePrefix(getBasePath() ?? '');
-    // get path you want to redirect to
-    const targetPath = `/clusters/${appConfig.clusterId}/unauthorized`;
-    // when is embedded redirect to the cloud-ui
-    if (path !== targetPath) {
-      window.location.replace(`/clusters/${appConfig.clusterId}/unauthorized`);
-    }
-  } else {
+  // if (isEmbedded()) {
+  //   const path = window.location.pathname.removePrefix(getBasePath() ?? '');
+  //   // get path you want to redirect to
+  //   const targetPath = `/clusters/${appConfig.clusterId}/unauthorized`;
+  //   // when is embedded redirect to the cloud-ui
+  //   if (path !== targetPath) {
+  //     window.location.replace(`/clusters/${appConfig.clusterId}/unauthorized`);
+  //   }
+  // } else {
     // Redirect to login
     appGlobal.history.push('/login');
-  }
+  // }
 }
 
 function processVersionInfo(headers: Headers) {
@@ -468,37 +467,37 @@ const apiStore = {
         if (isEmbedded()) {
           // Create a mocked empty userData with all permissions set to false
           this.userData = {
-            displayName: '',
+            displayName: 'Kafka Console',
             avatarUrl: '',
-            authenticationMethod: AuthenticationMethod.UNSPECIFIED,
-            canListAcls: false,
-            canListQuotas: false,
-            canPatchConfigs: false,
-            canReassignPartitions: false,
-            canCreateRoles: false,
-            canViewPermissionsList: false,
-            canManageLicense: false,
-            canManageUsers: false,
-            canCreateSchemas: false,
-            canDeleteSchemas: false,
-            canManageSchemaRegistry: false,
-            canViewSchemas: false,
-            canListTransforms: false,
-            canCreateTransforms: false,
-            canDeleteTransforms: false,
-            canViewDebugBundle: false,
-            canViewConsoleUsers: false,
+            authenticationMethod: AuthenticationMethod.NONE,
+            canListAcls: true,
+            canListQuotas: true,
+            canPatchConfigs: true,
+            canReassignPartitions: true,
+            canCreateRoles: true,
+            canViewPermissionsList: true,
+            canManageLicense: true,
+            canManageUsers: true,
+            canCreateSchemas: true,
+            canDeleteSchemas: true,
+            canManageSchemaRegistry: true,
+            canViewSchemas: true,
+            canListTransforms: true,
+            canCreateTransforms: true,
+            canDeleteTransforms: true,
+            canViewDebugBundle: true,
+            canViewConsoleUsers: true,
           };
           return;
         }
 
-        if (err.code === Code.PermissionDenied) {
-          // TODO - solve typings, provide corresponding Reason type
-          const subject = getOidcSubject(err);
-          appGlobal.history.push(`/login?error_code=permission_denied&oidc_subject=${subject}`);
-        } else {
+        // if (err.code === Code.PermissionDenied) {
+        //   // TODO - solve typings, provide corresponding Reason type
+        //   const subject = getOidcSubject(err);
+        //   appGlobal.history.push(`/login?error_code=permission_denied&oidc_subject=${subject}`);
+        // } else {
           appGlobal.history.push('/login');
-        }
+        // }
       });
   },
 
@@ -546,8 +545,7 @@ const apiStore = {
   refreshTopicDocumentation(topicName: string) {
     GetTopicDocumentation(topicName)
       .then((documentation) => {
-        const text = documentation.markdown == null ? null : decodeBase64(Buffer.from(documentation.markdown).toString("utf-8"));
-        documentation.text = text;
+        documentation.text = documentation.markdown == null ? "" : decodeBase64(Buffer.from(documentation.markdown).toString("utf-8"));
         this.topicDocumentation.set(topicName, documentation);
       }, addError);
   },
@@ -562,8 +560,8 @@ const apiStore = {
   async deleteTopicRecords(topicName: string, offset: number, partitionId?: number) {
     const partitions =
       partitionId !== undefined
-        ? [{partitionId, offset}]
-        : this.topicPartitions?.get(topicName)?.map((partition) => ({partitionId: partition.id, offset}));
+        ? [{Partition: partitionId, Offset: offset}]
+        : this.topicPartitions?.get(topicName)?.map((partition) => ({Partition: partition.id, Offset: offset}));
 
     if (!partitions || partitions.length === 0) {
       addError(new Error(`Topic ${topicName} doesn't have partitions.`));
@@ -591,7 +589,7 @@ const apiStore = {
     topicName: string,
     pairs: Array<{ Partition: number; Offset: number }>,
   ) {
-    return DeleteTopicRecords({Topic: topicName, Partitions: [...pairs], UnknownTags: undefined})
+    return DeleteTopicRecords(DeleteRecordsRequestTopic.createFrom({Topic: topicName, Partition: [...pairs]}))
       .catch(addError);
   },
 
@@ -905,7 +903,7 @@ const apiStore = {
   },
 
   refreshConsumerGroups() {
-      GetConsumerGroupsOverview([])
+    GetConsumerGroupsOverview([])
       .then((groupOverviews) => {
         if (groupOverviews instanceof Array) {
           if (groupOverviews != null) {
@@ -917,7 +915,7 @@ const apiStore = {
             });
           }
         }
-    }, addError);
+      }, addError);
   },
 
   refreshConsumerGroupAcls(groupName: string, force?: boolean) {

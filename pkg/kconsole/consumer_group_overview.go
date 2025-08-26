@@ -31,6 +31,14 @@ type ConsumerGroupOverview struct {
 	Members       []GroupMemberDescription `json:"members"`
 	CoordinatorID int32                    `json:"coordinatorId"`
 	TopicOffsets  []GroupTopicOffsets      `json:"topicOffsets"`
+	// Added by frontend
+	// sum of lag for all topic offsets
+	LagSum int32 `json:"lagSum"`
+	// reasons for why the group can't be editted
+	IsInUse        bool     `json:"isInUse"`
+	NoEditPerms    bool     `json:"noEditPerms"`
+	NoDeletePerms  bool     `json:"noDeletePerms"`
+	AllowedActions []string `json:"allowedActions"`
 }
 
 // GroupMemberDescription is a member (e. g. connected host) of a Consumer Group

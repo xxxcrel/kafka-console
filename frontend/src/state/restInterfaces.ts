@@ -19,7 +19,8 @@ import type {
   GetSchemaRegistryInfoResponse,
 } from '../protogen/redpanda/api/console/v1alpha1/cluster_status_pb';
 import type { TroubleshootReport } from '../protogen/redpanda/api/console/v1alpha1/common_pb';
-import {kgo} from "../../wailsjs/go/models";
+import {kconsole, kgo} from "../../wailsjs/go/models";
+import TopicPartitionDetails = kconsole.TopicPartitionDetails;
 
 export interface ApiError {
   statusCode: number;
@@ -126,14 +127,14 @@ export interface Partition {
 export interface GetPartitionsResponse {
   topicName: string;
   error: string | null; // only set if metadata request has failed for the whole topic
-  partitions: Partition[];
+  partitions: TopicPartitionDetails[];
 }
 
 export interface GetAllPartitionsResponse {
   topics: {
     topicName: string;
     error: string | null;
-    partitions: Partition[];
+    partitions: TopicPartitionDetails[];
   }[];
 }
 
@@ -249,7 +250,7 @@ export interface ConfigEntry {
   documentation?: string;
 }
 
-export type ConfigEntryExtended = ConfigEntry & {
+export type ConfigEntryExtended = kconsole.TopicConfigEntry & {
   category?: string;
   frontendFormat?:
     | 'BOOLEAN'

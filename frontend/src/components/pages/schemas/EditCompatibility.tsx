@@ -9,19 +9,20 @@
  * by the Apache License, Version 2.0
  */
 
-import { observer } from 'mobx-react';
-import { useState } from 'react';
-import { appGlobal } from '../../../state/appGlobal';
-import { api } from '../../../state/backendApi';
-import { Button, DefaultSkeleton } from '../../../utils/tsxUtils';
-import { PageComponent, type PageInitHelper } from '../Page';
+import {observer} from 'mobx-react';
+import {useState} from 'react';
+import {appGlobal} from '../../../state/appGlobal';
+import {api} from '../../../state/backendApi';
+import {Button, DefaultSkeleton} from '../../../utils/tsxUtils';
+import {PageComponent, type PageInitHelper} from '../Page';
 import './Schema.List.scss';
-import { RadioGroup } from '@redpanda-data/ui';
-import { Box, CodeBlock, Empty, Flex, Grid, GridItem, Text, VStack, useToast } from '@redpanda-data/ui';
-import type { SchemaRegistryCompatibilityMode } from '../../../state/restInterfaces';
+import {Box, CodeBlock, Empty, Flex, Grid, GridItem, RadioGroup, Text, useToast, VStack} from '@redpanda-data/ui';
+import type {SchemaRegistryCompatibilityMode} from '../../../state/restInterfaces';
 import PageContent from '../../misc/PageContent';
 import Section from '../../misc/Section';
-import { getFormattedSchemaText, schemaTypeToCodeBlockLanguage } from './Schema.Details';
+import {getFormattedSchemaText, schemaTypeToCodeBlockLanguage} from './Schema.Details';
+import {sr} from "../../../../wailsjs/go/models";
+import CompatibilityLevel = sr.CompatibilityLevel;
 
 function renderNotConfigured() {
   return (
@@ -110,7 +111,7 @@ function EditSchemaCompatibility(p: {
 
   // type should be just "SchemaRegistryCompatibilityMode"
   const [configMode, setConfigMode] = useState<string>(
-    (subjectName ? subject?.compatibility : api.schemaCompatibility) ?? 'DEFAULT',
+    (subjectName ? subject?.compatibility : api.schemaCompatibility) ?? CompatibilityLevel.NONE,
   );
 
   if (subjectName && !schema) return DefaultSkeleton;
@@ -130,7 +131,7 @@ function EditSchemaCompatibility(p: {
           position: 'top-right',
         });
 
-        if (subjectName) await api.refreshSchemaDetails(subjectName, true);
+        if (subjectName) await api.refreshSchemaDetails(subjectName);
         else await api.refreshSchemaCompatibilityConfig();
 
         p.onClose();

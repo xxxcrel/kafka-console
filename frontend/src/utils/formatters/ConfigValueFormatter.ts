@@ -9,14 +9,16 @@
  * by the Apache License, Version 2.0
  */
 
-import type { ConfigEntry, ConfigEntryExtended } from '../../state/restInterfaces';
-import { prettyBytesOrNA, prettyMilliseconds } from '../utils';
+import type {ConfigEntryExtended} from '../../state/restInterfaces';
+import {prettyBytesOrNA, prettyMilliseconds} from '../utils';
+import {kconsole} from "../../../wailsjs/go/models";
+import TopicConfigEntry = kconsole.TopicConfigEntry;
 
 export const CONFIG_INFINITE_VALUES: Record<string, number> = {
   'flush.ms': 9223372036854,
 };
 
-export const entryHasInfiniteValue = (entry: ConfigEntry) =>
+export const entryHasInfiniteValue = (entry: TopicConfigEntry) =>
   Number(entry.value) === CONFIG_INFINITE_VALUES[entry.name] || entry.value === '-1';
 
 export const getInfiniteValueForEntry = (entry: ConfigEntryExtended) => {
@@ -90,7 +92,7 @@ export function formatConfigValue(
     if (num > Number.MAX_SAFE_INTEGER || num === -1) return `Infinite${suffix}`;
 
     const ms = num * msFactor;
-    return prettyMilliseconds(ms, { verbose: true, unitCount: 2 }) + suffix;
+    return prettyMilliseconds(ms, {verbose: true, unitCount: 2}) + suffix;
   }
 
   // Bytes

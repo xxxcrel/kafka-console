@@ -30,12 +30,10 @@ type TopicConfigEntry struct {
 	Name            string               `json:"name"`
 	Value           *string              `json:"value"` // If value is sensitive this will be nil
 	Source          string               `json:"source"`
-	Type            string               `json:"type"`
 	IsExplicitlySet bool                 `json:"isExplicitlySet"`
 	IsDefaultValue  bool                 `json:"isDefaultValue"`
 	IsSensitive     bool                 `json:"isSensitive"`
 	IsReadOnly      bool                 `json:"isReadOnly"`
-	Documentation   *string              `json:"documentation"` // Will be nil for Kafka <v2.6.0
 	Synonyms        []TopicConfigSynonym `json:"synonyms"`
 
 	ConfigEntryExtension
@@ -85,12 +83,10 @@ func NewTopicConfigEntry(
 		Name:                 cfg.Name,
 		Value:                cfg.Value,
 		Source:               cfg.Source.String(),
-		Type:                 configType.String(),
 		IsExplicitlySet:      isExplicitlySet,
 		IsDefaultValue:       isDefaultValue,
 		IsSensitive:          cfg.IsSensitive,
 		IsReadOnly:           cfg.ReadOnly,
-		Documentation:        documentation,
 		Synonyms:             innerEntries,
 		ConfigEntryExtension: extension,
 	}

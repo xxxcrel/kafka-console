@@ -128,6 +128,8 @@ import { SingleSelect, type SingleSelectProps } from '../../../misc/Select';
 import { range } from '../../../misc/common';
 import JavascriptFilterModal from './JavascriptFilterModal';
 import { PreviewSettings, getPreviewTags } from './PreviewSettings';
+import {kconsole} from "../../../../../wailsjs/go/models";
+import TopicSummary = kconsole.TopicSummary;
 
 const payloadEncodingPairs = [
   { value: PayloadEncoding.UNSPECIFIED, label: 'Automatic' },
@@ -157,8 +159,8 @@ const PAYLOAD_ENCODING_LABELS = payloadEncodingPairs.reduce(
 );
 
 interface TopicMessageViewProps {
-  topic: Topic;
-  refreshTopicData: (force: boolean) => void;
+  topic: TopicSummary;
+  refreshTopicData: () => void;
 }
 
 /*

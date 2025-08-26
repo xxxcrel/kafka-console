@@ -11,23 +11,63 @@
 
 /*eslint block-scoped-var: "error"*/
 
-import {createStandaloneToast, redpandaTheme, redpandaToastOptions} from '@redpanda-data/ui';
 import {comparer, computed, observable, transaction} from 'mobx';
 import {config as appConfig} from '../config';
 import {decodeBase64} from '../utils/utils';
-
-import {proto3} from '@bufbuild/protobuf';
 import type {ConnectError} from '@connectrpc/connect';
 import {AuthenticationMethod,} from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
-import {CompressionType as ProtoCompressionType, PayloadEncoding,} from '../protogen/redpanda/api/console/v1alpha1/common_pb';
+import {PayloadEncoding,} from '../protogen/redpanda/api/console/v1alpha1/common_pb';
 import {type GetClusterHealthResponse, type GetDebugBundleStatusResponse_DebugBundleBrokerStatus,} from '../protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
-import {ListMessagesRequest} from '../protogen/redpanda/api/console/v1alpha1/list_messages_pb';
 import type {PublishMessageRequest, PublishMessageResponse,} from '../protogen/redpanda/api/console/v1alpha1/publish_messages_pb';
 import {Features} from './supportedFeatures';
-import {PartitionOffsetOrigin} from './ui';
-import {CreateACL, CreateTopic, DeleteACLs, DeleteConsumerGroup, DeleteConsumerGroupOffsets, DeleteTopic, DeleteTopicRecords, DescribeQuotas, EditConsumerGroupOffsets, EditTopicConfig, GetBrokerConfig, GetBrokersWithLogDirs, GetClusterInfo, GetConsoleInfo, GetConsumerGroupsOverview, GetEndpointCompatibility, GetKafkaAuthorizerInfo, GetKafkaConnectInfo, GetKafkaInfo, GetSchemaRegistryConfig, GetSchemaRegistryInfo, GetSchemaRegistryMode, GetSchemaRegistrySchemaReferencedBy, GetSchemaRegistrySchemaTypes, GetSchemaRegistrySubjectDetails, GetSchemaRegistrySubjects, GetSchemaUsagesByID, GetTopicConfigs, GetTopicDetails, GetTopicDocumentation, GetTopicsConfigs, GetTopicsOverview, ListAllACLs, ListOffsets, ListTopicConsumers, ProducePlainRecords} from "../../wailsjs/go/main/App";
-import {kconsole, kgo, kmsg} from "../../wailsjs/go/models";
-import {AclRequestDefault, ClusterOverview, GetAclsRequest, PublishRecordsRequest, TopicPermissions, UserData} from "./restInterfaces";
+import {
+  AlterPartitionAssignments,
+  CreateACL,
+  CreateSchemaRegistrySchema,
+  CreateTopic,
+  DeleteACLs,
+  DeleteConsumerGroup,
+  DeleteConsumerGroupOffsets,
+  DeleteSchemaRegistrySubject,
+  DeleteSchemaRegistrySubjectConfig,
+  DeleteSchemaRegistrySubjectVersion,
+  DeleteTopic,
+  DeleteTopicRecords,
+  DescribeQuotas,
+  EditConsumerGroupOffsets,
+  EditTopicConfig,
+  GetBrokerConfig,
+  GetBrokersWithLogDirs,
+  GetClusterInfo,
+  GetConsoleInfo,
+  GetConsumerGroupsOverview,
+  GetEndpointCompatibility,
+  GetKafkaAuthorizerInfo,
+  GetKafkaConnectInfo,
+  GetKafkaInfo,
+  GetSchemaRegistryConfig,
+  GetSchemaRegistryInfo,
+  GetSchemaRegistryMode,
+  GetSchemaRegistrySchemaReferencedBy,
+  GetSchemaRegistrySchemaTypes,
+  GetSchemaRegistrySubjectDetails,
+  GetSchemaRegistrySubjects,
+  GetSchemaUsagesByID,
+  GetTopicConfigs,
+  GetTopicDetails,
+  GetTopicDocumentation,
+  GetTopicsConfigs,
+  GetTopicsOverview,
+  ListAllACLs,
+  ListOffsets,
+  ListPartitionReassignments,
+  ListTopicConsumers,
+  ProducePlainRecords,
+  PutSchemaRegistryConfig,
+  ValidateSchemaRegistrySchema
+} from "../../wailsjs/go/main/App";
+import {kconsole, kgo, kmsg, sr} from "../../wailsjs/go/models";
+import {AclRequestDefault, ClusterOverview, PublishRecordsRequest, TopicPermissions, UserData} from "./restInterfaces";
 import BrokerConfigEntry = kconsole.BrokerConfigEntry;
 import ClusterInfo = kconsole.ClusterInfo;
 import BrokerWithLogDirs = kconsole.BrokerWithLogDirs;
@@ -54,20 +94,25 @@ import SchemaRegistrySubject = kconsole.SchemaRegistrySubject;
 import SchemaRegistrySubjectDetails = kconsole.SchemaRegistrySubjectDetails;
 import SchemaReference = kconsole.SchemaReference;
 import SchemaVersion = kconsole.SchemaVersion;
+import SchemaRegistryConfig = kconsole.SchemaRegistryConfig;
+import SchemaType = sr.SchemaType;
+import Schema = sr.Schema;
+import SchemaRegistrySchemaValidation = kconsole.SchemaRegistrySchemaValidation;
+import CreateSchemaResponse = kconsole.CreateSchemaResponse;
+import SchemaRegistryDeleteSubjectResponse = kconsole.SchemaRegistryDeleteSubjectResponse;
+import SchemaRegistryDeleteSubjectVersionResponse = kconsole.SchemaRegistryDeleteSubjectVersionResponse;
+import AlterPartitionReassignmentsResponse = kconsole.AlterPartitionReassignmentsResponse;
+import AlterPartitionAssignmentsRequestTopic = kmsg.AlterPartitionAssignmentsRequestTopic;
+import CompatibilityLevel = sr.CompatibilityLevel;
+import PartitionReassignments = kconsole.PartitionReassignments;
+import SetCompatibility = sr.SetCompatibility;
 
 export const REST_CACHE_DURATION_SEC = 20;
-
-const {toast} = createStandaloneToast({
-  theme: redpandaTheme,
-  defaultOptions: redpandaToastOptions.defaultOptions,
-});
 
 /*
     - If statusCode is not 2xx (any sort of error) -> response content will always be an `ApiError` json object
     - 2xx does not mean complete success, for some endpoints (e.g.: broker log dirs) we can get partial responses (array with some result entries and some error entries)
 */
-let SchemaCompatibilityLevel: string[] = ["NONE", "BACKWARD", "BACKWARD_TRANSITIVE", "FORWARD", "FORWARD_TRANSITIVE", "FULL", "FULL_TRANSITIVE"];
-let SchemaTypeMap: string[] = ["AVRO", "PROTOBUF", "JSON"]
 //
 // BackendAPI
 //
@@ -86,9 +131,9 @@ const apiStore = {
   schemaOverviewIsConfigured: undefined as boolean | undefined,
 
   schemaMode: undefined as string | null | undefined, // undefined = not yet known, null = got not configured response
-  schemaCompatibility: undefined as string | null | undefined, // undefined = not yet known, null = got not configured response
+  schemaCompatibility: undefined as CompatibilityLevel | null | undefined, // undefined = not yet known, null = got not configured response
   schemaSubjects: undefined as SchemaRegistrySubject[] | undefined,
-  schemaTypes: undefined as string[] | undefined,
+  schemaTypes: undefined as SchemaType[] | undefined,
   schemaDetails: new Map<string, SchemaRegistrySubjectDetails>(), // subjectName => details
   schemaReferencedBy: new Map<string, Map<number, SchemaReference[]>>(), // subjectName => version => details
   schemaUsagesById: new Map<number, SchemaVersion[]>(),
@@ -404,9 +449,9 @@ const apiStore = {
       .then((consumerGroups) => this.topicConsumers.set(topicName, consumerGroups), addError);
   },
 
-  async refreshAcls(request: GetAclsRequest): Promise<void> {
+  async refreshAcls(request: DescribeACLsRequest): Promise<void> {
     await
-      ListAllACLs(DescribeACLsRequest.createFrom(request))
+      ListAllACLs(request)
         .then(
           (v) => {
             if (v) {
@@ -597,7 +642,7 @@ const apiStore = {
     return GetSchemaRegistryConfig("")
       .then((r) => {
         this.schemaOverviewIsConfigured = true;
-        this.schemaCompatibility = SchemaCompatibilityLevel[r.compatibility];
+        this.schemaCompatibility = r.compatibility;
       })
       .catch(addError);
   },
@@ -620,9 +665,7 @@ const apiStore = {
       .then((types) => {
         // could also be a "not configured" response
         if (types.schemaTypes) {
-          this.schemaTypes = types.schemaTypes.map(i => {
-            return SchemaTypeMap[i];
-          });
+          this.schemaTypes = types.schemaTypes;
         }
       })
       .catch((err) => {
@@ -701,111 +744,62 @@ const apiStore = {
   },
 
   async setSchemaRegistryCompatibilityMode(
-    mode: SchemaRegistryCompatibilityMode,
-  ): Promise<SchemaRegistryConfigResponse> {
-    const response = await appConfig.fetch(`${appConfig.restBasePath}/schema-registry/config`, {
-      method: 'PUT',
-      headers: [['Content-Type', 'application/json']],
-      body: JSON.stringify({compatibility: mode} as SchemaRegistrySetCompatibilityModeRequest),
-    });
-    return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
+    mode: CompatibilityLevel,
+  ): Promise<SchemaRegistryConfig> {
+    return PutSchemaRegistryConfig("", SetCompatibility.createFrom({compatibility: mode}))
   },
-  //
-  // async setSchemaRegistrySubjectCompatibilityMode(
-  //   subjectName: string,
-  //   mode: 'DEFAULT' | SchemaRegistryCompatibilityMode,
-  // ): Promise<SchemaRegistryConfigResponse> {
-  //   if (mode === 'DEFAULT') {
-  //     const response = await appConfig.fetch(
-  //       `${appConfig.restBasePath}/schema-registry/config/${encodeURIComponent(subjectName)}`,
-  //       {
-  //         method: 'DELETE',
-  //       },
-  //     );
-  //     return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
-  //   }
-  //   const response = await appConfig.fetch(
-  //     `${appConfig.restBasePath}/schema-registry/config/${encodeURIComponent(subjectName)}`,
-  //     {
-  //       method: 'PUT',
-  //       headers: [['Content-Type', 'application/json']],
-  //       body: JSON.stringify({compatibility: mode} as SchemaRegistrySetCompatibilityModeRequest),
-  //     },
-  //   );
-  //   return parseOrUnwrap<SchemaRegistryConfigResponse>(response, null);
-  // },
-  //
-  // async validateSchema(
-  //   subjectName: string,
-  //   version: number | 'latest',
-  //   request: SchemaRegistryCreateSchema,
-  // ): Promise<SchemaRegistryValidateSchemaResponse> {
-  //   const response = await appConfig.fetch(
-  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${version}/validate`,
-  //     {
-  //       method: 'POST',
-  //       headers: [['Content-Type', 'application/json']],
-  //       body: JSON.stringify(request),
-  //     },
-  //   );
-  //   return parseOrUnwrap<SchemaRegistryValidateSchemaResponse>(response, null);
-  // },
-  // async createSchema(
-  //   subjectName: string,
-  //   request: SchemaRegistryCreateSchema,
-  // ): Promise<SchemaRegistryCreateSchemaResponse> {
-  //   const response = await appConfig.fetch(
-  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions`,
-  //     {
-  //       method: 'POST',
-  //       headers: [['Content-Type', 'application/json']],
-  //       body: JSON.stringify(request),
-  //     },
-  //   );
-  //   return parseOrUnwrap<SchemaRegistryCreateSchemaResponse>(response, null);
-  // },
-  //
-  // async deleteSchemaSubject(subjectName: string, permanent: boolean): Promise<SchemaRegistryDeleteSubjectResponse> {
-  //   const response = await appConfig.fetch(
-  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}?permanent=${permanent ? 'true' : 'false'}`,
-  //     {
-  //       method: 'DELETE',
-  //       headers: [['Content-Type', 'application/json']],
-  //     },
-  //   );
-  //   return parseOrUnwrap<SchemaRegistryDeleteSubjectResponse>(response, null);
-  // },
-  //
-  // async deleteSchemaSubjectVersion(
-  //   subjectName: string,
-  //   version: 'latest' | number,
-  //   permanent: boolean,
-  // ): Promise<SchemaRegistryDeleteSubjectVersionResponse> {
-  //   const response = await appConfig.fetch(
-  //     `${appConfig.restBasePath}/schema-registry/subjects/${encodeURIComponent(subjectName)}/versions/${encodeURIComponent(version)}?permanent=${permanent ? 'true' : 'false'}`,
-  //     {
-  //       method: 'DELETE',
-  //       headers: [['Content-Type', 'application/json']],
-  //     },
-  //   );
-  //   return parseOrUnwrap<SchemaRegistryDeleteSubjectVersionResponse>(response, null);
-  // },
-  //
-  // refreshPartitionReassignments(force?: boolean): Promise<void> {
-  //   return cachedApiRequest<PartitionReassignmentsResponse | null>(
-  //     `${appConfig.restBasePath}/operations/reassign-partitions`,
-  //     force,
-  //   ).then((v) => {
-  //     if (v === null) this.partitionReassignments = null;
-  //     else this.partitionReassignments = v.topics;
-  //   }, addError);
-  // },
-  //
-  // async startPartitionReassignment(
-  //   request: AlterPartitionAssignmentsRequestTopic[],
-  // ): Promise<Array<AlterPartitionReassignmentsResponse>> {
-  //   return await AlterPartitionAssignments(request);
-  // },
+
+  async setSchemaRegistrySubjectCompatibilityMode(
+    subjectName: string,
+    mode: CompatibilityLevel,
+  ): Promise<SchemaRegistryConfig> {
+    if (mode === CompatibilityLevel.NONE) {
+      await DeleteSchemaRegistrySubjectConfig(subjectName);
+      return new Promise((_v) => {
+      });
+    }
+    return PutSchemaRegistryConfig(subjectName, SetCompatibility.createFrom({compatibility: mode}))
+  },
+
+  async validateSchema(
+    subjectName: string,
+    version: number,
+    schema: Schema,
+  ): Promise<SchemaRegistrySchemaValidation> {
+    return ValidateSchemaRegistrySchema(subjectName, version, schema);
+  },
+
+  async createSchema(
+    subjectName: string,
+    schema: Schema,
+  ): Promise<CreateSchemaResponse> {
+    return CreateSchemaRegistrySchema(subjectName, schema);
+  },
+
+  async deleteSchemaSubject(subjectName: string, permanent: boolean): Promise<SchemaRegistryDeleteSubjectResponse> {
+    return DeleteSchemaRegistrySubject(subjectName, permanent);
+  },
+
+  async deleteSchemaSubjectVersion(
+    subjectName: string,
+    version: number,
+    permanent: boolean,
+  ): Promise<SchemaRegistryDeleteSubjectVersionResponse> {
+    return DeleteSchemaRegistrySubjectVersion(subjectName, version, permanent);
+  },
+
+  refreshPartitionReassignments(): Promise<void> {
+    return ListPartitionReassignments().then((v) => {
+      if (v === null) this.partitionReassignments = null;
+      else this.partitionReassignments = v;
+    }, addError);
+  },
+
+  async startPartitionReassignment(
+    request: AlterPartitionAssignmentsRequestTopic[],
+  ): Promise<Array<AlterPartitionReassignmentsResponse>> {
+    return await AlterPartitionAssignments(request);
+  },
   //
   // async setReplicationThrottleRate(brokerIds: number[], maxBytesPerSecond: number): Promise<PatchConfigsResponse> {
   //   maxBytesPerSecond = Math.ceil(maxBytesPerSecond);
@@ -1074,353 +1068,353 @@ export const rolesApi = observable({
   },
 });
 
-export function createMessageSearch() {
-  const messageSearch = {
-    // Parameters last passed to 'startMessageSearch'
-    searchRequest: null as MessageSearchRequest | null,
+// export function createMessageSearch() {
+//   const messageSearch = {
+//     // Parameters last passed to 'startMessageSearch'
+//     searchRequest: null as MessageSearchRequest | null,
+//
+//     // Some statistics that might be interesting to show in the UI
+//     searchPhase: null as string | null, // A search has different phases, like "waiting for mssages", or "creating consumers", this string is directly reported by the backend
+//     elapsedMs: null as null | number, // Reported by the backend, only set once the search is done
+//     bytesConsumed: 0,
+//     totalMessagesConsumed: 0,
+//
+//     // Call 'stopSearch' instead of using this directly
+//     abortController: null as AbortController | null,
+//
+//     // Live view of messages, gets updated as new messages arrive
+//     messages: observable([] as TopicMessage[], {deep: false}),
+//
+//     async startSearch(_searchRequest: MessageSearchRequest): Promise<TopicMessage[]> {
+//       // https://connectrpc.com/docs/web/using-clients
+//       // https://github.com/connectrpc/connect-es
+//       // https://github.com/connectrpc/examples-es
+//       const client = appConfig.consoleClient;
+//
+//       if (!client) {
+//         // this shouldn't happen but better to explicitly throw
+//         throw new Error('No kconsole client configured');
+//       }
+//
+//       if (this.searchPhase) {
+//         // There is a search running already, abort it
+//         this.stopSearch('starting a new search');
+//       }
+//
+//       const searchRequest = {
+//         ..._searchRequest,
+//         ...(appConfig.jwt
+//           ? {
+//             enterprise: {
+//               redpandaCloud: {
+//                 accessToken: appConfig.jwt,
+//               },
+//             },
+//           }
+//           : {}),
+//       };
+//       this.searchRequest = searchRequest;
+//       this.searchPhase = 'Connecting';
+//       this.bytesConsumed = 0;
+//       this.totalMessagesConsumed = 0;
+//       this.messages.length = 0;
+//       this.elapsedMs = null;
+//
+//       const messageSearchAbortController = (this.abortController = new AbortController());
+//
+//       // do it
+//       const req = new ListMessagesRequest();
+//       req.topic = searchRequest.topicName;
+//       req.startOffset = BigInt(searchRequest.startOffset);
+//       req.startTimestamp = BigInt(searchRequest.startTimestamp);
+//       req.partitionId = searchRequest.partitionId;
+//       req.maxResults = searchRequest.maxResults;
+//       req.filterInterpreterCode = searchRequest.filterInterpreterCode;
+//       req.includeOriginalRawPayload = searchRequest.includeRawPayload ?? false;
+//       req.ignoreMaxSizeLimit = searchRequest.ignoreSizeLimit ?? false;
+//       req.keyDeserializer = searchRequest.keyDeserializer;
+//       req.valueDeserializer = searchRequest.valueDeserializer;
+//
+//       // For StartOffset = Newest and any set push-down filter we need to bump the default timeout
+//       // from 30s to 30 minutes before ending the request gracefully.
+//       let timeoutMs = 30 * 1000;
+//       if (searchRequest.startOffset === PartitionOffsetOrigin.End || req.filterInterpreterCode != null) {
+//         const minuteMs = 60 * 1000;
+//         timeoutMs = 30 * minuteMs;
+//       }
+//
+//       try {
+//         for await (const res of client.listMessages(req, {signal: messageSearchAbortController.signal, timeoutMs})) {
+//           if (messageSearchAbortController.signal.aborted) break;
+//
+//           try {
+//             switch (res.controlMessage.case) {
+//               case 'phase':
+//                 console.log(`phase: ${res.controlMessage.value.phase}`);
+//                 this.searchPhase = res.controlMessage.value.phase;
+//                 break;
+//               case 'progress':
+//                 console.log(`progress: ${res.controlMessage.value.messagesConsumed}`);
+//                 this.bytesConsumed = Number(res.controlMessage.value.bytesConsumed);
+//                 this.totalMessagesConsumed = Number(res.controlMessage.value.messagesConsumed);
+//                 break;
+//               case 'done':
+//                 this.elapsedMs = Number(res.controlMessage.value.elapsedMs);
+//                 this.bytesConsumed = Number(res.controlMessage.value.bytesConsumed);
+//                 // this.MessageSearchCancelled = msg.isCancelled;
+//                 this.searchPhase = 'Done';
+//                 this.searchPhase = null;
+//                 break;
+//               case 'error':
+//                 // error doesn't necessarily mean the whole request is done
+//                 console.info(`ws backend error: ${res.controlMessage.value.message}`);
+//                 toast({
+//                   title: 'Backend Error',
+//                   description: res.controlMessage.value.message,
+//                   status: 'error',
+//                 });
+//
+//                 break;
+//               case 'data': {
+//                 // TODO I would guess we should replace the rest interface types and just utilize the generated Connect types
+//                 // this is my hacky way of attempting to get things working by converting the Connect types
+//                 // to the rest interface types that are hooked up to other things
+//
+//                 const m = {} as TopicMessage;
+//                 m.partitionID = res.controlMessage.value.partitionId;
+//
+//                 m.compression = CompressionType.Unknown;
+//                 switch (res.controlMessage.value.compression) {
+//                   case ProtoCompressionType.UNCOMPRESSED:
+//                     m.compression = CompressionType.Uncompressed;
+//                     break;
+//                   case ProtoCompressionType.GZIP:
+//                     m.compression = CompressionType.GZip;
+//                     break;
+//                   case ProtoCompressionType.SNAPPY:
+//                     m.compression = CompressionType.Snappy;
+//                     break;
+//                   case ProtoCompressionType.LZ4:
+//                     m.compression = CompressionType.LZ4;
+//                     break;
+//                   case ProtoCompressionType.ZSTD:
+//                     m.compression = CompressionType.ZStd;
+//                     break;
+//                 }
+//
+//                 m.offset = Number(res.controlMessage.value.offset);
+//                 m.timestamp = Number(res.controlMessage.value.timestamp);
+//                 m.isTransactional = res.controlMessage.value.isTransactional;
+//                 m.headers = [];
+//                 for (const header of res.controlMessage.value.headers) {
+//                   m.headers.push({
+//                     key: header.key,
+//                     value: {
+//                       payload: JSON.stringify(new TextDecoder().decode(header.value)),
+//                       encoding: 'text',
+//                       schemaId: 0,
+//                       size: header.value.length,
+//                       isPayloadNull: header.value == null,
+//                     },
+//                   });
+//                 }
+//
+//                 // key
+//                 const key = res.controlMessage.value.key;
+//                 const keyPayload = new TextDecoder().decode(key?.normalizedPayload);
+//
+//                 m.key = {} as Payload;
+//                 m.key.rawBytes = key?.originalPayload;
+//
+//                 switch (key?.encoding) {
+//                   case PayloadEncoding.NULL:
+//                     m.key.encoding = 'null';
+//                     break;
+//                   case PayloadEncoding.BINARY:
+//                     m.key.encoding = 'binary';
+//                     break;
+//                   case PayloadEncoding.XML:
+//                     m.key.encoding = 'xml';
+//                     break;
+//                   case PayloadEncoding.AVRO:
+//                     m.key.encoding = 'avro';
+//                     break;
+//                   case PayloadEncoding.JSON:
+//                     m.key.encoding = 'json';
+//                     break;
+//                   case PayloadEncoding.PROTOBUF:
+//                     m.key.encoding = 'protobuf';
+//                     break;
+//                   case PayloadEncoding.MESSAGE_PACK:
+//                     m.key.encoding = 'msgpack';
+//                     break;
+//                   case PayloadEncoding.TEXT:
+//                     m.key.encoding = 'text';
+//                     break;
+//                   case PayloadEncoding.UTF8:
+//                     m.key.encoding = 'utf8WithControlChars';
+//                     break;
+//                   case PayloadEncoding.UINT:
+//                     m.key.encoding = 'uint';
+//                     break;
+//                   case PayloadEncoding.SMILE:
+//                     m.key.encoding = 'smile';
+//                     break;
+//                   case PayloadEncoding.CONSUMER_OFFSETS:
+//                     m.key.encoding = 'consumerOffsets';
+//                     break;
+//                   case PayloadEncoding.CBOR:
+//                     m.key.encoding = 'cbor';
+//                     break;
+//                   default:
+//                     console.log('unhandled key encoding type', {
+//                       encoding: key?.encoding,
+//                       encodingName:
+//                         key?.encoding != null
+//                           ? proto3.getEnumType(PayloadEncoding).findNumber(key.encoding)?.localName
+//                           : undefined,
+//                       message: res,
+//                     });
+//                 }
+//
+//                 m.key.isPayloadNull = key?.encoding === PayloadEncoding.NULL;
+//                 m.key.payload = keyPayload;
+//                 m.key.normalizedPayload = key?.normalizedPayload;
+//
+//                 try {
+//                   m.key.payload = JSON.parse(keyPayload);
+//                 } catch {
+//                 }
+//
+//                 m.key.troubleshootReport = key?.troubleshootReport;
+//                 m.key.schemaId = key?.schemaId ?? 0;
+//                 m.keyJson = JSON.stringify(m.key.payload);
+//                 m.key.size = Number(key?.payloadSize);
+//                 m.key.isPayloadTooLarge = key?.isPayloadTooLarge;
+//
+//                 // kconsole.log(m.keyJson)
+//
+//                 // value
+//                 const val = res.controlMessage.value.value;
+//                 const valuePayload = new TextDecoder().decode(val?.normalizedPayload);
+//
+//                 m.value = {} as Payload;
+//                 m.value.payload = valuePayload;
+//                 m.value.normalizedPayload = val?.normalizedPayload;
+//                 m.value.rawBytes = val?.originalPayload;
+//
+//                 switch (val?.encoding) {
+//                   case PayloadEncoding.NULL:
+//                     m.value.encoding = 'null';
+//                     break;
+//                   case PayloadEncoding.BINARY:
+//                     m.value.encoding = 'binary';
+//                     break;
+//                   case PayloadEncoding.XML:
+//                     m.value.encoding = 'xml';
+//                     break;
+//                   case PayloadEncoding.AVRO:
+//                     m.value.encoding = 'avro';
+//                     break;
+//                   case PayloadEncoding.JSON:
+//                     m.value.encoding = 'json';
+//                     break;
+//                   case PayloadEncoding.PROTOBUF:
+//                     m.value.encoding = 'protobuf';
+//                     break;
+//                   case PayloadEncoding.MESSAGE_PACK:
+//                     m.value.encoding = 'msgpack';
+//                     break;
+//                   case PayloadEncoding.TEXT:
+//                     m.value.encoding = 'text';
+//                     break;
+//                   case PayloadEncoding.UTF8:
+//                     m.value.encoding = 'utf8WithControlChars';
+//                     break;
+//                   case PayloadEncoding.UINT:
+//                     m.value.encoding = 'uint';
+//                     break;
+//                   case PayloadEncoding.SMILE:
+//                     m.value.encoding = 'smile';
+//                     break;
+//                   case PayloadEncoding.CONSUMER_OFFSETS:
+//                     m.value.encoding = 'consumerOffsets';
+//                     break;
+//                   case PayloadEncoding.CBOR:
+//                     m.value.encoding = 'cbor';
+//                     break;
+//                   default:
+//                     console.log('unhandled value encoding type', {
+//                       encoding: val?.encoding,
+//                       encodingName:
+//                         val?.encoding != null
+//                           ? proto3.getEnumType(PayloadEncoding).findNumber(val.encoding)?.localName
+//                           : undefined,
+//                       message: res,
+//                     });
+//                 }
+//
+//                 m.value.schemaId = val?.schemaId ?? 0;
+//                 m.value.troubleshootReport = val?.troubleshootReport;
+//                 m.value.isPayloadNull = val?.encoding === PayloadEncoding.NULL;
+//                 m.valueJson = valuePayload;
+//                 m.value.isPayloadTooLarge = val?.isPayloadTooLarge;
+//
+//                 try {
+//                   m.value.payload = JSON.parse(valuePayload);
+//                 } catch {
+//                 }
+//
+//                 m.valueJson = JSON.stringify(m.value.payload);
+//                 m.value.size = Number(val?.payloadSize);
+//
+//                 this.messages.push(m);
+//                 break;
+//               }
+//             }
+//           } catch (e) {
+//             console.error('error in listMessages loop', {error: e});
+//           }
+//         }
+//       } catch (e) {
+//         this.abortController = null;
+//         this.searchPhase = 'Done';
+//         this.bytesConsumed = 0;
+//         this.totalMessagesConsumed = 0;
+//         this.searchPhase = null;
+//         // https://connectrpc.com/docs/web/errors
+//         if (messageSearchAbortController.signal.aborted) {
+//           // Do not throw, this is a user cancellation
+//         } else {
+//           console.error('startMessageSearchNew: error in await loop of client.listMessages', {error: e});
+//           throw e;
+//         }
+//       }
+//
+//       // one done
+//       this.stopSearch();
+//       return this.messages;
+//     },
+//
+//     stopSearch(reason?: string) {
+//       if (this.abortController) {
+//         this.abortController.abort(reason ?? 'aborted by user');
+//         this.abortController = null;
+//       }
+//
+//       if (this.searchPhase != null) {
+//         this.searchPhase = 'Done';
+//         this.bytesConsumed = 0;
+//         this.totalMessagesConsumed = 0;
+//         this.searchPhase = null;
+//       }
+//     },
+//   };
+//
+//   return observable(messageSearch);
+// }
 
-    // Some statistics that might be interesting to show in the UI
-    searchPhase: null as string | null, // A search has different phases, like "waiting for mssages", or "creating consumers", this string is directly reported by the backend
-    elapsedMs: null as null | number, // Reported by the backend, only set once the search is done
-    bytesConsumed: 0,
-    totalMessagesConsumed: 0,
-
-    // Call 'stopSearch' instead of using this directly
-    abortController: null as AbortController | null,
-
-    // Live view of messages, gets updated as new messages arrive
-    messages: observable([] as TopicMessage[], {deep: false}),
-
-    async startSearch(_searchRequest: MessageSearchRequest): Promise<TopicMessage[]> {
-      // https://connectrpc.com/docs/web/using-clients
-      // https://github.com/connectrpc/connect-es
-      // https://github.com/connectrpc/examples-es
-      const client = appConfig.consoleClient;
-
-      if (!client) {
-        // this shouldn't happen but better to explicitly throw
-        throw new Error('No kconsole client configured');
-      }
-
-      if (this.searchPhase) {
-        // There is a search running already, abort it
-        this.stopSearch('starting a new search');
-      }
-
-      const searchRequest = {
-        ..._searchRequest,
-        ...(appConfig.jwt
-          ? {
-            enterprise: {
-              redpandaCloud: {
-                accessToken: appConfig.jwt,
-              },
-            },
-          }
-          : {}),
-      };
-      this.searchRequest = searchRequest;
-      this.searchPhase = 'Connecting';
-      this.bytesConsumed = 0;
-      this.totalMessagesConsumed = 0;
-      this.messages.length = 0;
-      this.elapsedMs = null;
-
-      const messageSearchAbortController = (this.abortController = new AbortController());
-
-      // do it
-      const req = new ListMessagesRequest();
-      req.topic = searchRequest.topicName;
-      req.startOffset = BigInt(searchRequest.startOffset);
-      req.startTimestamp = BigInt(searchRequest.startTimestamp);
-      req.partitionId = searchRequest.partitionId;
-      req.maxResults = searchRequest.maxResults;
-      req.filterInterpreterCode = searchRequest.filterInterpreterCode;
-      req.includeOriginalRawPayload = searchRequest.includeRawPayload ?? false;
-      req.ignoreMaxSizeLimit = searchRequest.ignoreSizeLimit ?? false;
-      req.keyDeserializer = searchRequest.keyDeserializer;
-      req.valueDeserializer = searchRequest.valueDeserializer;
-
-      // For StartOffset = Newest and any set push-down filter we need to bump the default timeout
-      // from 30s to 30 minutes before ending the request gracefully.
-      let timeoutMs = 30 * 1000;
-      if (searchRequest.startOffset === PartitionOffsetOrigin.End || req.filterInterpreterCode != null) {
-        const minuteMs = 60 * 1000;
-        timeoutMs = 30 * minuteMs;
-      }
-
-      try {
-        for await (const res of client.listMessages(req, {signal: messageSearchAbortController.signal, timeoutMs})) {
-          if (messageSearchAbortController.signal.aborted) break;
-
-          try {
-            switch (res.controlMessage.case) {
-              case 'phase':
-                console.log(`phase: ${res.controlMessage.value.phase}`);
-                this.searchPhase = res.controlMessage.value.phase;
-                break;
-              case 'progress':
-                console.log(`progress: ${res.controlMessage.value.messagesConsumed}`);
-                this.bytesConsumed = Number(res.controlMessage.value.bytesConsumed);
-                this.totalMessagesConsumed = Number(res.controlMessage.value.messagesConsumed);
-                break;
-              case 'done':
-                this.elapsedMs = Number(res.controlMessage.value.elapsedMs);
-                this.bytesConsumed = Number(res.controlMessage.value.bytesConsumed);
-                // this.MessageSearchCancelled = msg.isCancelled;
-                this.searchPhase = 'Done';
-                this.searchPhase = null;
-                break;
-              case 'error':
-                // error doesn't necessarily mean the whole request is done
-                console.info(`ws backend error: ${res.controlMessage.value.message}`);
-                toast({
-                  title: 'Backend Error',
-                  description: res.controlMessage.value.message,
-                  status: 'error',
-                });
-
-                break;
-              case 'data': {
-                // TODO I would guess we should replace the rest interface types and just utilize the generated Connect types
-                // this is my hacky way of attempting to get things working by converting the Connect types
-                // to the rest interface types that are hooked up to other things
-
-                const m = {} as TopicMessage;
-                m.partitionID = res.controlMessage.value.partitionId;
-
-                m.compression = CompressionType.Unknown;
-                switch (res.controlMessage.value.compression) {
-                  case ProtoCompressionType.UNCOMPRESSED:
-                    m.compression = CompressionType.Uncompressed;
-                    break;
-                  case ProtoCompressionType.GZIP:
-                    m.compression = CompressionType.GZip;
-                    break;
-                  case ProtoCompressionType.SNAPPY:
-                    m.compression = CompressionType.Snappy;
-                    break;
-                  case ProtoCompressionType.LZ4:
-                    m.compression = CompressionType.LZ4;
-                    break;
-                  case ProtoCompressionType.ZSTD:
-                    m.compression = CompressionType.ZStd;
-                    break;
-                }
-
-                m.offset = Number(res.controlMessage.value.offset);
-                m.timestamp = Number(res.controlMessage.value.timestamp);
-                m.isTransactional = res.controlMessage.value.isTransactional;
-                m.headers = [];
-                for (const header of res.controlMessage.value.headers) {
-                  m.headers.push({
-                    key: header.key,
-                    value: {
-                      payload: JSON.stringify(new TextDecoder().decode(header.value)),
-                      encoding: 'text',
-                      schemaId: 0,
-                      size: header.value.length,
-                      isPayloadNull: header.value == null,
-                    },
-                  });
-                }
-
-                // key
-                const key = res.controlMessage.value.key;
-                const keyPayload = new TextDecoder().decode(key?.normalizedPayload);
-
-                m.key = {} as Payload;
-                m.key.rawBytes = key?.originalPayload;
-
-                switch (key?.encoding) {
-                  case PayloadEncoding.NULL:
-                    m.key.encoding = 'null';
-                    break;
-                  case PayloadEncoding.BINARY:
-                    m.key.encoding = 'binary';
-                    break;
-                  case PayloadEncoding.XML:
-                    m.key.encoding = 'xml';
-                    break;
-                  case PayloadEncoding.AVRO:
-                    m.key.encoding = 'avro';
-                    break;
-                  case PayloadEncoding.JSON:
-                    m.key.encoding = 'json';
-                    break;
-                  case PayloadEncoding.PROTOBUF:
-                    m.key.encoding = 'protobuf';
-                    break;
-                  case PayloadEncoding.MESSAGE_PACK:
-                    m.key.encoding = 'msgpack';
-                    break;
-                  case PayloadEncoding.TEXT:
-                    m.key.encoding = 'text';
-                    break;
-                  case PayloadEncoding.UTF8:
-                    m.key.encoding = 'utf8WithControlChars';
-                    break;
-                  case PayloadEncoding.UINT:
-                    m.key.encoding = 'uint';
-                    break;
-                  case PayloadEncoding.SMILE:
-                    m.key.encoding = 'smile';
-                    break;
-                  case PayloadEncoding.CONSUMER_OFFSETS:
-                    m.key.encoding = 'consumerOffsets';
-                    break;
-                  case PayloadEncoding.CBOR:
-                    m.key.encoding = 'cbor';
-                    break;
-                  default:
-                    console.log('unhandled key encoding type', {
-                      encoding: key?.encoding,
-                      encodingName:
-                        key?.encoding != null
-                          ? proto3.getEnumType(PayloadEncoding).findNumber(key.encoding)?.localName
-                          : undefined,
-                      message: res,
-                    });
-                }
-
-                m.key.isPayloadNull = key?.encoding === PayloadEncoding.NULL;
-                m.key.payload = keyPayload;
-                m.key.normalizedPayload = key?.normalizedPayload;
-
-                try {
-                  m.key.payload = JSON.parse(keyPayload);
-                } catch {
-                }
-
-                m.key.troubleshootReport = key?.troubleshootReport;
-                m.key.schemaId = key?.schemaId ?? 0;
-                m.keyJson = JSON.stringify(m.key.payload);
-                m.key.size = Number(key?.payloadSize);
-                m.key.isPayloadTooLarge = key?.isPayloadTooLarge;
-
-                // kconsole.log(m.keyJson)
-
-                // value
-                const val = res.controlMessage.value.value;
-                const valuePayload = new TextDecoder().decode(val?.normalizedPayload);
-
-                m.value = {} as Payload;
-                m.value.payload = valuePayload;
-                m.value.normalizedPayload = val?.normalizedPayload;
-                m.value.rawBytes = val?.originalPayload;
-
-                switch (val?.encoding) {
-                  case PayloadEncoding.NULL:
-                    m.value.encoding = 'null';
-                    break;
-                  case PayloadEncoding.BINARY:
-                    m.value.encoding = 'binary';
-                    break;
-                  case PayloadEncoding.XML:
-                    m.value.encoding = 'xml';
-                    break;
-                  case PayloadEncoding.AVRO:
-                    m.value.encoding = 'avro';
-                    break;
-                  case PayloadEncoding.JSON:
-                    m.value.encoding = 'json';
-                    break;
-                  case PayloadEncoding.PROTOBUF:
-                    m.value.encoding = 'protobuf';
-                    break;
-                  case PayloadEncoding.MESSAGE_PACK:
-                    m.value.encoding = 'msgpack';
-                    break;
-                  case PayloadEncoding.TEXT:
-                    m.value.encoding = 'text';
-                    break;
-                  case PayloadEncoding.UTF8:
-                    m.value.encoding = 'utf8WithControlChars';
-                    break;
-                  case PayloadEncoding.UINT:
-                    m.value.encoding = 'uint';
-                    break;
-                  case PayloadEncoding.SMILE:
-                    m.value.encoding = 'smile';
-                    break;
-                  case PayloadEncoding.CONSUMER_OFFSETS:
-                    m.value.encoding = 'consumerOffsets';
-                    break;
-                  case PayloadEncoding.CBOR:
-                    m.value.encoding = 'cbor';
-                    break;
-                  default:
-                    console.log('unhandled value encoding type', {
-                      encoding: val?.encoding,
-                      encodingName:
-                        val?.encoding != null
-                          ? proto3.getEnumType(PayloadEncoding).findNumber(val.encoding)?.localName
-                          : undefined,
-                      message: res,
-                    });
-                }
-
-                m.value.schemaId = val?.schemaId ?? 0;
-                m.value.troubleshootReport = val?.troubleshootReport;
-                m.value.isPayloadNull = val?.encoding === PayloadEncoding.NULL;
-                m.valueJson = valuePayload;
-                m.value.isPayloadTooLarge = val?.isPayloadTooLarge;
-
-                try {
-                  m.value.payload = JSON.parse(valuePayload);
-                } catch {
-                }
-
-                m.valueJson = JSON.stringify(m.value.payload);
-                m.value.size = Number(val?.payloadSize);
-
-                this.messages.push(m);
-                break;
-              }
-            }
-          } catch (e) {
-            console.error('error in listMessages loop', {error: e});
-          }
-        }
-      } catch (e) {
-        this.abortController = null;
-        this.searchPhase = 'Done';
-        this.bytesConsumed = 0;
-        this.totalMessagesConsumed = 0;
-        this.searchPhase = null;
-        // https://connectrpc.com/docs/web/errors
-        if (messageSearchAbortController.signal.aborted) {
-          // Do not throw, this is a user cancellation
-        } else {
-          console.error('startMessageSearchNew: error in await loop of client.listMessages', {error: e});
-          throw e;
-        }
-      }
-
-      // one done
-      this.stopSearch();
-      return this.messages;
-    },
-
-    stopSearch(reason?: string) {
-      if (this.abortController) {
-        this.abortController.abort(reason ?? 'aborted by user');
-        this.abortController = null;
-      }
-
-      if (this.searchPhase != null) {
-        this.searchPhase = 'Done';
-        this.bytesConsumed = 0;
-        this.totalMessagesConsumed = 0;
-        this.searchPhase = null;
-      }
-    },
-  };
-
-  return observable(messageSearch);
-}
-
-export type MessageSearch = ReturnType<typeof createMessageSearch>;
+// export type MessageSearch = ReturnType<typeof createMessageSearch>;
 
 
 function addFrontendFieldsForConsumerGroup(g: ConsumerGroupOverview) {

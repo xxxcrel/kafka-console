@@ -9,18 +9,20 @@
  * by the Apache License, Version 2.0
  */
 
-import { observer } from 'mobx-react';
-import { Component } from 'react';
-import type { ConfigEntryExtended, KafkaError, Topic } from '../../../state/restInterfaces';
-import { uiSettings } from '../../../state/ui';
+import {observer} from 'mobx-react';
+import {Component} from 'react';
+import type {ConfigEntryExtended, KafkaError} from '../../../state/restInterfaces';
+import {uiSettings} from '../../../state/ui';
 import '../../../utils/arrayExtensions';
-import { Box, Button, Code, CodeBlock, Empty, Flex, Result } from '@redpanda-data/ui';
-import { computed, makeObservable } from 'mobx';
-import { appGlobal } from '../../../state/appGlobal';
-import { api } from '../../../state/backendApi';
-import { toJson } from '../../../utils/jsonUtils';
-import { DefaultSkeleton } from '../../../utils/tsxUtils';
+import {Box, Button, Code, CodeBlock, Empty, Flex, Result} from '@redpanda-data/ui';
+import {computed, makeObservable} from 'mobx';
+import {appGlobal} from '../../../state/appGlobal';
+import {api} from '../../../state/backendApi';
+import {toJson} from '../../../utils/jsonUtils';
+import {DefaultSkeleton} from '../../../utils/tsxUtils';
 import TopicConfigurationEditor from './TopicConfiguration';
+import {kconsole} from "../../../../wailsjs/go/models";
+import TopicSummary = kconsole.TopicSummary;
 
 // todo: can we assume that config values for time and bytes will always be provided in the smallest units?
 // or is it possible we'll get something like 'segment.hours' instead of 'segment.ms'?
@@ -28,7 +30,7 @@ import TopicConfigurationEditor from './TopicConfiguration';
 // Full topic configuration
 @observer
 export class TopicConfiguration extends Component<{
-  topic: Topic;
+  topic: TopicSummary;
 }> {
   constructor(p: any) {
     super(p);
@@ -47,7 +49,7 @@ export class TopicConfiguration extends Component<{
           targetTopic={this.props.topic.topicName}
           entries={entries}
           onForceRefresh={() => {
-            api.refreshTopicConfig(this.props.topic.topicName, true);
+            api.refreshTopicConfig(this.props.topic.topicName);
           }}
         />
       </>
@@ -83,7 +85,7 @@ export class TopicConfiguration extends Component<{
 
     if (config === null || config.configEntries.length === 0) {
       // config===null should never happen, so we catch it together with empty
-      return <Empty description="No config entries" />;
+      return <Empty description="No config entries"/>;
     }
     return null;
   }
@@ -103,13 +105,13 @@ export class TopicConfiguration extends Component<{
             }
           />
           <Box m={8}>
-            <CodeBlock language="raw" codeString={toJson(error, 4)} />
+            <CodeBlock language="raw" codeString={toJson(error, 4)}/>
           </Box>
           <Button
             variant="solid"
             size="lg"
             onClick={() => appGlobal.onRefresh()}
-            style={{ width: '12em', margin: '0', alignSelf: 'center' }}
+            style={{width: '12em', margin: '0', alignSelf: 'center'}}
           >
             Retry
           </Button>

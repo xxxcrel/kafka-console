@@ -9,24 +9,26 @@
  * by the Apache License, Version 2.0
  */
 
-import { observer } from 'mobx-react';
-import type { FC } from 'react';
-import type { Topic, TopicConsumer } from '../../../state/restInterfaces';
+import {observer} from 'mobx-react';
+import type {FC} from 'react';
+import type {TopicConsumer} from '../../../state/restInterfaces';
 
 import '../../../utils/arrayExtensions';
 
-import { DataTable } from '@redpanda-data/ui';
+import {DataTable} from '@redpanda-data/ui';
 import usePaginationParams from '../../../hooks/usePaginationParams';
-import { appGlobal } from '../../../state/appGlobal';
-import { api } from '../../../state/backendApi';
-import { uiState } from '../../../state/uiState';
-import { onPaginationChange } from '../../../utils/pagination';
-import { editQuery } from '../../../utils/queryHelper';
-import { DefaultSkeleton } from '../../../utils/tsxUtils';
+import {appGlobal} from '../../../state/appGlobal';
+import {api} from '../../../state/backendApi';
+import {uiState} from '../../../state/uiState';
+import {onPaginationChange} from '../../../utils/pagination';
+import {editQuery} from '../../../utils/queryHelper';
+import {DefaultSkeleton} from '../../../utils/tsxUtils';
+import {kconsole} from "../../../../wailsjs/go/models";
+import TopicSummary = kconsole.TopicSummary;
 
-type TopicConsumersProps = { topic: Topic };
+type TopicConsumersProps = { topic: TopicSummary };
 
-export const TopicConsumers: FC<TopicConsumersProps> = observer(({ topic }) => {
+export const TopicConsumers: FC<TopicConsumersProps> = observer(({topic}) => {
   let consumers = api.topicConsumers.get(topic.topicName);
   const isLoading = consumers === null;
   if (isLoading) {
@@ -42,7 +44,7 @@ export const TopicConsumers: FC<TopicConsumersProps> = observer(({ topic }) => {
     <DataTable<TopicConsumer>
       data={consumers}
       pagination={paginationParams}
-      onPaginationChange={onPaginationChange(paginationParams, ({ pageSize, pageIndex }) => {
+      onPaginationChange={onPaginationChange(paginationParams, ({pageSize, pageIndex}) => {
         uiState.topicSettings.consumerPageSize = pageSize;
         editQuery((query) => {
           query.page = String(pageIndex);
@@ -51,8 +53,8 @@ export const TopicConsumers: FC<TopicConsumersProps> = observer(({ topic }) => {
       })}
       sorting
       columns={[
-        { size: 1, header: 'Group', accessorKey: 'groupId' },
-        { header: 'Lag', accessorKey: 'summedLag' },
+        {size: 1, header: 'Group', accessorKey: 'groupId'},
+        {header: 'Lag', accessorKey: 'summedLag'},
       ]}
       onRow={(row) => {
         appGlobal.history.push(`/groups/${encodeURIComponent(row.original.groupId)}`);

@@ -9,16 +9,18 @@
  * by the Apache License, Version 2.0
  */
 
-import { ChevronRightIcon } from '@heroicons/react/solid';
-import { Tooltip } from '@redpanda-data/ui';
-import { observer } from 'mobx-react';
-import React, { Component } from 'react';
-import { api, brokerMap } from '../../state/backendApi';
-import type { Broker, Partition } from '../../state/restInterfaces';
+import {ChevronRightIcon} from '@heroicons/react/solid';
+import {Tooltip} from '@redpanda-data/ui';
+import {observer} from 'mobx-react';
+import React, {Component} from 'react';
+import {api, brokerMap} from '../../state/backendApi';
+import {kconsole} from "../../../wailsjs/go/models";
+import TopicPartitionDetails = kconsole.TopicPartitionDetails;
+import Broker = kconsole.Broker;
 
 type BrokerListProps =
   | { brokerIds: number[]; addedIds?: number[]; removedIds?: number[]; leaderId?: number }
-  | { partition: Partition };
+  | { partition: TopicPartitionDetails };
 
 @observer
 export class BrokerList extends Component<BrokerListProps> {
@@ -35,7 +37,7 @@ export class BrokerList extends Component<BrokerListProps> {
     let removedIds: number[] = [];
 
     if ('partition' in this.props) {
-      const { partition } = this.props;
+      const {partition} = this.props;
       leaderId = partition.leader;
       sortedIds = partition.replicas.distinct().sort((a, b) => a - b);
       if (partition.offlineReplicas) offlineIds.push(...partition.offlineReplicas);
@@ -74,20 +76,20 @@ export class BrokerList extends Component<BrokerListProps> {
       const additionalContent: JSX.Element[] = [];
       if (id === leaderId)
         additionalContent.push(
-          <div key="leader" style={{ marginTop: '5px' }}>
-            <ChevronRightIcon className="svgCenter" height="15px" style={{ marginLeft: '-4px', marginRight: '-2px' }} />
+          <div key="leader" style={{marginTop: '5px'}}>
+            <ChevronRightIcon className="svgCenter" height="15px" style={{marginLeft: '-4px', marginRight: '-2px'}}/>
             This broker is the leader for this partition
           </div>,
         );
       if (isAdding)
         additionalContent.push(
-          <div key="added" style={{ color: 'hsl(102deg, 80%, 45%)', marginTop: '5px' }}>
+          <div key="added" style={{color: 'hsl(102deg, 80%, 45%)', marginTop: '5px'}}>
             Partitions are currently being transferred to this broker.
           </div>,
         );
       if (isRemoving)
         additionalContent.push(
-          <div key="removed" style={{ color: 'hsl(38deg, 100%, 50%)', marginTop: '5px' }}>
+          <div key="removed" style={{color: 'hsl(38deg, 100%, 50%)', marginTop: '5px'}}>
             Once the assignment completes, the partitions of the reassignment will be removed from the broker.
           </div>,
         );
@@ -100,7 +102,7 @@ export class BrokerList extends Component<BrokerListProps> {
     });
 
     return (
-      <span style={{ cursor: 'pointer' }}>
+      <span style={{cursor: 'pointer'}}>
         <span className="brokerTagList">
           {tags.map((t, i) => (
             <React.Fragment key={i}>{t}</React.Fragment>
@@ -116,7 +118,7 @@ function BrokerTooltip(p: { broker: Broker; children?: React.ReactElement; toolt
   const id = broker.brokerId;
 
   const tooltipContentEntries = [
-    <b key={1} style={{ borderBottom: '1px solid', width: '100%', display: 'block', marginBottom: '5px' }}>
+    <b key={1} style={{borderBottom: '1px solid', width: '100%', display: 'block', marginBottom: '5px'}}>
       Broker ID {id}
     </b>,
     <div key={2}>{broker.address}</div>,
@@ -125,7 +127,7 @@ function BrokerTooltip(p: { broker: Broker; children?: React.ReactElement; toolt
   ];
 
   const tooltipContent = (
-    <div style={{ textAlign: 'left', maxWidth: '300px' }}>
+    <div style={{textAlign: 'left', maxWidth: '300px'}}>
       {tooltipContentEntries.map((e, i) => (
         <React.Fragment key={i}>{e}</React.Fragment>
       ))}

@@ -152,7 +152,7 @@ class ReassignPartitions extends PageComponent {
     api.refreshCluster(); // need to know brokers for reassignment calculation, will also refresh config
     api.refreshTopics();
     api.refreshPartitions('all');
-    api.refreshPartitionReassignments(force);
+    api.refreshPartitionReassignments();
   }
 
   componentWillUnmount() {

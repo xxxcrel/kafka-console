@@ -9,34 +9,37 @@
  * by the Apache License, Version 2.0
  */
 
-import { computed, makeObservable, observable } from 'mobx';
-import { observer } from 'mobx-react';
+import {computed, makeObservable, observable} from 'mobx';
+import {observer} from 'mobx-react';
 import React from 'react';
-import { appGlobal } from '../../../state/appGlobal';
-import { api } from '../../../state/backendApi';
-import type { ConfigEntry, Topic, TopicAction } from '../../../state/restInterfaces';
-import { uiSettings } from '../../../state/ui';
-import { uiState } from '../../../state/uiState';
+import {appGlobal} from '../../../state/appGlobal';
+import {api} from '../../../state/backendApi';
+import type {ConfigEntry, Topic, TopicAction} from '../../../state/restInterfaces';
+import {uiSettings} from '../../../state/ui';
+import {uiState} from '../../../state/uiState';
 import '../../../utils/arrayExtensions';
-import { LockIcon } from '@primer/octicons-react';
-import { Box, Button, Code, Flex, Popover, Result, Tooltip } from '@redpanda-data/ui';
-import { MdError, MdOutlineWarning, MdOutlineWarningAmber } from 'react-icons/md';
+import {LockIcon} from '@primer/octicons-react';
+import {Box, Button, Code, Flex, Popover, Result, Tooltip} from '@redpanda-data/ui';
+import {MdError, MdOutlineWarning, MdOutlineWarningAmber} from 'react-icons/md';
 import colors from '../../../colors';
-import { isServerless } from '../../../config';
-import { AppFeatures } from '../../../utils/env';
-import { DefaultSkeleton } from '../../../utils/tsxUtils';
+import {isServerless} from '../../../config';
+import {AppFeatures} from '../../../utils/env';
+import {DefaultSkeleton} from '../../../utils/tsxUtils';
 import PageContent from '../../misc/PageContent';
 import Section from '../../misc/Section';
 import Tabs from '../../misc/tabs/Tabs';
-import { PageComponent, type PageInitHelper } from '../Page';
+import {PageComponent, type PageInitHelper} from '../Page';
 import DeleteRecordsModal from './DeleteRecordsModal/DeleteRecordsModal';
-import { TopicQuickInfoStatistic } from './QuickInfo';
+import {TopicQuickInfoStatistic} from './QuickInfo';
 import AclList from './Tab.Acl/AclList';
-import { TopicConfiguration } from './Tab.Config';
-import { TopicConsumers } from './Tab.Consumers';
-import { TopicDocumentation } from './Tab.Docu';
-import { DeleteRecordsMenuItem, TopicMessageView } from './Tab.Messages';
-import { TopicPartitions } from './Tab.Partitions';
+import {TopicConfiguration} from './Tab.Config';
+import {TopicConsumers} from './Tab.Consumers';
+import {TopicDocumentation} from './Tab.Docu';
+import {DeleteRecordsMenuItem, TopicMessageView} from './Tab.Messages';
+import {TopicPartitions} from './Tab.Partitions';
+import {kconsole} from "../../../../wailsjs/go/models";
+import TopicConfigEntry = kconsole.TopicConfigEntry;
+import TopicSummary = kconsole.TopicSummary;
 
 const TopicTabIds = ['messages', 'consumers', 'partitions', 'configuration', 'documentation', 'topicacl'] as const;
 export type TopicTabId = (typeof TopicTabIds)[number];
@@ -44,13 +47,14 @@ export type TopicTabId = (typeof TopicTabIds)[number];
 // A tab (specifying title+content) that disable/lock itself if the user doesn't have some required permissions.
 class TopicTab {
   constructor(
-    public readonly topicGetter: () => Topic | undefined | null,
+    public readonly topicGetter: () => TopicSummary | undefined | null,
     public id: TopicTabId,
     private requiredPermission: TopicAction,
     public titleText: React.ReactNode,
-    private contentFunc: (topic: Topic) => React.ReactNode,
-    private disableHooks?: ((topic: Topic) => React.ReactNode | undefined)[],
-  ) {}
+    private contentFunc: (topic: TopicSummary) => React.ReactNode,
+    private disableHooks?: ((topic: TopicSummary) => React.ReactNode | undefined)[],
+  ) {
+  }
 
   @computed get isEnabled(): boolean {
     const topic = this.topicGetter();
@@ -89,7 +93,7 @@ class TopicTab {
           hideCloseButton={true}
         >
           <div>
-            <LockIcon size={16} /> {this.titleText}
+            <LockIcon size={16}/> {this.titleText}
           </div>
         </Popover>
       )
@@ -109,8 +113,8 @@ const mkDocuTip = (text: string, icon?: JSX.Element) => (
   </Tooltip>
 );
 const warnIcon = (
-  <span style={{ fontSize: '15px', marginRight: '5px', transform: 'translateY(1px)', display: 'inline-block' }}>
-    <MdOutlineWarningAmber />
+  <span style={{fontSize: '15px', marginRight: '5px', transform: 'translateY(1px)', display: 'inline-block'}}>
+    <MdOutlineWarningAmber/>
   </span>
 );
 
@@ -132,8 +136,8 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
     const topicName = this.props.topicName;
     uiState.currentTopicName = topicName;
 
-    this.refreshData(true);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
 
     p.title = topicName;
     p.addBreadcrumb('Topics', '/topics');
@@ -143,7 +147,7 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
     });
   }
 
-  refreshData(force: boolean) {
+  refreshData() {
     // must know what distribution we're working with; redpanda has some differences
     api.refreshClusterOverview();
 
@@ -166,17 +170,18 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
       api.refreshTopicDocumentation(this.props.topicName);
 
     // ACL can be lazy loaded
-    if (uiSettings.topicDetailsActiveTabKey === 'topicacl') api.refreshTopicAcls(this.props.topicName, force);
+    if (uiSettings.topicDetailsActiveTabKey === 'topicacl') api.refreshTopicAcls(this.props.topicName);
   }
 
-  @computed get topic(): undefined | Topic | null {
+  @computed get topic(): undefined | TopicSummary | null {
     // undefined = not yet known, null = known to be null
     if (!api.topics) return undefined;
     const topic = api.topics.find((e) => e.topicName === this.props.topicName);
     if (!topic) return null;
     return topic;
   }
-  @computed get topicConfig(): undefined | ConfigEntry[] | null {
+
+  @computed get topicConfig(): undefined | TopicConfigEntry[] | null {
     const config = api.topicConfig.get(this.props.topicName);
     if (config === undefined) return undefined;
     if (config === null || config.error != null) return null;
@@ -226,10 +231,10 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
     setTimeout(() => topicConfig && this.addBaseFavs(topicConfig));
 
     const leaderLessPartitionIds = (api.clusterHealth?.leaderlessPartitions ?? []).find(
-      ({ topicName }) => topicName === this.props.topicName,
+      ({topicName}) => topicName === this.props.topicName,
     )?.partitionIds;
     const underReplicatedPartitionIds = (api.clusterHealth?.underReplicatedPartitions ?? []).find(
-      ({ topicName }) => topicName === this.props.topicName,
+      ({topicName}) => topicName === this.props.topicName,
     )?.partitionIds;
 
     this.topicTabs = [
@@ -238,14 +243,14 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
         'messages',
         'viewMessages',
         'Messages',
-        (t) => <TopicMessageView topic={t} refreshTopicData={(force: boolean) => this.refreshData(force)} />,
+        (t) => <TopicMessageView topic={t} refreshTopicData={(() => this.refreshData())}/>,
       ),
       new TopicTab(
         () => topic,
         'consumers',
         'viewConsumers',
         'Consumers',
-        (t) => <TopicConsumers topic={t} />,
+        (t) => <TopicConsumers topic={t}/>,
       ),
       new TopicTab(
         () => topic,
@@ -260,7 +265,7 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
               label={`This topic has ${leaderLessPartitionIds.length} ${leaderLessPartitionIds.length === 1 ? 'a leaderless partition' : 'leaderless partitions'}`}
             >
               <Box>
-                <MdError size={18} color={colors.brandError} />
+                <MdError size={18} color={colors.brandError}/>
               </Box>
             </Tooltip>
           )}
@@ -271,19 +276,19 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
               label={`This topic has ${underReplicatedPartitionIds.length} ${underReplicatedPartitionIds.length === 1 ? 'an under-replicated partition' : 'under-replicated partitions'}`}
             >
               <Box>
-                <MdOutlineWarning size={18} color={colors.brandWarning} />
+                <MdOutlineWarning size={18} color={colors.brandWarning}/>
               </Box>
             </Tooltip>
           )}
         </Flex>,
-        (t) => <TopicPartitions topic={t} />,
+        (t) => <TopicPartitions topic={t}/>,
       ),
       new TopicTab(
         () => topic,
         'configuration',
         'viewConfig',
         'Configuration',
-        (t) => <TopicConfiguration topic={t} />,
+        (t) => <TopicConfiguration topic={t}/>,
       ),
       new TopicTab(
         () => topic,
@@ -291,7 +296,7 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
         'seeTopic',
         'ACL',
         (t) => {
-          return <AclList acl={api.topicAcls.get(t.topicName)} />;
+          return <AclList acl={api.topicAcls.get(t.topicName)}/>;
         },
         [
           () => {
@@ -304,7 +309,7 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
                   >
                     <div>
                       {' '}
-                      <LockIcon size={16} /> ACL
+                      <LockIcon size={16}/> ACL
                     </div>
                   </Popover>
                 );
@@ -317,7 +322,7 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
         'documentation',
         'seeTopic',
         'Documentation',
-        (t) => <TopicDocumentation topic={t} />,
+        (t) => <TopicDocumentation topic={t}/>,
         [
           (t) => (t.documentation === 'NOT_CONFIGURED' ? mkDocuTip('Topic documentation is not configured') : null),
           (t) =>
@@ -331,7 +336,7 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
     return (
       <>
         <PageContent key={'b'}>
-          {uiSettings.topicDetailsShowStatisticsBar && <TopicQuickInfoStatistic topic={topic} />}
+          {uiSettings.topicDetailsShowStatisticsBar && <TopicQuickInfoStatistic topic={topic}/>}
 
           <Flex mb={4} gap={2}>
             <Button
@@ -351,7 +356,7 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
           <Section>
             <Tabs
               isFitted
-              tabs={this.topicTabs.map(({ id, title, content, isDisabled }) => ({
+              tabs={this.topicTabs.map(({id, title, content, isDisabled}) => ({
                 key: id,
                 disabled: isDisabled,
                 title,
@@ -380,7 +385,7 @@ class TopicDetails extends PageComponent<{ topicName: string }> {
   }
 
   // depending on the cleanupPolicy we want to show specific config settings at the top
-  addBaseFavs(topicConfig: ConfigEntry[]): void {
+  addBaseFavs(topicConfig: TopicConfigEntry[]): void {
     const cleanupPolicy = topicConfig.find((e) => e.name === 'cleanup.policy')?.value;
     const favs = uiState.topicSettings.favConfigEntries;
 

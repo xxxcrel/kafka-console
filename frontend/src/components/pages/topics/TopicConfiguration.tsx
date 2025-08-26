@@ -1,44 +1,20 @@
-import { PencilIcon } from '@heroicons/react/solid';
-import {
-  Alert,
-  AlertIcon,
-  Box,
-  Button,
-  Flex,
-  FormField,
-  Icon,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  PasswordInput,
-  Popover,
-  RadioGroup,
-  SearchField,
-  Text,
-  Tooltip,
-  useToast,
-} from '@redpanda-data/ui';
-import { observer, useLocalObservable } from 'mobx-react';
-import type { FC } from 'react';
-import { useState } from 'react';
-import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
-import type { ConfigEntryExtended } from '../../../state/restInterfaces';
-import {
-  entryHasInfiniteValue,
-  formatConfigValue,
-  getInfiniteValueForEntry,
-} from '../../../utils/formatters/ConfigValueFormatter';
-import { DataSizeSelect, DurationSelect, NumInput, RatioInput } from './CreateTopicModal/CreateTopicModal';
+import {PencilIcon} from '@heroicons/react/solid';
+import {Alert, AlertIcon, Box, Button, Flex, FormField, Icon, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, ModalOverlay, PasswordInput, Popover, RadioGroup, SearchField, Text, Tooltip, useToast,} from '@redpanda-data/ui';
+import {observer, useLocalObservable} from 'mobx-react';
+import type {FC} from 'react';
+import {useState} from 'react';
+import {Controller, type SubmitHandler, useForm} from 'react-hook-form';
+import type {ConfigEntryExtended} from '../../../state/restInterfaces';
+import {entryHasInfiniteValue, formatConfigValue, getInfiniteValueForEntry,} from '../../../utils/formatters/ConfigValueFormatter';
+import {DataSizeSelect, DurationSelect, NumInput, RatioInput} from './CreateTopicModal/CreateTopicModal';
 import './TopicConfiguration.scss';
-import { MdInfoOutline } from 'react-icons/md';
-import { isServerless } from '../../../config';
-import { api } from '../../../state/backendApi';
-import { SingleSelect } from '../../misc/Select';
+import {MdInfoOutline} from 'react-icons/md';
+import {isServerless} from '../../../config';
+import {api} from '../../../state/backendApi';
+import {SingleSelect} from '../../misc/Select';
 import {kconsole, kmsg} from "../../../../wailsjs/go/models";
+import TopicConfigEntry = kconsole.TopicConfigEntry;
+import FrontendFormat = kconsole.FrontendFormat;
 import IncrementalAlterConfigsRequestResourceConfig = kmsg.IncrementalAlterConfigsRequestResourceConfig;
 
 type ConfigurationEditorProps = {
@@ -57,14 +33,14 @@ const ConfigEditorForm: FC<{
   onClose: () => void;
   onSuccess: () => void;
   targetTopic: string;
-}> = ({ editedEntry, onClose, targetTopic, onSuccess }) => {
+}> = ({editedEntry, onClose, targetTopic, onSuccess}) => {
   const toast = useToast();
   const [globalError, setGlobalError] = useState<string | null>(null);
 
   const {
     control,
     handleSubmit,
-    formState: { isSubmitting },
+    formState: {isSubmitting},
     watch,
   } = useForm<Inputs>({
     defaultValues: {
@@ -93,7 +69,7 @@ const ConfigEditorForm: FC<{
     value: 'custom',
   });
 
-  const onSubmit: SubmitHandler<Inputs> = async ({ valueType, customValue }) => {
+  const onSubmit: SubmitHandler<Inputs> = async ({valueType, customValue}) => {
     const operation = valueType === 'infinite' || valueType === 'custom' ? 0 : 1;
 
     let value: number | string | undefined | null = undefined;
@@ -122,7 +98,7 @@ const ConfigEditorForm: FC<{
       onSuccess();
       onClose();
     } catch (err) {
-      console.error('error while applying config change', { err, configEntry: editedEntry });
+      console.error('error while applying config change', {err, configEntry: editedEntry});
       setGlobalError(err instanceof Error ? err.message : String(err));
     }
   };
@@ -138,7 +114,7 @@ const ConfigEditorForm: FC<{
   ];
 
   const defaultConfigSynonym = editedEntry.synonyms
-    ?.filter(({ source }) => source !== 'DYNAMIC_TOPIC_CONFIG')
+    ?.filter(({source}) => source !== 'DYNAMIC_TOPIC_CONFIG')
     .sort((a, b) => {
       return SOURCE_PRIORITY_ORDER.indexOf(a.source) - SOURCE_PRIORITY_ORDER.indexOf(b.source);
     })[0];
@@ -146,7 +122,7 @@ const ConfigEditorForm: FC<{
   return (
     <Modal isOpen onClose={onClose}>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <ModalOverlay />
+        <ModalOverlay/>
         <ModalContent minW="2xl">
           <ModalHeader>{`Edit ${editedEntry.name}`}</ModalHeader>
           <ModalBody>
@@ -157,8 +133,8 @@ const ConfigEditorForm: FC<{
                 <Controller
                   control={control}
                   name="valueType"
-                  render={({ field: { onChange, value } }) => (
-                    <RadioGroup name="valueType" options={valueTypeOptions} value={value} onChange={onChange} />
+                  render={({field: {onChange, value}}) => (
+                    <RadioGroup name="valueType" options={valueTypeOptions} value={value} onChange={onChange}/>
                   )}
                 />
               </FormField>
@@ -168,8 +144,8 @@ const ConfigEditorForm: FC<{
                     <Controller
                       control={control}
                       name="customValue"
-                      render={({ field: { onChange, value } }) => (
-                        <ConfigEntryEditorController entry={editedEntry} onChange={onChange} value={value} />
+                      render={({field: {onChange, value}}) => (
+                        <ConfigEntryEditorController entry={editedEntry} onChange={onChange} value={value}/>
                       )}
                     />
                   </Box>
@@ -190,7 +166,7 @@ const ConfigEditorForm: FC<{
             </Flex>
             {globalError && (
               <Alert status="error" my={2}>
-                <AlertIcon />
+                <AlertIcon/>
                 {globalError}
               </Alert>
             )}
@@ -294,7 +270,7 @@ const ConfigGroup = observer(
   }) => {
     return (
       <>
-        <div className="configGroupSpacer" />
+        <div className="configGroupSpacer"/>
         {p.groupName && <div className="configGroupTitle">{p.groupName}</div>}
         {p.entries.map((e) => (
           <ConfigEntryComponent
@@ -315,7 +291,7 @@ const ConfigEntryComponent = observer(
     entry: ConfigEntryExtended;
     hasEditPermissions: boolean;
   }) => {
-    const { canEdit, reason: nonEdittableReason } = isTopicConfigEdittable(p.entry, p.hasEditPermissions);
+    const {canEdit, reason: nonEdittableReason} = isTopicConfigEdittable(p.entry, p.hasEditPermissions);
 
     const entry = p.entry;
     const friendlyValue = formatConfigValue(entry.name, entry.value, 'friendly');
@@ -338,7 +314,7 @@ const ConfigEntryComponent = observer(
                 if (canEdit) p.onEditEntry(p.entry);
               }}
             >
-              <Icon as={PencilIcon} />
+              <Icon as={PencilIcon}/>
             </span>
           </Tooltip>
           {entry.documentation && (
@@ -356,7 +332,7 @@ const ConfigEntryComponent = observer(
               }
             >
               <Box>
-                <Icon as={MdInfoOutline} />
+                <Icon as={MdInfoOutline}/>
               </Box>
             </Popover>
           )}
@@ -371,42 +347,42 @@ function isTopicConfigEdittable(
   hasEditPermissions: boolean,
 ): { canEdit: boolean; reason?: string } {
   if (!hasEditPermissions)
-    return { canEdit: false, reason: "You don't have permissions to change topic configuration entries" };
+    return {canEdit: false, reason: "You don't have permissions to change topic configuration entries"};
 
   if (isServerless()) {
     const edittableEntries = ['retention.ms', 'retention.bytes'];
 
     if (edittableEntries.includes(entry.name)) {
-      return { canEdit: true };
+      return {canEdit: true};
     }
 
-    return { canEdit: false, reason: 'This configuration is not editable on Serverless clusters' };
+    return {canEdit: false, reason: 'This configuration is not editable on Serverless clusters'};
   }
 
-  return { canEdit: true };
+  return {canEdit: true};
 }
 
 export const ConfigEntryEditorController = <T extends string | number>(p: {
-  entry: ConfigEntryExtended;
+  entry: TopicConfigEntry;
   value: T;
   onChange: (e: T) => void;
   className?: string;
 }) => {
-  const { entry, value, onChange } = p;
+  const {entry, value, onChange} = p;
   switch (entry.frontendFormat) {
-    case 'BOOLEAN':
+    case FrontendFormat.BOOLEAN:
       return (
         <SingleSelect<T>
           options={[
-            { value: 'false' as T, label: 'False' },
-            { value: 'true' as T, label: 'True' },
+            {value: 'false' as T, label: 'False'},
+            {value: 'true' as T, label: 'True'},
           ]}
           value={value}
           onChange={onChange}
         />
       );
 
-    case 'SELECT':
+    case FrontendFormat.SELECT:
       return (
         <SingleSelect
           value={value}
@@ -421,7 +397,7 @@ export const ConfigEntryEditorController = <T extends string | number>(p: {
         />
       );
 
-    case 'BYTE_SIZE':
+    case FrontendFormat.BYTE_SIZE:
       return (
         <DataSizeSelect
           allowInfinite={false}
@@ -429,7 +405,7 @@ export const ConfigEntryEditorController = <T extends string | number>(p: {
           onChange={(e) => onChange(Math.round(e) as T)}
         />
       );
-    case 'DURATION':
+    case FrontendFormat.DURATION:
       return (
         <DurationSelect
           allowInfinite={false}
@@ -438,19 +414,19 @@ export const ConfigEntryEditorController = <T extends string | number>(p: {
         />
       );
 
-    case 'PASSWORD':
-      return <PasswordInput value={value ?? ''} onChange={(x) => onChange(x.target.value as T)} />;
+    case FrontendFormat.PASSWORD:
+      return <PasswordInput value={value ?? ''} onChange={(x) => onChange(x.target.value as T)}/>;
 
-    case 'RATIO':
-      return <RatioInput value={Number(value)} onChange={(x) => onChange(x as T)} />;
+    case FrontendFormat.RATIO:
+      return <RatioInput value={Number(value)} onChange={(x) => onChange(x as T)}/>;
 
-    case 'INTEGER':
-      return <NumInput value={Number(value)} onChange={(e) => onChange(Math.round(e ?? 0) as T)} />;
+    case FrontendFormat.INTEGER:
+      return <NumInput value={Number(value)} onChange={(e) => onChange(Math.round(e ?? 0) as T)}/>;
 
-    case 'DECIMAL':
-      return <NumInput value={Number(value)} onChange={(e) => onChange(e as T)} />;
+    case FrontendFormat.DECIMAL:
+      return <NumInput value={Number(value)} onChange={(e) => onChange(e as T)}/>;
     default:
-      return <Input value={String(value)} onChange={(e) => onChange(e.target.value as T)} />;
+      return <Input value={String(value)} onChange={(e) => onChange(e.target.value as T)}/>;
   }
 };
 

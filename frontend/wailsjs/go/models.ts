@@ -155,6 +155,19 @@ export namespace clusterstatus {
 
 export namespace kconsole {
 	
+	export enum FrontendFormat {
+	    UNKNOWN = 0,
+	    BOOLEAN = 1,
+	    PASSWORD = 2,
+	    STRING = 3,
+	    SELECT = 4,
+	    MULTI_SELECT = 5,
+	    BYTE_SIZE = 6,
+	    RATIO = 7,
+	    DURATION = 8,
+	    DECIMAL = 9,
+	    INTEGER = 10,
+	}
 	export class ACLRule {
 	    principal: string;
 	    principalType: string;
@@ -1294,7 +1307,7 @@ export namespace kconsole {
 		}
 	}
 	export class SchemaRegistryConfig {
-	    compatibility: number;
+	    compatibility: sr.CompatibilityLevel;
 	
 	    static createFrom(source: any = {}) {
 	        return new SchemaRegistryConfig(source);
@@ -1420,7 +1433,7 @@ export namespace kconsole {
 	    id: number;
 	    version: number;
 	    isSoftDeleted: boolean;
-	    type: number;
+	    type: sr.SchemaType;
 	    schema: string;
 	    references: Reference[];
 	
@@ -1472,8 +1485,8 @@ export namespace kconsole {
 	}
 	export class SchemaRegistrySubjectDetails {
 	    name: string;
-	    type: number;
-	    compatibility?: number;
+	    type: sr.SchemaType;
+	    compatibility?: sr.CompatibilityLevel;
 	    versions: SchemaRegistrySubjectDetailsVersion[];
 	    latestActiveVersion: number;
 	    schemas: SchemaRegistryVersionedSchema[];
@@ -1549,17 +1562,15 @@ export namespace kconsole {
 	    name: string;
 	    value?: string;
 	    source: string;
-	    type: string;
 	    isExplicitlySet: boolean;
 	    isDefaultValue: boolean;
 	    isSensitive: boolean;
 	    isReadOnly: boolean;
-	    documentation?: string;
 	    synonyms: TopicConfigSynonym[];
 	    documentation?: string;
 	    type: number;
 	    category?: string;
-	    frontendFormat?: number;
+	    frontendFormat?: FrontendFormat;
 	    enumValues?: string[];
 	
 	    static createFrom(source: any = {}) {
@@ -1571,12 +1582,10 @@ export namespace kconsole {
 	        this.name = source["name"];
 	        this.value = source["value"];
 	        this.source = source["source"];
-	        this.type = source["type"];
 	        this.isExplicitlySet = source["isExplicitlySet"];
 	        this.isDefaultValue = source["isDefaultValue"];
 	        this.isSensitive = source["isSensitive"];
 	        this.isReadOnly = source["isReadOnly"];
-	        this.documentation = source["documentation"];
 	        this.synonyms = this.convertValues(source["synonyms"], TopicConfigSynonym);
 	        this.documentation = source["documentation"];
 	        this.type = source["type"];
@@ -2002,6 +2011,46 @@ export namespace kgo {
 
 export namespace kmsg {
 	
+	export enum ACLOperation {
+	    UNKNOWN = 0,
+	    ANY = 1,
+	    ALL = 2,
+	    READ = 3,
+	    WRITE = 4,
+	    CREATE = 5,
+	    DELETE = 6,
+	    ALTER = 7,
+	    DESCRIBE = 8,
+	    CLUSTER_ACTION = 9,
+	    DESCRIBE_CONFIGS = 10,
+	    ALTER_CONFIGS = 11,
+	    IDEMPOTENT_WRITE = 12,
+	    CREATE_TOKENS = 13,
+	    DESCRIBE_TOKENS = 14,
+	}
+	export enum ACLPermissionType {
+	    UNKNOWN = 0,
+	    ANY = 1,
+	    DENY = 2,
+	    ALLOW = 3,
+	}
+	export enum ACLResourceType {
+	    UNKNOWN = 0,
+	    ANY = 1,
+	    TOPIC = 2,
+	    GROUP = 3,
+	    CLUSTER = 4,
+	    TRANSACTIONAL_ID = 5,
+	    DELEGATION_TOKEN = 6,
+	    USER = 7,
+	}
+	export enum ACLResourcePatternType {
+	    UNKNOWN = 0,
+	    ANY = 1,
+	    MATCH = 2,
+	    LITERAL = 3,
+	    PREFIXED = 4,
+	}
 	export class Tags {
 	
 	
@@ -2274,13 +2323,13 @@ export namespace kmsg {
 	}
 	
 	export class CreateACLsRequestCreation {
-	    ResourceType: number;
+	    ResourceType: ACLResourceType;
 	    ResourceName: string;
-	    ResourcePatternType: number;
+	    ResourcePatternType: ACLResourcePatternType;
 	    Principal: string;
 	    Host: string;
-	    Operation: number;
-	    PermissionType: number;
+	    Operation: ACLOperation;
+	    PermissionType: ACLPermissionType;
 	    // Go type: Tags
 	    UnknownTags: any;
 	
@@ -2708,13 +2757,13 @@ export namespace kmsg {
 	
 	
 	export class DeleteACLsRequestFilter {
-	    ResourceType: number;
+	    ResourceType: ACLResourceType;
 	    ResourceName?: string;
-	    ResourcePatternType: number;
+	    ResourcePatternType: ACLResourcePatternType;
 	    Principal?: string;
 	    Host?: string;
-	    Operation: number;
-	    PermissionType: number;
+	    Operation: ACLOperation;
+	    PermissionType: ACLPermissionType;
 	    // Go type: Tags
 	    UnknownTags: any;
 	
@@ -2791,13 +2840,13 @@ export namespace kmsg {
 	export class DeleteACLsResponseResultMatchingACL {
 	    ErrorCode: number;
 	    ErrorMessage?: string;
-	    ResourceType: number;
+	    ResourceType: ACLResourceType;
 	    ResourceName: string;
-	    ResourcePatternType: number;
+	    ResourcePatternType: ACLResourcePatternType;
 	    Principal: string;
 	    Host: string;
-	    Operation: number;
-	    PermissionType: number;
+	    Operation: ACLOperation;
+	    PermissionType: ACLPermissionType;
 	    // Go type: Tags
 	    UnknownTags: any;
 	
@@ -3138,13 +3187,13 @@ export namespace kmsg {
 	
 	export class DescribeACLsRequest {
 	    Version: number;
-	    ResourceType: number;
+	    ResourceType: ACLResourceType;
 	    ResourceName?: string;
-	    ResourcePatternType: number;
+	    ResourcePatternType: ACLResourcePatternType;
 	    Principal?: string;
 	    Host?: string;
-	    Operation: number;
-	    PermissionType: number;
+	    Operation: ACLOperation;
+	    PermissionType: ACLPermissionType;
 	    // Go type: Tags
 	    UnknownTags: any;
 	
@@ -3186,8 +3235,8 @@ export namespace kmsg {
 	export class DescribeACLsResponseResourceACL {
 	    Principal: string;
 	    Host: string;
-	    Operation: number;
-	    PermissionType: number;
+	    Operation: ACLOperation;
+	    PermissionType: ACLPermissionType;
 	    // Go type: Tags
 	    UnknownTags: any;
 	
@@ -3223,9 +3272,9 @@ export namespace kmsg {
 		}
 	}
 	export class DescribeACLsResponseResource {
-	    ResourceType: number;
+	    ResourceType: ACLResourceType;
 	    ResourceName: string;
-	    ResourcePatternType: number;
+	    ResourcePatternType: ACLResourcePatternType;
 	    ACLs: DescribeACLsResponseResourceACL[];
 	    // Go type: Tags
 	    UnknownTags: any;
@@ -4151,11 +4200,42 @@ export namespace serde {
 
 export namespace sr {
 	
+	export enum Mode {
+	    IMPORT = 0,
+	    READONLY = 1,
+	    READWRITE = 2,
+	}
+	export enum SchemaRuleMode {
+	    UPGRADE = 0,
+	    DOWNGRADE = 1,
+	    UPDOWN = 2,
+	    WRITE = 3,
+	    READ = 4,
+	    WRITEREAD = 5,
+	}
+	export enum SchemaRuleKind {
+	    TRANSFORM = 0,
+	    CONDITION = 1,
+	}
+	export enum SchemaType {
+	    AVRO = 0,
+	    PROTOBUF = 1,
+	    JSON = 2,
+	}
+	export enum CompatibilityLevel {
+	    NONE = 1,
+	    BACKWROD = 2,
+	    BACKWORD_TRANSITIVE = 3,
+	    FORWARD = 4,
+	    FORWARD_TRANSITIVE = 5,
+	    FULL = 6,
+	    FULL_TRANSITIVE = 7,
+	}
 	export class SchemaRule {
 	    name: string;
 	    doc?: string;
-	    kind: number;
-	    mode: number;
+	    kind: SchemaRuleKind;
+	    mode: SchemaRuleMode;
 	    type: string;
 	    tags: string[];
 	    params?: Record<string, string>;
@@ -4249,7 +4329,7 @@ export namespace sr {
 	}
 	export class Schema {
 	    schema: string;
-	    schemaType?: number;
+	    schemaType?: SchemaType;
 	    references?: SchemaReference[];
 	    metadata?: SchemaMetadata;
 	    ruleSet?: SchemaRuleSet;
@@ -4290,7 +4370,7 @@ export namespace sr {
 	
 	
 	export class SetCompatibility {
-	    compatibility: number;
+	    compatibility: CompatibilityLevel;
 	    alias?: string;
 	    normalize?: boolean;
 	    compatibilityGroup?: string;

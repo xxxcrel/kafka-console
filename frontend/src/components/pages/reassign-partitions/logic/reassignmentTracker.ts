@@ -92,7 +92,7 @@ export class ReassignmentTracker {
     // Immediately refresh as well
     setTimeout(() => {
       this.refreshReassignments();
-      api.refreshCluster(true);
+      api.refreshCluster();
     });
   }
 

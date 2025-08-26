@@ -106,8 +106,8 @@ class TopicList extends PageComponent {
     if (this.quickSearchReaction) this.quickSearchReaction();
   }
 
-  refreshData(force: boolean) {
-    api.refreshTopics(force);
+  refreshData() {
+    api.refreshTopics();
     api.refreshClusterOverview();
     void api.refreshClusterHealth();
   }

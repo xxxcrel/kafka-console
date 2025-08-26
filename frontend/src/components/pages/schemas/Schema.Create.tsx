@@ -28,7 +28,7 @@ import { observer } from 'mobx-react';
 import { useEffect, useState } from 'react';
 import { appGlobal } from '../../../state/appGlobal';
 import { api } from '../../../state/backendApi';
-import { type SchemaRegistryValidateSchemaResponse, SchemaType } from '../../../state/restInterfaces';
+import { type SchemaRegistryValidateSchemaResponse } from '../../../state/restInterfaces';
 import { DefaultSkeleton } from '../../../utils/tsxUtils';
 import type { ElementOf } from '../../../utils/utils';
 import KowlEditor from '../../misc/KowlEditor';
@@ -36,6 +36,9 @@ import PageContent from '../../misc/PageContent';
 import { SingleSelect } from '../../misc/Select';
 import { PageComponent, type PageInitHelper } from '../Page';
 import { openSwitchSchemaFormatModal, openValidationErrorsModal } from './modals';
+import {sr} from "../../../../wailsjs/go/models";
+import SchemaType = sr.SchemaType;
+import Schema = sr.Schema;
 
 @observer
 export class SchemaCreatePage extends PageComponent<{}> {
@@ -43,13 +46,13 @@ export class SchemaCreatePage extends PageComponent<{}> {
     p.title = 'Create schema';
     p.addBreadcrumb('Schema Registry', '/schema-registry');
     p.addBreadcrumb('Create schema', '/schema-registry');
-    this.refreshData(true);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
   }
 
-  refreshData(force?: boolean) {
-    api.refreshSchemaSubjects(force); // for references editor -> subject selector
-    api.refreshTopics(force); // for the topics selector
+  refreshData() {
+    api.refreshSchemaSubjects(); // for references editor -> subject selector
+    api.refreshTopics(); // for the topics selector
   }
 
   editorState = createSchemaState();
@@ -261,11 +264,11 @@ async function validateSchema(state: SchemaEditorStateHelper): Promise<{
   if (!state.computedSubjectName) return { isValid: false, errorDetails: 'Missing subject name' };
 
   const r = await api
-    .validateSchema(state.computedSubjectName, 'latest', {
+    .validateSchema(state.computedSubjectName, -1, Schema.createFrom({
       schemaType: state.format as SchemaType,
       schema: state.schemaText,
       references: state.references.filter((x) => x.name && x.subject),
-    })
+    }))
     .catch((err) => {
       return {
         compatibility: { isCompatible: false },
@@ -513,7 +516,7 @@ function createSchemaState() {
     userInput: '', // holds either topicName (for the two relevant topic-based strategies), or the custom input
     keyOrValue: undefined as 'KEY' | 'VALUE' | undefined,
 
-    format: 'AVRO' as 'AVRO' | 'PROTOBUF' | 'JSON',
+    format: 'AVRO' as SchemaType.AVRO | 'PROTOBUF' as SchemaType.PROTOBUF | 'JSON' as SchemaType.JSON,
     schemaText: exampleSchema.AVRO,
     references: [{ name: '', subject: '', version: 1 }] as {
       name: string;
@@ -568,7 +571,7 @@ function createSchemaState() {
   });
 }
 
-const exampleSchema: Record<SchemaType, string> = {
+const exampleSchema: Record<string, string> = {
   AVRO: `
 {
    "type": "record",

@@ -9,45 +9,48 @@
  * by the Apache License, Version 2.0
  */
 
-import { observer } from 'mobx-react';
-import type { FC } from 'react';
-import { api } from '../../../state/backendApi';
-import type { Partition, Topic } from '../../../state/restInterfaces';
+import {observer} from 'mobx-react';
+import type {FC} from 'react';
+import {api} from '../../../state/backendApi';
+import type {Partition} from '../../../state/restInterfaces';
 import '../../../utils/arrayExtensions';
-import { Alert, AlertIcon, Badge, Box, DataTable, Flex, Popover, Text } from '@redpanda-data/ui';
-import { MdOutlineWarningAmber } from 'react-icons/md';
+import {Alert, AlertIcon, Badge, Box, DataTable, Flex, Popover, Text} from '@redpanda-data/ui';
+import {MdOutlineWarningAmber} from 'react-icons/md';
 import usePaginationParams from '../../../hooks/usePaginationParams';
-import { uiState } from '../../../state/uiState';
-import { onPaginationChange } from '../../../utils/pagination';
-import { editQuery } from '../../../utils/queryHelper';
-import { DefaultSkeleton, InfoText, numberToThousandsString } from '../../../utils/tsxUtils';
-import { BrokerList } from '../../misc/BrokerList';
+import {uiState} from '../../../state/uiState';
+import {onPaginationChange} from '../../../utils/pagination';
+import {editQuery} from '../../../utils/queryHelper';
+import {DefaultSkeleton, InfoText, numberToThousandsString} from '../../../utils/tsxUtils';
+import {BrokerList} from '../../misc/BrokerList';
+import {kconsole} from "../../../../wailsjs/go/models";
+import TopicSummary = kconsole.TopicSummary;
+import TopicPartitionDetails = kconsole.TopicPartitionDetails;
 
 type TopicPartitionsProps = {
-  topic: Topic;
+  topic: TopicSummary;
 };
 
-export const TopicPartitions: FC<TopicPartitionsProps> = observer(({ topic }) => {
+export const TopicPartitions: FC<TopicPartitionsProps> = observer(({topic}) => {
   const partitions = api.topicPartitions.get(topic.topicName);
   const paginationParams = usePaginationParams(uiState.topicSettings.partitionPageSize, partitions?.length ?? 0);
 
   if (partitions === undefined) return DefaultSkeleton;
   if (partitions === null) {
-    return <div />; // todo: show the error (if one was reported);
+    return <div/>; // todo: show the error (if one was reported);
   }
 
   const leaderLessPartitions = (api.clusterHealth?.leaderlessPartitions ?? []).find(
-    ({ topicName }) => topicName === topic.topicName,
+    ({topicName}) => topicName === topic.topicName,
   )?.partitionIds;
   const underReplicatedPartitions = (api.clusterHealth?.underReplicatedPartitions ?? []).find(
-    ({ topicName }) => topicName === topic.topicName,
+    ({topicName}) => topicName === topic.topicName,
   )?.partitionIds;
 
   let warning: JSX.Element = <></>;
   if (topic.cleanupPolicy.toLowerCase() === 'compact')
     warning = (
       <Alert status="warning" marginBottom="1em">
-        <AlertIcon />
+        <AlertIcon/>
         Topic cleanupPolicy is 'compact'. Message Count is an estimate!
       </Alert>
     );
@@ -55,9 +58,9 @@ export const TopicPartitions: FC<TopicPartitionsProps> = observer(({ topic }) =>
   return (
     <>
       {warning}
-      <DataTable<Partition>
+      <DataTable<TopicPartitionDetails>
         pagination={paginationParams}
-        onPaginationChange={onPaginationChange(paginationParams, ({ pageSize, pageIndex }) => {
+        onPaginationChange={onPaginationChange(paginationParams, ({pageSize, pageIndex}) => {
           uiState.topicSettings.partitionPageSize = pageSize;
           editQuery((query) => {
             query.page = String(pageIndex);
@@ -72,12 +75,12 @@ export const TopicPartitions: FC<TopicPartitionsProps> = observer(({ topic }) =>
           {
             header: 'Partition ID',
             accessorKey: 'id',
-            cell: ({ row: { original: partition } }) => {
+            cell: ({row: {original: partition}}) => {
               const header = partition.hasErrors ? (
                 <Flex justifyContent="space-between">
                   <Text>{partition.id}</Text>
                   <Box>
-                    <PartitionError partition={partition} />
+                    <PartitionError partition={partition}/>
                   </Box>
                 </Flex>
               ) : (
@@ -103,7 +106,7 @@ export const TopicPartitions: FC<TopicPartitionsProps> = observer(({ topic }) =>
               </InfoText>
             ),
             accessorKey: 'waterMarkLow',
-            cell: ({ row: { original: partition } }) => numberToThousandsString(partition.waterMarkLow),
+            cell: ({row: {original: partition}}) => numberToThousandsString(partition.waterMarkLow),
           },
           {
             id: 'waterMarkHigh',
@@ -113,16 +116,16 @@ export const TopicPartitions: FC<TopicPartitionsProps> = observer(({ topic }) =>
               </InfoText>
             ),
             accessorKey: 'waterMarkHigh',
-            cell: ({ row: { original: partition } }) => numberToThousandsString(partition.waterMarkHigh),
+            cell: ({row: {original: partition}}) => numberToThousandsString(partition.waterMarkHigh),
           },
           {
             header: 'Messages',
-            cell: ({ row: { original: partition } }) =>
+            cell: ({row: {original: partition}}) =>
               !partition.hasErrors && numberToThousandsString(partition.waterMarkHigh - partition.waterMarkLow),
           },
           {
             header: 'Brokers',
-            cell: ({ row: { original: partition } }) => <BrokerList partition={partition} />,
+            cell: ({row: {original: partition}}) => <BrokerList partition={partition}/>,
           },
         ]}
       />
@@ -130,7 +133,7 @@ export const TopicPartitions: FC<TopicPartitionsProps> = observer(({ topic }) =>
   );
 });
 
-const PartitionError: FC<{ partition: Partition }> = ({ partition }) => {
+const PartitionError: FC<{ partition: TopicPartitionDetails }> = ({partition}) => {
   if (!partition.partitionError && !partition.waterMarksError) {
     return null;
   }
@@ -149,7 +152,7 @@ const PartitionError: FC<{ partition: Partition }> = ({ partition }) => {
       }
     >
       <Box>
-        <MdOutlineWarningAmber color="orange" size={20} />
+        <MdOutlineWarningAmber color="orange" size={20}/>
       </Box>
     </Popover>
   );

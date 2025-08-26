@@ -351,7 +351,7 @@ export class ReassignmentDetailsDialog extends Component<{ state: ReassignmentSt
       // force update of topic config, so isThrottle has up to date information
       setTimeout(async () => {
         api.topicConfig.delete(state.topicName);
-        await api.refreshTopicConfig(state.topicName, true);
+        await api.refreshTopicConfig(state.topicName);
         this.shouldThrottle = this.isThrottled();
       });
     }

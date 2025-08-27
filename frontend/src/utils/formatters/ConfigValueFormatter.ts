@@ -9,7 +9,6 @@
  * by the Apache License, Version 2.0
  */
 
-import type {ConfigEntryExtended} from '../../state/restInterfaces';
 import {prettyBytesOrNA, prettyMilliseconds} from '../utils';
 import {kconsole} from "../../../wailsjs/go/models";
 import TopicConfigEntry = kconsole.TopicConfigEntry;
@@ -21,7 +20,7 @@ export const CONFIG_INFINITE_VALUES: Record<string, number> = {
 export const entryHasInfiniteValue = (entry: TopicConfigEntry) =>
   Number(entry.value) === CONFIG_INFINITE_VALUES[entry.name] || entry.value === '-1';
 
-export const getInfiniteValueForEntry = (entry: ConfigEntryExtended) => {
+export const getInfiniteValueForEntry = (entry: TopicConfigEntry) => {
   return CONFIG_INFINITE_VALUES[entry.name] ?? -1;
 };
 

@@ -17,7 +17,6 @@ import {Button, DefaultSkeleton} from '../../../utils/tsxUtils';
 import {PageComponent, type PageInitHelper} from '../Page';
 import './Schema.List.scss';
 import {Box, CodeBlock, Empty, Flex, Grid, GridItem, RadioGroup, Text, useToast, VStack} from '@redpanda-data/ui';
-import type {SchemaRegistryCompatibilityMode} from '../../../state/restInterfaces';
 import PageContent from '../../misc/PageContent';
 import Section from '../../misc/Section';
 import {getFormattedSchemaText, schemaTypeToCodeBlockLanguage} from './Schema.Details';
@@ -29,10 +28,10 @@ function renderNotConfigured() {
     <PageContent>
       <Section>
         <VStack gap={4}>
-          <Empty description="Not Configured" />
+          <Empty description="Not Configured"/>
           <Text textAlign="center">
             Schema Registry is not configured in Redpanda Console.
-            <br />
+            <br/>
             To view all registered schemas, their documentation and their versioned history simply provide the
             connection credentials in the Redpanda Console config.
           </Text>
@@ -61,16 +60,16 @@ class EditSchemaCompatibilityPage extends PageComponent<{ subjectName: string }>
     } else {
       p.addBreadcrumb('Edit Compatibility', '/schema-registry/edit-compatibility');
     }
-    this.refreshData(true);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
   }
 
-  refreshData(force?: boolean) {
+  refreshData() {
     api.refreshSchemaCompatibilityConfig();
     api.refreshSchemaMode();
     const subjectName = this.props.subjectName ? decodeURIComponent(this.props.subjectName) : undefined;
 
-    if (subjectName) api.refreshSchemaDetails(subjectName, force);
+    if (subjectName) api.refreshSchemaDetails(subjectName);
   }
 
   render() {
@@ -98,6 +97,7 @@ class EditSchemaCompatibilityPage extends PageComponent<{ subjectName: string }>
     );
   }
 }
+
 export default EditSchemaCompatibilityPage;
 
 function EditSchemaCompatibility(p: {
@@ -105,12 +105,12 @@ function EditSchemaCompatibility(p: {
   onClose: () => void; // called after save/cancel
 }) {
   const toast = useToast();
-  const { subjectName } = p;
+  const {subjectName} = p;
   const subject = subjectName ? api.schemaDetails.get(subjectName) : undefined;
   const schema = subject?.schemas.first((x) => x.version === subject.latestActiveVersion);
 
   // type should be just "SchemaRegistryCompatibilityMode"
-  const [configMode, setConfigMode] = useState<string>(
+  const [configMode, setConfigMode] = useState<CompatibilityLevel>(
     (subjectName ? subject?.compatibility : api.schemaCompatibility) ?? CompatibilityLevel.NONE,
   );
 
@@ -118,8 +118,8 @@ function EditSchemaCompatibility(p: {
 
   const onSave = () => {
     const changeReq = subjectName
-      ? api.setSchemaRegistrySubjectCompatibilityMode(subjectName, configMode as SchemaRegistryCompatibilityMode)
-      : api.setSchemaRegistryCompatibilityMode(configMode as SchemaRegistryCompatibilityMode);
+      ? api.setSchemaRegistrySubjectCompatibilityMode(subjectName, configMode)
+      : api.setSchemaRegistryCompatibilityMode(configMode);
 
     changeReq
       .then(async () => {
@@ -253,7 +253,7 @@ function EditSchemaCompatibility(p: {
                 ),
               },
             ]}
-            value={configMode}
+            value={configMode.toString()}
             onChange={(e) => {
               setConfigMode(e);
             }}

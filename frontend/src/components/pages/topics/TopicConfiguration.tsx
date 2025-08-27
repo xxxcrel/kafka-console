@@ -4,7 +4,6 @@ import {observer, useLocalObservable} from 'mobx-react';
 import type {FC} from 'react';
 import {useState} from 'react';
 import {Controller, type SubmitHandler, useForm} from 'react-hook-form';
-import type {ConfigEntryExtended} from '../../../state/restInterfaces';
 import {entryHasInfiniteValue, formatConfigValue, getInfiniteValueForEntry,} from '../../../utils/formatters/ConfigValueFormatter';
 import {DataSizeSelect, DurationSelect, NumInput, RatioInput} from './CreateTopicModal/CreateTopicModal';
 import './TopicConfiguration.scss';
@@ -19,7 +18,7 @@ import IncrementalAlterConfigsRequestResourceConfig = kmsg.IncrementalAlterConfi
 
 type ConfigurationEditorProps = {
   targetTopic: string; // topic name, or null if default configs
-  entries: ConfigEntryExtended[];
+  entries: TopicConfigEntry[];
   onForceRefresh: () => void;
 };
 
@@ -29,7 +28,7 @@ type Inputs = {
 };
 
 const ConfigEditorForm: FC<{
-  editedEntry: ConfigEntryExtended;
+  editedEntry: TopicConfigEntry;
   onClose: () => void;
   onSuccess: () => void;
   targetTopic: string;
@@ -49,7 +48,7 @@ const ConfigEditorForm: FC<{
     },
   });
 
-  const hasInfiniteValue = editedEntry.frontendFormat && ['BYTE_SIZE', 'DURATION'].includes(editedEntry.frontendFormat);
+  const hasInfiniteValue = editedEntry.frontendFormat && [FrontendFormat.BYTE_SIZE, FrontendFormat.DURATION].includes(editedEntry.frontendFormat);
   const valueTypeOptions: Array<{
     label: string;
     value: Inputs['valueType'];
@@ -193,13 +192,13 @@ const ConfigEditorForm: FC<{
 const ConfigurationEditor: FC<ConfigurationEditorProps> = observer((props) => {
   const $state = useLocalObservable<{
     filter?: string;
-    editedEntry: ConfigEntryExtended | null;
+    editedEntry: TopicConfigEntry | null;
   }>(() => ({
     filter: '',
     editedEntry: null,
   }));
 
-  const editConfig = (configEntry: ConfigEntryExtended) => {
+  const editConfig = (configEntry: TopicConfigEntry) => {
     $state.editedEntry = configEntry;
   };
 
@@ -264,8 +263,8 @@ export default ConfigurationEditor;
 const ConfigGroup = observer(
   (p: {
     groupName?: string;
-    onEditEntry: (configEntry: ConfigEntryExtended) => void;
-    entries: ConfigEntryExtended[];
+    onEditEntry: (configEntry: TopicConfigEntry) => void;
+    entries: TopicConfigEntry[];
     hasEditPermissions: boolean;
   }) => {
     return (
@@ -287,8 +286,8 @@ const ConfigGroup = observer(
 
 const ConfigEntryComponent = observer(
   (p: {
-    onEditEntry: (configEntry: ConfigEntryExtended) => void;
-    entry: ConfigEntryExtended;
+    onEditEntry: (configEntry: TopicConfigEntry) => void;
+    entry: TopicConfigEntry;
     hasEditPermissions: boolean;
   }) => {
     const {canEdit, reason: nonEdittableReason} = isTopicConfigEdittable(p.entry, p.hasEditPermissions);
@@ -343,7 +342,7 @@ const ConfigEntryComponent = observer(
 );
 
 function isTopicConfigEdittable(
-  entry: ConfigEntryExtended,
+  entry: TopicConfigEntry,
   hasEditPermissions: boolean,
 ): { canEdit: boolean; reason?: string } {
   if (!hasEditPermissions)

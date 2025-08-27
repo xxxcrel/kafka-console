@@ -9,49 +9,29 @@
  * by the Apache License, Version 2.0
  */
 
-import { observer } from 'mobx-react';
-import React, { useMemo } from 'react';
+import {observer} from 'mobx-react';
+import React, {useMemo} from 'react';
 
-import { PencilIcon, TrashIcon } from '@heroicons/react/solid';
-import { SkipIcon } from '@primer/octicons-react';
-import {
-  Accordion,
-  Checkbox,
-  CopyButton,
-  DataTable,
-  Empty,
-  Flex,
-  Grid,
-  GridItem,
-  Popover,
-  SearchField,
-  Section,
-  Tabs,
-  Text,
-} from '@redpanda-data/ui';
-import { action, computed, makeObservable, observable } from 'mobx';
-import {
-  MdCheckCircleOutline,
-  MdHourglassBottom,
-  MdHourglassEmpty,
-  MdLocalFireDepartment,
-  MdOutlineQuiz,
-  MdOutlineWarningAmber,
-} from 'react-icons/md';
-import { appGlobal } from '../../../state/appGlobal';
-import { api } from '../../../state/backendApi';
-import type { GroupDescription, GroupMemberDescription } from '../../../state/restInterfaces';
-import { Features } from '../../../state/supportedFeatures';
-import { uiSettings } from '../../../state/ui';
-import { editQuery, queryToObj } from '../../../utils/queryHelper';
-import { Button, DefaultSkeleton, IconButton, numberToThousandsString } from '../../../utils/tsxUtils';
+import {PencilIcon, TrashIcon} from '@heroicons/react/solid';
+import {SkipIcon} from '@primer/octicons-react';
+import {Accordion, Checkbox, CopyButton, DataTable, Empty, Flex, Grid, GridItem, Popover, SearchField, Section, Tabs, Text,} from '@redpanda-data/ui';
+import {action, computed, makeObservable, observable} from 'mobx';
+import {MdCheckCircleOutline, MdHourglassBottom, MdHourglassEmpty, MdLocalFireDepartment, MdOutlineQuiz, MdOutlineWarningAmber,} from 'react-icons/md';
+import {appGlobal} from '../../../state/appGlobal';
+import {api} from '../../../state/backendApi';
+import {Features} from '../../../state/supportedFeatures';
+import {uiSettings} from '../../../state/ui';
+import {editQuery, queryToObj} from '../../../utils/queryHelper';
+import {Button, DefaultSkeleton, IconButton, numberToThousandsString} from '../../../utils/tsxUtils';
 import PageContent from '../../misc/PageContent';
-import { ShortNum } from '../../misc/ShortNum';
-import { Statistic } from '../../misc/Statistic';
-import { PageComponent, type PageInitHelper } from '../Page';
-import AclList from '../topics/Tab.Acl/AclList';
-import type { GroupDeletingMode } from './Modals';
-import { DeleteOffsetsModal, EditOffsetsModal, type GroupOffset } from './Modals';
+import {ShortNum} from '../../misc/ShortNum';
+import {Statistic} from '../../misc/Statistic';
+import {PageComponent, type PageInitHelper} from '../Page';
+import type {GroupDeletingMode} from './Modals';
+import {DeleteOffsetsModal, EditOffsetsModal, type GroupOffset} from './Modals';
+import {kconsole} from "../../../../wailsjs/go/models";
+import ConsumerGroupOverview = kconsole.ConsumerGroupOverview;
+import GroupMemberDescription = kconsole.GroupMemberDescription;
 
 @observer
 class GroupDetails extends PageComponent<{ groupId: string }> {
@@ -81,17 +61,16 @@ class GroupDetails extends PageComponent<{ groupId: string }> {
         canBeTruncated: true,
       });
 
-    this.refreshData(true);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
   }
 
-  refreshData(force: boolean) {
+  refreshData() {
     const group = decodeURIComponent(this.props.groupId);
     api.refreshConsumerGroup(group);
-    api.refreshConsumerGroupAcls(group, force);
   }
 
-  renderTopics(group: GroupDescription) {
+  renderTopics(group: ConsumerGroupOverview) {
     return (
       <>
         <Flex mb={6} gap={4} alignItems="center">
@@ -175,19 +154,19 @@ class GroupDetails extends PageComponent<{ groupId: string }> {
           <Section py={4}>
             <div className="statisticsBar">
               <Flex gap="2rem" justifyContent="space-between">
-                <Statistic title="State" value={<GroupState group={group} />} />
-                <Statistic title="Assigned Partitions" value={totalPartitions} />
-                <ProtocolType group={group} />
-                <Statistic title="Protocol Type" value={group.protocolType} />
+                <Statistic title="State" value={<GroupState group={group}/>}/>
+                <Statistic title="Assigned Partitions" value={totalPartitions}/>
+                <ProtocolType group={group}/>
+                <Statistic title="Protocol Type" value={group.protocolType}/>
                 <Statistic
                   title={
                     <Flex alignItems="center" gap={1}>
-                      Coordinator ID <CopyButton content={`${group.coordinatorId}`} variant="sm" />
+                      Coordinator ID <CopyButton content={`${group.coordinatorId}`} variant="sm"/>
                     </Flex>
                   }
                   value={group.coordinatorId}
                 />
-                <Statistic title="Total Lag" value={group.lagSum} />
+                <Statistic title="Total Lag" value={group.lagSum}/>
               </Flex>
             </div>
           </Section>
@@ -204,12 +183,7 @@ class GroupDetails extends PageComponent<{ groupId: string }> {
                 key: 'topics',
                 name: 'Topics',
                 component: this.renderTopics(group),
-              },
-              {
-                key: 'acl',
-                name: 'ACL',
-                component: <AclList acl={api.consumerGroupAcls.get(group.groupId)} />,
-              },
+              }
             ]}
           />
         </Section>
@@ -235,7 +209,7 @@ class GroupDetails extends PageComponent<{ groupId: string }> {
   @action editGroup() {
     const groupOffsets = this.group?.topicOffsets.flatMap((x) => {
       return x.partitionOffsets.map((p) => {
-        return { topicName: x.topic, partitionId: p.partitionId, offset: p.groupOffset } as GroupOffset;
+        return {topicName: x.topic, partitionId: p.partitionId, offset: p.groupOffset} as GroupOffset;
       });
     });
 
@@ -249,7 +223,7 @@ class GroupDetails extends PageComponent<{ groupId: string }> {
   @action deleteGroup() {
     const groupOffsets = this.group?.topicOffsets.flatMap((x) => {
       return x.partitionOffsets.map((p) => {
-        return { topicName: x.topic, partitionId: p.partitionId, offset: p.groupOffset } as GroupOffset;
+        return {topicName: x.topic, partitionId: p.partitionId, offset: p.groupOffset} as GroupOffset;
       });
     });
 
@@ -261,7 +235,7 @@ class GroupDetails extends PageComponent<{ groupId: string }> {
 }
 
 const GroupByTopics = observer(function GroupByTopics(props: {
-  group: GroupDescription;
+  group: ConsumerGroupOverview;
   onlyShowPartitionsWithLag: boolean;
   quickSearch: string;
   onEditOffsets: (offsets: GroupOffset[]) => void;
@@ -280,7 +254,7 @@ const GroupByTopics = observer(function GroupByTopics(props: {
   const topicLags = props.group.topicOffsets;
   const p = props;
   const allAssignments = p.group.members.flatMap((m) => {
-    return m.assignments.map((as) => ({ member: m, topicName: as.topicName, partitions: as.partitionIds }));
+    return m.assignments.map((as) => ({member: m, topicName: as.topicName, partitions: as.partitionIds}));
   });
 
   const lagsFlat = topicLags.flatMap((topicLag) =>
@@ -308,7 +282,7 @@ const GroupByTopics = observer(function GroupByTopics(props: {
     .filter((x) => !x.assignedMember || x.assignedMember?.id.match(quickSearchRegExp))
     .groupInto((e) => e.topicName)
     .sort((a, b) => a.key.localeCompare(b.key))
-    .map((x) => ({ topicName: x.key, partitions: x.items }));
+    .map((x) => ({topicName: x.key, partitions: x.items}));
 
   const topicEntries = lagGroupsByTopic.map((g) => {
     const totalLagAll = g.partitions.sum((c) => c.lag ?? 0);
@@ -335,7 +309,7 @@ const GroupByTopics = observer(function GroupByTopics(props: {
                 }}
                 disabledReason={cannotEditGroupReason(props.group)}
               >
-                <PencilIcon />
+                <PencilIcon/>
               </IconButton>
               <IconButton
                 onClick={(e) => {
@@ -344,7 +318,7 @@ const GroupByTopics = observer(function GroupByTopics(props: {
                 }}
                 disabledReason={cannotDeleteGroupOffsetsReason(props.group)}
               >
-                <TrashIcon />
+                <TrashIcon/>
               </IconButton>
             </Flex>
           </Flex>
@@ -387,15 +361,15 @@ const GroupByTopics = observer(function GroupByTopics(props: {
               header: 'Assigned Member',
               accessorKey: 'id',
               cell: ({
-                row: {
-                  original: { assignedMember, id, clientId },
-                },
-              }) =>
+                       row: {
+                         original: {assignedMember, id, clientId},
+                       },
+                     }) =>
                 assignedMember ? (
                   renderMergedID(id, clientId)
                 ) : (
-                  <span style={{ margin: '0 3px' }}>
-                    <SkipIcon /> No assigned member
+                  <span style={{margin: '0 3px'}}>
+                    <SkipIcon/> No assigned member
                   </span>
                 ),
             },
@@ -403,13 +377,13 @@ const GroupByTopics = observer(function GroupByTopics(props: {
               header: 'Host',
               accessorKey: 'host',
               cell: ({
-                row: {
-                  original: { host },
-                },
-              }) =>
+                       row: {
+                         original: {host},
+                       },
+                     }) =>
                 host ?? (
-                  <span style={{ opacity: 0.66, margin: '0 3px' }}>
-                    <SkipIcon />
+                  <span style={{opacity: 0.66, margin: '0 3px'}}>
+                    <SkipIcon/>
                   </span>
                 ),
             },
@@ -417,37 +391,37 @@ const GroupByTopics = observer(function GroupByTopics(props: {
               size: 120,
               header: 'Log End Offset',
               accessorKey: 'highWaterMark',
-              cell: ({ row: { original } }) => numberToThousandsString(original.highWaterMark),
+              cell: ({row: {original}}) => numberToThousandsString(original.highWaterMark),
             },
             {
               size: 120,
               header: 'Group Offset',
               accessorKey: 'groupOffset',
-              cell: ({ row: { original } }) => numberToThousandsString(original.groupOffset),
+              cell: ({row: {original}}) => numberToThousandsString(original.groupOffset),
             },
             {
               size: 80,
               header: 'Lag',
               accessorKey: 'lag',
-              cell: ({ row: { original } }) => ShortNum({ value: original.lag, tooltip: true }),
+              cell: ({row: {original}}) => ShortNum({value: original.lag, tooltip: true}),
             },
             {
               size: 1,
               header: '',
               id: 'action',
-              cell: ({ row: { original } }) => (
+              cell: ({row: {original}}) => (
                 <Flex pr={2} gap={1}>
                   <IconButton
                     onClick={() => p.onEditOffsets([original])}
                     disabledReason={cannotEditGroupReason(props.group)}
                   >
-                    <PencilIcon />
+                    <PencilIcon/>
                   </IconButton>
                   <IconButton
                     onClick={() => p.onDeleteOffsets([original], 'partition')}
                     disabledReason={cannotDeleteGroupOffsetsReason(props.group)}
                   >
-                    <TrashIcon />
+                    <TrashIcon/>
                   </IconButton>
                 </Flex>
               ),
@@ -478,7 +452,7 @@ const GroupByTopics = observer(function GroupByTopics(props: {
     );
   }
 
-  return <Accordion allowToggle items={topicEntries.filterNull()} defaultIndex={defaultExpand} />;
+  return <Accordion allowToggle items={topicEntries.filterNull()} defaultIndex={defaultExpand}/>;
 });
 
 const renderMergedID = (id?: string, clientId?: string) => {
@@ -504,12 +478,12 @@ const renderMergedID = (id?: string, clientId?: string) => {
 type StateIcon = 'stable' | 'completingrebalance' | 'preparingrebalance' | 'empty' | 'dead' | 'unknown';
 
 const stateIcons = new Map<StateIcon, JSX.Element>([
-  ['stable', <MdCheckCircleOutline key="stable" size={16} color="#52c41a" />],
-  ['completingrebalance', <MdHourglassBottom key="completingrebalance" size={16} color="#52c41a" />],
-  ['preparingrebalance', <MdHourglassEmpty key="preparingrebalance" size={16} color="orange" />],
-  ['empty', <MdOutlineWarningAmber key="empty" size={16} color="orange" />],
-  ['dead', <MdLocalFireDepartment key="dead" size={16} color="orangered" />],
-  ['unknown', <MdOutlineQuiz key="unknown" size={16} />],
+  ['stable', <MdCheckCircleOutline key="stable" size={16} color="#52c41a"/>],
+  ['completingrebalance', <MdHourglassBottom key="completingrebalance" size={16} color="#52c41a"/>],
+  ['preparingrebalance', <MdHourglassEmpty key="preparingrebalance" size={16} color="orange"/>],
+  ['empty', <MdOutlineWarningAmber key="empty" size={16} color="orange"/>],
+  ['dead', <MdLocalFireDepartment key="dead" size={16} color="orangered"/>],
+  ['unknown', <MdOutlineQuiz key="unknown" size={16}/>],
 ]);
 
 const stateIconNames: Record<StateIcon, string> = {
@@ -546,7 +520,7 @@ const consumerGroupStateTable = (
   </Grid>
 );
 
-export const GroupState = (p: { group: GroupDescription }) => {
+export const GroupState = (p: { group: ConsumerGroupOverview }) => {
   const state = p.group.state.toLowerCase();
   const icon = stateIcons.get(state as StateIcon);
 
@@ -559,26 +533,26 @@ export const GroupState = (p: { group: GroupDescription }) => {
     </Popover>
   );
 };
-const ProtocolType = (p: { group: GroupDescription }) => {
+const ProtocolType = (p: { group: ConsumerGroupOverview }) => {
   const protocol = p.group.protocolType;
   if (protocol === 'consumer') return null;
 
-  return <Statistic title="Protocol" value={protocol} />;
+  return <Statistic title="Protocol" value={protocol}/>;
 };
 
-function cannotEditGroupReason(group: GroupDescription): string | undefined {
+function cannotEditGroupReason(group: ConsumerGroupOverview): string | undefined {
   if (group.noEditPerms) return "You don't have 'editConsumerGroup' permissions for this group";
   if (group.isInUse) return 'Consumer groups with active members cannot be edited';
   if (!Features.patchGroup) return 'This cluster does not support editing group offsets';
 }
 
-function cannotDeleteGroupReason(group: GroupDescription): string | undefined {
+function cannotDeleteGroupReason(group: ConsumerGroupOverview): string | undefined {
   if (group.noDeletePerms) return "You don't have 'deleteConsumerGroup' permissions for this group";
   if (group.isInUse) return 'Consumer groups with active members cannot be deleted';
   if (!Features.deleteGroup) return 'This cluster does not support deleting groups';
 }
 
-function cannotDeleteGroupOffsetsReason(group: GroupDescription): string | undefined {
+function cannotDeleteGroupOffsetsReason(group: ConsumerGroupOverview): string | undefined {
   if (group.noEditPerms) return "You don't have 'deleteConsumerGroup' permissions for this group";
   if (group.isInUse) return 'Consumer groups with active members cannot be deleted';
   if (!Features.deleteGroupOffsets) return 'This cluster does not support deleting group offsets';

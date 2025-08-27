@@ -9,50 +9,23 @@
  * by the Apache License, Version 2.0
  */
 
-import { ChevronLeftIcon, ChevronRightIcon, SkipIcon } from '@primer/octicons-react';
-import {
-  Accordion,
-  Box,
-  Button,
-  ConfirmItemDeleteModal,
-  DataTable,
-  Flex,
-  FormLabel,
-  HStack,
-  List,
-  ListItem,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  NumberInput,
-  Radio,
-  Text,
-  Tooltip,
-  UnorderedList,
-  createStandaloneToast,
-  redpandaTheme,
-  redpandaToastOptions,
-} from '@redpanda-data/ui';
-import { type IReactionDisposer, action, autorun, makeObservable, observable, transaction } from 'mobx';
-import { observer } from 'mobx-react';
-import { Component } from 'react';
-import { MdOutlineWarningAmber } from 'react-icons/md';
-import { appGlobal } from '../../../state/appGlobal';
-import { api } from '../../../state/backendApi';
-import type {
-  DeleteConsumerGroupOffsetsTopic,
-  EditConsumerGroupOffsetsTopic,
-  GroupDescription,
-} from '../../../state/restInterfaces';
-import { toJson } from '../../../utils/jsonUtils';
-import { InfoText, Button as RPButton, numberToThousandsString } from '../../../utils/tsxUtils';
-import { showErrorModal } from '../../misc/ErrorModal';
-import { KowlTimePicker } from '../../misc/KowlTimePicker';
-import { SingleSelect } from '../../misc/Select';
-import {kconsole} from "../../../../wailsjs/go/models";
+import {ChevronLeftIcon, ChevronRightIcon, SkipIcon} from '@primer/octicons-react';
+import {Accordion, Box, Button, ConfirmItemDeleteModal, createStandaloneToast, DataTable, Flex, FormLabel, HStack, List, ListItem, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, ModalOverlay, NumberInput, Radio, redpandaTheme, redpandaToastOptions, Text, Tooltip, UnorderedList,} from '@redpanda-data/ui';
+import {action, autorun, type IReactionDisposer, makeObservable, observable, transaction} from 'mobx';
+import {observer} from 'mobx-react';
+import {Component} from 'react';
+import {MdOutlineWarningAmber} from 'react-icons/md';
+import {appGlobal} from '../../../state/appGlobal';
+import {api} from '../../../state/backendApi';
+import {toJson} from '../../../utils/jsonUtils';
+import {Button as RPButton, InfoText, numberToThousandsString} from '../../../utils/tsxUtils';
+import {showErrorModal} from '../../misc/ErrorModal';
+import {KowlTimePicker} from '../../misc/KowlTimePicker';
+import {SingleSelect} from '../../misc/Select';
+import {kconsole, kmsg} from "../../../../wailsjs/go/models";
+import ConsumerGroupOverview = kconsole.ConsumerGroupOverview;
+import OffsetDeleteRequestTopic = kmsg.OffsetDeleteRequestTopic;
+import OffsetCommitRequestTopic = kmsg.OffsetCommitRequestTopic;
 
 type EditOptions = 'startOffset' | 'endOffset' | 'time' | 'otherGroup' | 'shiftBy';
 
@@ -78,7 +51,7 @@ export type GroupOffset = {
   newOffset?: number | Date | kconsole.PartitionOffset;
 };
 
-const { ToastContainer, toast } = createStandaloneToast({
+const {ToastContainer, toast} = createStandaloneToast({
   theme: redpandaTheme,
   defaultOptions: {
     ...redpandaToastOptions.defaultOptions,
@@ -89,7 +62,7 @@ const { ToastContainer, toast } = createStandaloneToast({
 
 @observer
 export class EditOffsetsModal extends Component<{
-  group: GroupDescription;
+  group: ConsumerGroupOverview;
   offsets: GroupOffset[] | null;
   onClose: () => void;
   initialTopic: string | null;
@@ -112,7 +85,7 @@ export class EditOffsetsModal extends Component<{
   @observable offsetShiftByValueAsString = '0';
 
 
-  @observable otherConsumerGroups: GroupDescription[] = [];
+  @observable otherConsumerGroups: ConsumerGroupOverview[] = [];
   @observable selectedGroup: string | undefined = undefined;
   @observable otherGroupCopyMode: 'all' | 'onlyExisting' = 'onlyExisting';
 
@@ -138,13 +111,14 @@ export class EditOffsetsModal extends Component<{
     offsets = offsets ?? this.lastOffsets;
     if (!offsets) return null;
 
-    this.offsetsByTopic = offsets.groupInto((x) => x.topicName).map((g) => ({ topicName: g.key, items: g.items }));
+    this.offsetsByTopic = offsets.groupInto((x) => x.topicName).map((g) => ({topicName: g.key, items: g.items}));
 
     return (
       <>
-        <ToastContainer />
-        <Modal isOpen={visible} onClose={() => {}}>
-          <ModalOverlay />
+        <ToastContainer/>
+        <Modal isOpen={visible} onClose={() => {
+        }}>
+          <ModalOverlay/>
           <ModalContent minW="3xl">
             <ModalHeader>Edit consumer group</ModalHeader>
             <ModalBody>
@@ -157,7 +131,7 @@ export class EditOffsetsModal extends Component<{
               </HStack>
 
               {/* Content */}
-              <div style={{ marginTop: '2em' }}>
+              <div style={{marginTop: '2em'}}>
                 {this.page === 0 ? <div key="p1">{this.page1()}</div> : <div key="p2">{this.page2()}</div>}
               </div>
             </ModalBody>
@@ -204,14 +178,16 @@ export class EditOffsetsModal extends Component<{
                       label: 'All Partitions',
                     },
                     ...this.props.offsets?.filter((x) => x.topicName === this.selectedTopic)
-                    ?.sort((a, b) => a.partitionId - b.partitionId)
-                    ?.map((x: GroupOffset) => ({
-                      value: x.partitionId,
-                      label: x.partitionId.toString(),
-                    })) ?? [],
+                      ?.sort((a, b) => a.partitionId - b.partitionId)
+                      ?.map((x: GroupOffset) => ({
+                        value: x.partitionId,
+                        label: x.partitionId.toString(),
+                      })) ?? [],
                   ]}
                   value={this.selectedPartition}
-                  onChange={action((v: number | null) => { this.selectedPartition = v })}
+                  onChange={action((v: number | null) => {
+                    this.selectedPartition = v
+                  })}
                 />
               </Box>
             )
@@ -308,7 +284,7 @@ export class EditOffsetsModal extends Component<{
               }}
             >
               <SingleSelect
-                options={this.otherConsumerGroups.map((g) => ({ value: g.groupId, label: g.groupId }))}
+                options={this.otherConsumerGroups.map((g) => ({value: g.groupId, label: g.groupId}))}
                 value={this.selectedGroup}
                 onChange={(x) => (this.selectedGroup = x)}
                 isDisabled={this.isLoadingTimestamps}
@@ -352,12 +328,12 @@ export class EditOffsetsModal extends Component<{
 
   page2() {
     return (
-      <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+      <div style={{maxHeight: '400px', overflowY: 'auto'}}>
         <Accordion
           defaultIndex={0}
           items={this.offsetsByTopic
-            .filter(({ topicName }) => this.selectedTopic === null || topicName === this.selectedTopic)
-            .map(({ topicName, items }) => ({
+            .filter(({topicName}) => this.selectedTopic === null || topicName === this.selectedTopic)
+            .map(({topicName, items}) => ({
               heading: (
                 <Flex alignItems="center" gap={1} fontWeight={600} whiteSpace="nowrap">
                   {/* Title */}
@@ -387,10 +363,10 @@ export class EditOffsetsModal extends Component<{
                       header: 'Offset Before',
                       accessorKey: 'offset',
                       cell: ({
-                        row: {
-                          original: { offset },
-                        },
-                      }) =>
+                               row: {
+                                 original: {offset},
+                               },
+                             }) =>
                         offset == null ? (
                           <Tooltip
                             label="The group does not have an offset for this partition yet"
@@ -398,8 +374,8 @@ export class EditOffsetsModal extends Component<{
                             placement="top"
                             hasArrow
                           >
-                            <span style={{ opacity: 0.66, marginLeft: '2px' }}>
-                              <SkipIcon />
+                            <span style={{opacity: 0.66, marginLeft: '2px'}}>
+                              <SkipIcon/>
                             </span>
                           </Tooltip>
                         ) : (
@@ -410,8 +386,8 @@ export class EditOffsetsModal extends Component<{
                       header: 'Offset After',
                       id: 'offsetAfter',
                       size: Number.POSITIVE_INFINITY,
-                      cell: ({ row: { original } }) => (
-                        <ColAfter selectedTime={this.timestampUtcMs} record={original} />
+                      cell: ({row: {original}}) => (
+                        <ColAfter selectedTime={this.timestampUtcMs} record={original}/>
                       ),
                     },
                   ]}
@@ -489,7 +465,7 @@ export class EditOffsetsModal extends Component<{
                 Could not lookup offsets for given timestamp{' '}
                 <span className="codeBox">{new Date(this.timestampUtcMs).toUTCString()}</span>.
               </span>,
-              toJson({ errors: err, request: requiredTopics }, 4),
+              toJson({errors: err, request: requiredTopics}, 4),
             );
             toast.update(toastRef, {
               status: 'error',
@@ -581,7 +557,7 @@ export class EditOffsetsModal extends Component<{
           >
             <span>Review</span>
             <span>
-              <ChevronRightIcon />
+              <ChevronRightIcon/>
             </span>
           </Button>
         </Flex>
@@ -589,14 +565,14 @@ export class EditOffsetsModal extends Component<{
 
     return (
       <Flex gap={2}>
-        <Button key="back" onClick={() => this.setPage(0)} style={{ paddingRight: '18px' }} isDisabled={disableNav}>
+        <Button key="back" onClick={() => this.setPage(0)} style={{paddingRight: '18px'}} isDisabled={disableNav}>
           <span>
-            <ChevronLeftIcon />
+            <ChevronLeftIcon/>
           </span>
           <span>Back</span>
         </Button>
 
-        <Button key="cancel" style={{ marginLeft: 'auto' }} onClick={this.props.onClose}>
+        <Button key="cancel" style={{marginLeft: 'auto'}} onClick={this.props.onClose}>
           Cancel
         </Button>
 
@@ -620,7 +596,7 @@ export class EditOffsetsModal extends Component<{
         // need watermarks for all topics the group consumes
         // in order to know earliest/latest offsets
         const topics = this.props.group.topicOffsets.map((x) => x.topic).distinct();
-        api.refreshPartitions(topics, true);
+        api.refreshPartitions(topics);
 
         this.autorunDisposer = autorun(() => {
           this.otherConsumerGroups = [...api.consumerGroups.values()].filter(
@@ -649,7 +625,7 @@ export class EditOffsetsModal extends Component<{
     const group = this.props.group;
     // biome-ignore lint/style/noNonNullAssertion: not touching MobX observables
     const offsets = this.props.offsets!.filter(
-      ({ topicName, partitionId }) =>
+      ({topicName, partitionId}) =>
         (this.selectedTopic === null || topicName === this.selectedTopic)
         && (this.selectedPartition === null || partitionId === this.selectedPartition),
     );
@@ -664,15 +640,15 @@ export class EditOffsetsModal extends Component<{
     const topics = createEditRequest(offsets);
     try {
       const editResponse = await api.editConsumerGroupOffsets(group.groupId, topics);
-      const errors = editResponse
+      const errors = editResponse.topics
         .map((t) => ({
           ...t,
           partitions: t.partitions.filter((x) => x.error),
         }))
         .filter((t) => t.partitions.length > 0);
       if (errors.length > 0) {
-        console.error('apply offsets, backend errors', { errors: errors, request: topics });
-        throw { errors: errors, request: topics };
+        console.error('apply offsets, backend errors', {errors: errors, request: topics});
+        throw {errors: errors, request: topics};
       }
 
       toast.update(toastRef, {
@@ -715,8 +691,8 @@ class ColAfter extends Component<{
     if (val == null) {
       return (
         <Tooltip label="Offset will not be changed" openDelay={1} placement="top" hasArrow>
-          <span style={{ opacity: 0.66, marginLeft: '2px' }}>
-            <SkipIcon />
+          <span style={{opacity: 0.66, marginLeft: '2px'}}>
+            <SkipIcon/>
           </span>
         </Tooltip>
       );
@@ -730,14 +706,14 @@ class ColAfter extends Component<{
       // actual offset
       if ('offset' in val) {
         // error
-        if (val.error) return <span style={{ color: 'orangered' }}>{val.error}</span>;
+        if (val.error) return <span style={{color: 'orangered'}}>{val.error}</span>;
 
         // successful fetch
         if (val.timestamp > 0)
           return (
-            <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+            <div style={{display: 'inline-flex', gap: '6px', alignItems: 'center'}}>
               <span>{numberToThousandsString(val.offset)}</span>
-              <span style={{ fontSize: 'smaller', color: 'hsl(0deg 0% 67%)', userSelect: 'none', cursor: 'default' }}>
+              <span style={{fontSize: 'smaller', color: 'hsl(0deg 0% 67%)', userSelect: 'none', cursor: 'default'}}>
                 ({new Date(val.timestamp).toLocaleString()})
               </span>
             </div>
@@ -747,7 +723,7 @@ class ColAfter extends Component<{
         // use 'latest'
         const partition = api.topicPartitions.get(record.topicName)?.first((p) => p.id === record.partitionId);
         return (
-          <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+          <div style={{display: 'inline-flex', gap: '6px', alignItems: 'center'}}>
             <InfoText
               tooltip={
                 <div>
@@ -756,7 +732,7 @@ class ColAfter extends Component<{
                   offset in that partition will be used.
                 </div>
               }
-              icon={<MdOutlineWarningAmber size={14} />}
+              icon={<MdOutlineWarningAmber size={14}/>}
               iconSize="18px"
               iconColor="orangered"
               maxWidth="350px"
@@ -778,13 +754,13 @@ class ColAfter extends Component<{
 
       const content =
         val === -2
-          ? { name: 'Earliest', offset: partition?.waterMarkLow ?? '...' }
-          : { name: 'Latest', offset: partition?.waterMarkHigh ?? '...' };
+          ? {name: 'Earliest', offset: partition?.waterMarkLow ?? '...'}
+          : {name: 'Latest', offset: partition?.waterMarkHigh ?? '...'};
 
       return (
-        <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+        <div style={{display: 'inline-flex', gap: '6px', alignItems: 'center'}}>
           <span>{typeof content.offset === 'number' ? numberToThousandsString(content.offset) : content.offset}</span>
-          <span style={{ fontSize: 'smaller', color: 'hsl(0deg 0% 67%)', userSelect: 'none', cursor: 'default' }}>
+          <span style={{fontSize: 'smaller', color: 'hsl(0deg 0% 67%)', userSelect: 'none', cursor: 'default'}}>
             ({content.name})
           </span>
         </div>
@@ -793,7 +769,7 @@ class ColAfter extends Component<{
 
     // Loading placeholder
     if (typeof val === 'string') {
-      return <span style={{ opacity: 0.66, fontStyle: 'italic' }}>{val}</span>;
+      return <span style={{opacity: 0.66, fontStyle: 'italic'}}>{val}</span>;
     }
 
     return `Unknown type in 'newOffset' type='${typeof val}' value='{v}'`;
@@ -811,7 +787,7 @@ export type GroupDeletingMode = 'group' | 'topic' | 'partition';
 //       which is technically correct, but might give the impression of deleting more than he wanted
 @observer
 export class DeleteOffsetsModal extends Component<{
-  group: GroupDescription;
+  group: ConsumerGroupOverview;
   mode: GroupDeletingMode;
   offsets: GroupOffset[] | null;
   onClose: () => void;
@@ -821,14 +797,14 @@ export class DeleteOffsetsModal extends Component<{
   lastOffsets: GroupOffset[];
 
   render() {
-    const { group, mode } = this.props;
+    const {group, mode} = this.props;
     let offsets = this.props.offsets;
 
     const visible = Boolean(offsets);
     if (offsets) this.lastOffsets = offsets;
     offsets = offsets ?? this.lastOffsets;
 
-    const offsetsByTopic = offsets?.groupInto((x) => x.topicName).map((g) => ({ topicName: g.key, items: g.items }));
+    const offsetsByTopic = offsets?.groupInto((x) => x.topicName).map((g) => ({topicName: g.key, items: g.items}));
     const singlePartition = offsets?.length === 1;
 
     return (
@@ -864,8 +840,8 @@ export class DeleteOffsetsModal extends Component<{
                 }))
                 .filter((t) => t.partitions.length > 0);
               if (errors.length > 0) {
-                console.error('backend returned errors for deleteOffsets', { request: deleteRequest, errors: errors });
-                throw { request: deleteRequest, errors: errors };
+                console.error('backend returned errors for deleteOffsets', {request: deleteRequest, errors: errors});
+                throw {request: deleteRequest, errors: errors};
               }
             }
 
@@ -889,7 +865,7 @@ export class DeleteOffsetsModal extends Component<{
             console.error(err);
             onError(`Could not delete selected offsets in consumer group ${group.groupId} - ${toJson(err, 4)}`);
           } finally {
-            api.refreshConsumerGroups(true);
+            api.refreshConsumerGroups();
           }
         }}
       >
@@ -965,7 +941,7 @@ export class DeleteOffsetsModal extends Component<{
 }
 
 // Utility functions
-function createEditRequest(offsets: GroupOffset[]): EditConsumerGroupOffsetsTopic[] {
+function createEditRequest(offsets: GroupOffset[]): OffsetCommitRequestTopic[] {
   const getOffset = (x: GroupOffset['newOffset']): number | undefined => {
     // no offset set
     if (x == null) return undefined;
@@ -982,45 +958,35 @@ function createEditRequest(offsets: GroupOffset[]): EditConsumerGroupOffsetsTopi
 
   const topicOffsets = offsets
     .groupInto((x) => x.topicName)
-    .map((t) => ({
-      topicName: t.key,
-      partitions: t.items.map((p) => ({
-        partitionId: p.partitionId,
-        offset: getOffset(p.newOffset),
+    .map((t) => (OffsetCommitRequestTopic.createFrom({
+      TopicName: t.key,
+      Partitions: t.items.map((p) => ({
+        Partition: p.partitionId,
+        Offset: getOffset(p.newOffset),
       })),
-    }));
+    })));
 
   // filter undefined partitions
-  for (const t of topicOffsets) t.partitions.removeAll((p) => p.offset == null);
-
-  // assert type:
-  // we know that there can't be any undefined offsets anymore
-  const cleanOffsets = topicOffsets as {
-    topicName: string;
-    partitions: {
-      partitionId: number;
-      offset: number;
-    }[];
-  }[];
+  for (const t of topicOffsets) t.Partitions.removeAll((p) => p.Offset == null);
 
   // filter topics with zero partitions
-  cleanOffsets.removeAll((t) => t.partitions.length === 0);
+  topicOffsets.removeAll((t) => t.Partitions.length === 0);
 
-  return cleanOffsets;
+  return topicOffsets;
 }
 
-function createDeleteRequest(offsets: GroupOffset[]): DeleteConsumerGroupOffsetsTopic[] {
+function createDeleteRequest(offsets: GroupOffset[]): OffsetDeleteRequestTopic[] {
   const topicOffsets = offsets
     .groupInto((x) => x.topicName)
-    .map((t) => ({
-      topicName: t.key,
-      partitions: t.items.map((p) => ({
-        partitionId: p.partitionId,
+    .map((t) => (OffsetDeleteRequestTopic.createFrom({
+      TopicName: t.key,
+      Partitions: t.items.map((p) => ({
+        partition: p.partitionId,
       })),
-    }));
+    })));
 
   // filter topics with zero partitions
-  topicOffsets.removeAll((t) => t.partitions.length === 0);
+  topicOffsets.removeAll((t) => t.Partitions.length === 0);
 
   return topicOffsets;
 }

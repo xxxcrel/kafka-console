@@ -45,6 +45,8 @@ type TopicSummary struct {
 	CleanupPolicy     string             `json:"cleanupPolicy"`
 	Documentation     DocumentationState `json:"documentation"`
 	LogDirSummary     TopicLogDirSummary `json:"logDirSummary"`
+	//for Frontend
+	AllowedActions []string `json:"allowedActions"`
 }
 
 // GetTopicsOverview returns a TopicSummary for all Kafka Topics

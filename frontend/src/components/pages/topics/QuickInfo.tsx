@@ -9,18 +9,20 @@
  * by the Apache License, Version 2.0
  */
 
-import { observer } from 'mobx-react';
-import { api } from '../../../state/backendApi';
-import type { ConfigEntry, Topic } from '../../../state/restInterfaces';
+import {observer} from 'mobx-react';
+import {api} from '../../../state/backendApi';
 import '../../../utils/arrayExtensions';
-import { Box, Divider, Flex, Text, Tooltip } from '@redpanda-data/ui';
-import { MdInfoOutline } from 'react-icons/md';
-import { formatConfigValue } from '../../../utils/formatters/ConfigValueFormatter';
-import { prettyBytesOrNA } from '../../../utils/utils';
-import type { CleanupPolicyType } from './types';
+import {Box, Divider, Flex, Text, Tooltip} from '@redpanda-data/ui';
+import {MdInfoOutline} from 'react-icons/md';
+import {formatConfigValue} from '../../../utils/formatters/ConfigValueFormatter';
+import {prettyBytesOrNA} from '../../../utils/utils';
+import type {CleanupPolicyType} from './types';
+import {kconsole} from "../../../../wailsjs/go/models";
+import TopicConfigEntry = kconsole.TopicConfigEntry;
+import TopicSummary = kconsole.TopicSummary;
 
 // todo: rename QuickInfo
-export const TopicQuickInfoStatistic = observer((p: { topic: Topic }) => {
+export const TopicQuickInfoStatistic = observer((p: { topic: TopicSummary }) => {
   const topic = p.topic;
 
   // Messages
@@ -60,7 +62,7 @@ export const TopicQuickInfoStatistic = observer((p: { topic: Topic }) => {
         <Text as="dd">{topic ? prettyBytesOrNA(topic.logDirSummary.totalSizeBytes) : '...'}</Text>
       </Flex>
       <Box>
-        <Divider orientation="vertical" />
+        <Divider orientation="vertical"/>
       </Box>
       <Flex gap={2}>
         <Tooltip
@@ -69,7 +71,7 @@ export const TopicQuickInfoStatistic = observer((p: { topic: Topic }) => {
           placement="bottom"
         >
           <Flex alignItems="flex-end">
-            <MdInfoOutline size={16} />
+            <MdInfoOutline size={16}/>
           </Flex>
         </Tooltip>
         <Text as="dt" fontWeight="bold">
@@ -78,7 +80,7 @@ export const TopicQuickInfoStatistic = observer((p: { topic: Topic }) => {
         <Text as="dd">{messageSum}</Text>
       </Flex>
       <Box>
-        <Divider orientation="vertical" />
+        <Divider orientation="vertical"/>
       </Box>
       {cleanupPolicy && (
         <Flex gap={2}>
@@ -97,7 +99,7 @@ export const TopicQuickInfoStatistic = observer((p: { topic: Topic }) => {
         </Flex>
       )}
       <Box>
-        <Divider orientation="vertical" />
+        <Divider orientation="vertical"/>
       </Box>
       <Flex gap={2}>
         {cleanupPolicy === 'compact' && (
@@ -146,10 +148,10 @@ export const TopicQuickInfoStatistic = observer((p: { topic: Topic }) => {
   );
 });
 
-function filterTopicConfig(config: ConfigEntry[] | null | undefined): ConfigEntry[] | null | undefined {
+function filterTopicConfig(config: TopicConfigEntry[] | null | undefined): TopicConfigEntry[] | null | undefined {
   if (!config) return config;
 
-  const newConfig: ConfigEntry[] = [];
+  const newConfig: TopicConfigEntry[] = [];
   for (const e of config) newConfig.push(e);
 
   if (config.find((e) => e.name === 'cleanup.policy' && (e.value ?? '').includes('compact'))) {

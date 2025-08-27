@@ -9,7 +9,7 @@
  * by the Apache License, Version 2.0
  */
 
-import {clusterstatus, kconsole, kgo} from "../../wailsjs/go/models";
+import {clusterstatus, kconsole} from "../../wailsjs/go/models";
 import TopicPartitionDetails = kconsole.TopicPartitionDetails;
 import KafkaInfo = clusterstatus.KafkaInfo;
 import SchemaRegistryInfo = clusterstatus.SchemaRegistryInfo;
@@ -50,18 +50,7 @@ export class WrappedApiError extends Error {
   }
 }
 
-export const TopicActions = [
-  'seeTopic',
-  'viewPartitions',
-  'viewMessages',
-  'useSearchFilter',
-  'viewConsumers',
-  'viewConfig',
-  'deleteTopic',
-  'deleteTopicRecords',
-  'editConfig',
-] as const;
-export type TopicAction = 'all' | (typeof TopicActions)[number];
+
 
 export interface Topic {
   topicName: string;
@@ -78,9 +67,9 @@ export interface TopicLogDirSummary {
   totalSizeBytes: number; // how much space this topic takes up (files in its log dir)
   replicaErrors:
     | {
-        brokerId: number;
-        error: string | null;
-      }[]
+    brokerId: number;
+    error: string | null;
+  }[]
     | null;
   hint: string | null;
 }
@@ -165,6 +154,7 @@ export type MessageDataType =
   | 'uint'
   | 'smile'
   | 'cbor';
+
 export enum CompressionType {
   Unknown = 'unknown',
 
@@ -275,12 +265,15 @@ export interface TopicDescription {
   configEntries: ConfigEntryExtended[];
   error: KafkaError | null;
 }
+
 export interface TopicConfigResponse {
   topicDescription: TopicDescription;
 }
+
 export interface PartialTopicConfigsResponse {
   topicDescriptions: TopicDescription[];
 }
+
 export interface TopicDocumentation {
   // if false: topic documentation is not configured
   isEnabled: boolean;
@@ -291,6 +284,7 @@ export interface TopicDocumentation {
   // added by frontend:
   text: string | null; // atob(markdown)
 }
+
 export interface TopicDocumentationResponse {
   topicName: string;
   documentation: TopicDocumentation;
@@ -300,6 +294,7 @@ export interface GroupMemberAssignment {
   topicName: string;
   partitionIds: number[];
 }
+
 export interface GroupMemberDescription {
   id: string; // unique ID assigned to the member after login
   clientId: string; // custom id reported by the member
@@ -380,10 +375,12 @@ export interface EditConsumerGroupOffsetsResponseTopic {
 export interface DeleteConsumerGroupRequest {
   groupId: string;
 }
+
 export interface DeleteConsumerGroupOffsetsRequest {
   groupId: string;
   topics: DeleteConsumerGroupOffsetsTopic[];
 }
+
 export interface DeleteConsumerGroupOffsetsTopic {
   topicName: string;
   partitions: {
@@ -407,6 +404,7 @@ export interface GetTopicOffsetsByTimestampRequest {
   topics: GetTopicOffsetsByTimestampRequestTopic[];
   timestamp: number; // unix ms
 }
+
 export interface GetTopicOffsetsByTimestampRequestTopic {
   topicName: string;
   partitionIds: number[];
@@ -415,6 +413,7 @@ export interface GetTopicOffsetsByTimestampRequestTopic {
 export interface GetTopicOffsetsByTimestampResponse {
   topicOffsets: TopicOffset[];
 }
+
 export interface TopicOffset {
   topicName: string;
   partitions: PartitionOffset[];
@@ -453,6 +452,7 @@ export interface PartitionLag {
 export interface GetConsumerGroupsResponse {
   consumerGroups: GroupDescription[];
 }
+
 export interface GetConsumerGroupResponse {
   consumerGroup: GroupDescription;
 }
@@ -520,16 +520,17 @@ export interface User {
     avatarUrl: string;
   };
 }
+
 export interface Seat {
   id: string; // id of seat
   licenseId: string; // shouldn't that be censored??
   user: User; // user representation of firestore? should be removed...
   lastActivity: string; // is a datetime string, should probably be a "UnixMillis"
 }
+
 export interface UserData {
   displayName: string;
   avatarUrl: string;
-  authenticationMethod: AuthenticationMethod;
 
   canViewConsoleUsers: boolean;
   canListAcls: boolean;
@@ -551,6 +552,7 @@ export interface UserData {
   canCreateTransforms: boolean;
   canDeleteTransforms: boolean;
 }
+
 export type UserPermissions = Exclude<keyof UserData, 'user' | 'seat'>;
 
 export interface AdminInfo {
@@ -812,20 +814,6 @@ export interface QuotaResponseItem {
   settings: QuotaResponseSetting[];
 }
 
-export enum QuotaType {
-  // A rate representing the upper bound (bytes/sec) for producer traffic
-  PRODUCER_BYTE_RATE = 'producer_byte_rate',
-  // A rate representing the upper bound (bytes/sec) for consumer traffic.
-  CONSUMER_BYTE_RATE = 'consumer_byte_rate',
-  // A percentage representing the upper bound of time spent for processing requests.
-  REQUEST_PERCENTAGE = 'request_percentage',
-  // The rate at which mutations are accepted for the create "topics request,
-  // the create partitions request and the delete topics request. The rate is accumulated by
-  // the number of partitions created or deleted.
-  CONTROLLER_MUTATION_RATE = 'controller_mutation_rate',
-  // An int representing the upper bound of connections accepted for the specified IP.
-  CONNECTION_CREATION_RATE = 'connection_creation_rate',
-}
 
 export interface QuotaResponseSetting {
   key: QuotaType;
@@ -842,10 +830,12 @@ export enum SchemaType {
 export interface PartitionReassignmentsResponse {
   topics: PartitionReassignments[];
 }
+
 export interface PartitionReassignments {
   topicName: string;
   partitions: PartitionReassignmentsPartition[];
 }
+
 export interface PartitionReassignmentsPartition {
   partitionId: number;
   addingReplicas: number[];
@@ -857,6 +847,7 @@ export interface PartitionReassignmentsPartition {
 export interface PartitionReassignmentRequest {
   topics: TopicAssignment[];
 }
+
 export type TopicAssignment = {
   topicName: string; // name of topic to change
   partitions: {
@@ -879,6 +870,7 @@ export interface AlterPartitionReassignmentsResponse {
     partitions: AlterPartitionReassignmentsPartitionResponse[];
   }[];
 }
+
 export interface AlterPartitionReassignmentsPartitionResponse {
   partitionId: number;
   errorCode: string;
@@ -958,6 +950,7 @@ export interface ResourceConfig {
   // key/value config pairs to set on the resource.
   configs: IncrementalAlterConfigsRequestResourceConfig[];
 }
+
 export interface PatchConfigsRequest {
   resources: ResourceConfig[];
 }
@@ -975,6 +968,7 @@ export interface PatchTopicConfigsEntry {
   op: 'SET' | 'DELETE' | 'APPEND' | 'SUBTRACT';
   value?: string;
 }
+
 export interface PatchTopicConfigsRequest {
   configs: PatchTopicConfigsEntry[];
 }
@@ -988,6 +982,7 @@ export interface ConnectClusters {
     connectorCount: number;
   };
 }
+
 export interface ConnectClusterShard {
   // GetClusterShard
   clusterName: string;
@@ -1268,6 +1263,7 @@ export function compressionTypeToNum(type: CompressionType) {
       return CompressionTypeNum.None;
   }
 }
+
 export interface PublishRecordsRequest {
   // TopicNames is a list of topic names into which the records shall be produced to.
   topicNames: string[];

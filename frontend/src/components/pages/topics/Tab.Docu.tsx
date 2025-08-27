@@ -9,21 +9,21 @@
  * by the Apache License, Version 2.0
  */
 
-import { Component } from 'react';
-import type { Topic } from '../../../state/restInterfaces';
+import {Component} from 'react';
 import '../../../utils/arrayExtensions';
-import { Button, Empty, VStack } from '@redpanda-data/ui';
-import { motion } from 'framer-motion';
-import { observer } from 'mobx-react';
-import ReactMarkdown from 'react-markdown';
-import { uriTransformer as baseUriTransformer } from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import {Button, Empty, VStack} from '@redpanda-data/ui';
+import {motion} from 'framer-motion';
+import {observer} from 'mobx-react';
+import ReactMarkdown, {uriTransformer as baseUriTransformer} from 'react-markdown';
+import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter';
+import {vs} from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkEmoji from 'remark-emoji';
 import remarkGfm from 'remark-gfm';
-import { api } from '../../../state/backendApi';
-import { animProps } from '../../../utils/animationProps';
-import { DefaultSkeleton } from '../../../utils/tsxUtils';
+import {api} from '../../../state/backendApi';
+import {animProps} from '../../../utils/animationProps';
+import {DefaultSkeleton} from '../../../utils/tsxUtils';
+import {kconsole} from "../../../../wailsjs/go/models";
+import TopicSummary = kconsole.TopicSummary;
 
 // Test for link sanitizer
 /*
@@ -49,9 +49,9 @@ function sanitizeUrl(uri: string, _children?: any, _title?: string | null): stri
 }
 
 @observer
-export class TopicDocumentation extends Component<{ topic: Topic }> {
+export class TopicDocumentation extends Component<{ topic: TopicSummary }> {
   private components = {
-    code({ inline, className, children, ...props }: any) {
+    code({inline, className, children, ...props}: any) {
       const match = /language-(\w+)/.exec(className || '');
       return !inline && match ? (
         <SyntaxHighlighter
@@ -115,7 +115,7 @@ const errorNotFound = renderDocuError(
   'Not Found',
   <>
     <p>No documentation file was found for this topic.</p>
-    <ul style={{ listStyle: 'none' }}>
+    <ul style={{listStyle: 'none'}}>
       <li>
         Ensure the Git connection to the documentation repository is configured correctly in the Redpanda Console
         backend.
@@ -130,7 +130,7 @@ const errorEmpty = renderDocuError(
     <p>The documentation file is empty.</p>
     <p>
       In case you just changed the file, keep in mind that Redpanda Console will only
-      <br />
+      <br/>
       periodically check the documentation repo for changes (every minute by default).
     </p>
   </>,
@@ -140,9 +140,9 @@ const errorEmpty = renderDocuError(
 // todo: use <MotionAlways> for them
 function renderDocuError(title: string, body: JSX.Element) {
   return (
-    <motion.div {...animProps} key={'b'} style={{ margin: '2rem 1rem' }}>
+    <motion.div {...animProps} key={'b'} style={{margin: '2rem 1rem'}}>
       <VStack gap={4}>
-        <Empty description={title} />
+        <Empty description={title}/>
         {body}
         <a target="_blank" rel="noopener noreferrer" href="https://docs.redpanda.com/docs/manage/console/">
           <Button variant="solid">Redpanda Console Documentation</Button>

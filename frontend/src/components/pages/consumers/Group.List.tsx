@@ -9,23 +9,24 @@
  * by the Apache License, Version 2.0
  */
 
-import { DataTable, Flex, Grid, SearchField, Tag, Text } from '@redpanda-data/ui';
-import { type IReactionDisposer, autorun } from 'mobx';
-import { observer } from 'mobx-react';
-import { Link } from 'react-router-dom';
-import { appGlobal } from '../../../state/appGlobal';
-import { api } from '../../../state/backendApi';
-import type { GroupDescription } from '../../../state/restInterfaces';
-import { uiSettings } from '../../../state/ui';
-import { editQuery } from '../../../utils/queryHelper';
-import { DefaultSkeleton } from '../../../utils/tsxUtils';
-import { BrokerList } from '../../misc/BrokerList';
+import {DataTable, Flex, Grid, SearchField, Tag, Text} from '@redpanda-data/ui';
+import {autorun, type IReactionDisposer} from 'mobx';
+import {observer} from 'mobx-react';
+import {Link} from 'react-router-dom';
+import {appGlobal} from '../../../state/appGlobal';
+import {api} from '../../../state/backendApi';
+import {uiSettings} from '../../../state/ui';
+import {editQuery} from '../../../utils/queryHelper';
+import {DefaultSkeleton} from '../../../utils/tsxUtils';
+import {BrokerList} from '../../misc/BrokerList';
 import PageContent from '../../misc/PageContent';
 import Section from '../../misc/Section';
-import { ShortNum } from '../../misc/ShortNum';
-import { Statistic } from '../../misc/Statistic';
-import { PageComponent, type PageInitHelper } from '../Page';
-import { GroupState } from './Group.Details';
+import {ShortNum} from '../../misc/ShortNum';
+import {Statistic} from '../../misc/Statistic';
+import {PageComponent, type PageInitHelper} from '../Page';
+import {GroupState} from './Group.Details';
+import {kconsole} from "../../../../wailsjs/go/models";
+import ConsumerGroupOverview = kconsole.ConsumerGroupOverview;
 
 @observer
 class GroupList extends PageComponent {
@@ -35,8 +36,8 @@ class GroupList extends PageComponent {
     p.title = 'Consumer Groups';
     p.addBreadcrumb('Consumer Groups', '/groups');
 
-    this.refreshData(true);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
   }
 
   componentDidMount() {
@@ -53,12 +54,13 @@ class GroupList extends PageComponent {
       });
     });
   }
+
   componentWillUnmount() {
     if (this.quickSearchReaction) this.quickSearchReaction();
   }
 
-  refreshData(force: boolean) {
-    api.refreshConsumerGroups(force);
+  refreshData() {
+    api.refreshConsumerGroups();
   }
 
   render() {
@@ -83,7 +85,7 @@ class GroupList extends PageComponent {
         <PageContent>
           <Section py={4}>
             <Flex>
-              <Statistic title="Total Groups" value={groups.length} />
+              <Statistic title="Total Groups" value={groups.length}/>
               <div
                 style={{
                   width: '1px',
@@ -93,7 +95,7 @@ class GroupList extends PageComponent {
                 }}
               />
               {stateGroups.map((g) => (
-                <Statistic key={g.key} title={g.key} value={g.items.length} marginRight={'1.5rem'} />
+                <Statistic key={g.key} title={g.key} value={g.items.length} marginRight={'1.5rem'}/>
               ))}
             </Flex>
           </Section>
@@ -110,7 +112,7 @@ class GroupList extends PageComponent {
                 gap: '2em',
               }}
             >
-              <this.SearchBar />
+              <this.SearchBar/>
               {/*
                         <Checkbox
                             value={uiSettings.consumerGroupList.hideEmpty}
@@ -121,7 +123,7 @@ class GroupList extends PageComponent {
                         */}
             </div>
             {/* Content */}
-            <DataTable<GroupDescription>
+            <DataTable<ConsumerGroupOverview>
               data={groups}
               pagination
               sorting
@@ -130,14 +132,14 @@ class GroupList extends PageComponent {
                   header: 'State',
                   accessorKey: 'state',
                   size: 130,
-                  cell: ({ row: { original } }) => <GroupState group={original} />,
+                  cell: ({row: {original}}) => <GroupState group={original}/>,
                 },
                 {
                   header: 'ID',
                   accessorKey: 'groupId',
-                  cell: ({ row: { original } }) => (
+                  cell: ({row: {original}}) => (
                     <Link to={`/groups/${encodeURIComponent(original.groupId)}`}>
-                      <this.GroupId group={original} />
+                      <this.GroupId group={original}/>
                     </Link>
                   ),
                   size: Number.POSITIVE_INFINITY,
@@ -146,7 +148,7 @@ class GroupList extends PageComponent {
                   header: 'Coordinator',
                   accessorKey: 'coordinatorId',
                   size: 1,
-                  cell: ({ row: { original } }) => <BrokerList brokerIds={[original.coordinatorId]} />,
+                  cell: ({row: {original}}) => <BrokerList brokerIds={[original.coordinatorId]}/>,
                 },
                 {
                   header: 'Protocol',
@@ -157,12 +159,12 @@ class GroupList extends PageComponent {
                   header: 'Members',
                   accessorKey: 'members',
                   size: 1,
-                  cell: ({ row: { original } }) => original.members.length,
+                  cell: ({row: {original}}) => original.members.length,
                 },
                 {
                   header: 'Lag (Sum)',
                   accessorKey: 'lagSum',
-                  cell: ({ row: { original } }) => ShortNum({ value: original.lagSum }),
+                  cell: ({row: {original}}) => ShortNum({value: original.lagSum}),
                 },
               ]}
             />
@@ -183,7 +185,7 @@ class GroupList extends PageComponent {
     );
   });
 
-  GroupId = (p: { group: GroupDescription }) => {
+  GroupId = (p: { group: ConsumerGroupOverview }) => {
     const protocol = p.group.protocolType;
 
     const groupIdEl = (

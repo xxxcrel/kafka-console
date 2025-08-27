@@ -9,64 +9,53 @@
  * by the Apache License, Version 2.0
  */
 
-import { CheckIcon, CircleSlashIcon, EyeClosedIcon } from '@primer/octicons-react';
-import {
-  Alert,
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogOverlay,
-  AlertIcon,
-  Box,
-  Button,
-  Checkbox,
-  CopyButton,
-  DataTable,
-  Flex,
-  Grid,
-  Icon,
-  Popover,
-  Text,
-  Tooltip,
-  useToast,
-} from '@redpanda-data/ui';
-import { type IReactionDisposer, autorun, computed, makeObservable, observable } from 'mobx';
-import { observer } from 'mobx-react';
-import React, { type FC, useRef, useState } from 'react';
-import { HiOutlineTrash } from 'react-icons/hi';
-import { MdError, MdOutlineWarning } from 'react-icons/md';
-import { Link } from 'react-router-dom';
-import colors from '../../../colors';
+import {CheckIcon, CircleSlashIcon, EyeClosedIcon} from '@primer/octicons-react';
+import {Alert, AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogOverlay, AlertIcon, Box, Button, Checkbox, CopyButton, DataTable, Flex, Grid, Icon, Popover, Text, Tooltip, useToast,} from '@redpanda-data/ui';
+import {autorun, computed, type IReactionDisposer, makeObservable, observable} from 'mobx';
+import {observer} from 'mobx-react';
+import React, {type FC, useRef, useState} from 'react';
+import {HiOutlineTrash} from 'react-icons/hi';
+import {Link} from 'react-router-dom';
 import usePaginationParams from '../../../hooks/usePaginationParams';
-import { appGlobal } from '../../../state/appGlobal';
-import { api } from '../../../state/backendApi';
-import { type Topic, TopicActions, type TopicConfigEntry } from '../../../state/restInterfaces';
-import { uiSettings } from '../../../state/ui';
+import {appGlobal} from '../../../state/appGlobal';
+import {api} from '../../../state/backendApi';
+import {uiSettings} from '../../../state/ui';
 import createAutoModal from '../../../utils/createAutoModal';
-import { onPaginationChange } from '../../../utils/pagination';
-import { editQuery } from '../../../utils/queryHelper';
-import { Code, DefaultSkeleton, QuickTable } from '../../../utils/tsxUtils';
+import {onPaginationChange} from '../../../utils/pagination';
+import {editQuery} from '../../../utils/queryHelper';
+import {Code, DefaultSkeleton, QuickTable} from '../../../utils/tsxUtils';
 import PageContent from '../../misc/PageContent';
 import SearchBar from '../../misc/SearchBar';
 import Section from '../../misc/Section';
-import { Statistic } from '../../misc/Statistic';
-import { renderLogDirSummary } from '../../misc/common';
-import { PageComponent, type PageInitHelper } from '../Page';
-import {
-  CreateTopicModalContent,
-  type CreateTopicModalState,
-  type RetentionSizeUnit,
-  type RetentionTimeUnit,
-} from './CreateTopicModal/CreateTopicModal';
+import {Statistic} from '../../misc/Statistic';
+import {renderLogDirSummary} from '../../misc/common';
+import {PageComponent, type PageInitHelper} from '../Page';
+import {CreateTopicModalContent, type CreateTopicModalState, type RetentionSizeUnit, type RetentionTimeUnit,} from './CreateTopicModal/CreateTopicModal';
+import {kconsole, kmsg} from "../../../../wailsjs/go/models";
+import TopicSummary = kconsole.TopicSummary;
+import TopicConfigEntry = kconsole.TopicConfigEntry;
+import CreateTopicsRequestTopic = kmsg.CreateTopicsRequestTopic;
+import CreateTopicsRequestTopicConfig = kmsg.CreateTopicsRequestTopicConfig;
+
+export const TopicActions = [
+  'seeTopic',
+  'viewPartitions',
+  'viewMessages',
+  'useSearchFilter',
+  'viewConsumers',
+  'viewConfig',
+  'deleteTopic',
+  'deleteTopicRecords',
+  'editConfig',
+] as const;
+export type TopicAction = 'all' | (typeof TopicActions)[number];
 
 @observer
 class TopicList extends PageComponent {
   quickSearchReaction: IReactionDisposer;
 
-  @observable topicToDelete: null | Topic = null;
-  @observable filteredTopics: Topic[] = [];
+  @observable topicToDelete: null | TopicSummary = null;
+  @observable filteredTopics: TopicSummary[] = [];
 
   CreateTopicModal;
   showCreateTopicModal;
@@ -84,8 +73,8 @@ class TopicList extends PageComponent {
     p.title = 'Topics';
     p.addBreadcrumb('Topics', '/topics');
 
-    this.refreshData(true);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
   }
 
   componentDidMount() {
@@ -102,6 +91,7 @@ class TopicList extends PageComponent {
       });
     });
   }
+
   componentWillUnmount() {
     if (this.quickSearchReaction) this.quickSearchReaction();
   }
@@ -109,10 +99,9 @@ class TopicList extends PageComponent {
   refreshData() {
     api.refreshTopics();
     api.refreshClusterOverview();
-    void api.refreshClusterHealth();
   }
 
-  isFilterMatch(filter: string, item: Topic): boolean {
+  isFilterMatch(filter: string, item: TopicSummary): boolean {
     try {
       const quickSearchRegExp = new RegExp(filter, 'i');
       return Boolean(item.topicName.match(quickSearchRegExp));
@@ -142,14 +131,14 @@ class TopicList extends PageComponent {
       <PageContent>
         <Section>
           <Flex>
-            <Statistic title="Total topics" value={topics.length} />
-            <Statistic title="Total partitions" value={partitionCount} />
-            <Statistic title="Total replicas" value={replicaCount} />
+            <Statistic title="Total topics" value={topics.length}/>
+            <Statistic title="Total partitions" value={partitionCount}/>
+            <Statistic title="Total replicas" value={replicaCount}/>
           </Flex>
         </Section>
 
         <Box pt={6}>
-          <SearchBar<Topic>
+          <SearchBar<TopicSummary>
             placeholderText="Enter search term/regex"
             dataSource={() => this.topics}
             isFilterMatch={this.isFilterMatch}
@@ -159,12 +148,12 @@ class TopicList extends PageComponent {
           />
         </Box>
         <Section>
-          <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+          <div style={{display: 'flex', justifyContent: 'flex-start', alignItems: 'center'}}>
             <Button
               variant="solid"
               colorScheme="brand"
               onClick={() => this.showCreateTopicModal()}
-              style={{ minWidth: '160px', marginBottom: '12px' }}
+              style={{minWidth: '160px', marginBottom: '12px'}}
               data-testid="create-topic-button"
             >
               Create topic
@@ -174,12 +163,12 @@ class TopicList extends PageComponent {
               data-testid="show-internal-topics-checkbox"
               isChecked={!uiSettings.topicList.hideInternalTopics}
               onChange={(x) => (uiSettings.topicList.hideInternalTopics = !x.target.checked)}
-              style={{ marginLeft: 'auto' }}
+              style={{marginLeft: 'auto'}}
             >
               Show internal topics
             </Checkbox>
 
-            <this.CreateTopicModal />
+            <this.CreateTopicModal/>
           </div>
           <Box my={4}>
             <TopicsTable
@@ -196,24 +185,25 @@ class TopicList extends PageComponent {
           onCancel={() => (this.topicToDelete = null)}
           onFinish={() => {
             this.topicToDelete = null;
-            this.refreshData(true);
+            this.refreshData();
           }}
         />
       </PageContent>
     );
   }
 }
+
 export default TopicList;
 
-const TopicsTable: FC<{ topics: Topic[]; onDelete: (record: Topic) => void }> = ({ topics, onDelete }) => {
+const TopicsTable: FC<{ topics: TopicSummary[]; onDelete: (record: TopicSummary) => void }> = ({topics, onDelete}) => {
   const paginationParams = usePaginationParams(uiSettings.topicList.pageSize, topics.length);
 
   return (
-    <DataTable<Topic>
+    <DataTable<TopicSummary>
       data={topics}
       sorting={true}
       pagination={paginationParams}
-      onPaginationChange={onPaginationChange(paginationParams, ({ pageSize, pageIndex }) => {
+      onPaginationChange={onPaginationChange(paginationParams, ({pageSize, pageIndex}) => {
         uiSettings.topicList.pageSize = pageSize;
         editQuery((query) => {
           query.page = String(pageIndex);
@@ -224,39 +214,10 @@ const TopicsTable: FC<{ topics: Topic[]; onDelete: (record: Topic) => void }> = 
         {
           header: 'Name',
           accessorKey: 'topicName',
-          cell: ({ row: { original: topic } }) => {
-            const leaderLessPartitions = (api.clusterHealth?.leaderlessPartitions ?? []).find(
-              ({ topicName }) => topicName === topic.topicName,
-            )?.partitionIds;
-            const underReplicatedPartitions = (api.clusterHealth?.underReplicatedPartitions ?? []).find(
-              ({ topicName }) => topicName === topic.topicName,
-            )?.partitionIds;
-
+          cell: ({row: {original: topic}}) => {
             return (
               <Flex wordBreak="break-word" whiteSpace="break-spaces" gap={2} alignItems="center">
                 <Link to={`/topics/${encodeURIComponent(topic.topicName)}`}>{renderName(topic)}</Link>
-                {!!leaderLessPartitions && (
-                  <Tooltip
-                    placement="top"
-                    hasArrow
-                    label={`This topic has ${leaderLessPartitions.length} ${leaderLessPartitions.length === 1 ? 'a leaderless partition' : 'leaderless partitions'}`}
-                  >
-                    <Box>
-                      <MdError size={18} color={colors.brandError} />
-                    </Box>
-                  </Tooltip>
-                )}
-                {!!underReplicatedPartitions && (
-                  <Tooltip
-                    placement="top"
-                    hasArrow
-                    label={`This topic has ${underReplicatedPartitions.length} ${underReplicatedPartitions.length === 1 ? 'an under-replicated partition' : 'under-replicated partitions'}`}
-                  >
-                    <Box>
-                      <MdOutlineWarning size={18} color={colors.brandWarning} />
-                    </Box>
-                  </Tooltip>
-                )}
               </Flex>
             );
           },
@@ -266,7 +227,7 @@ const TopicsTable: FC<{ topics: Topic[]; onDelete: (record: Topic) => void }> = 
           header: 'Partitions',
           accessorKey: 'partitionCount',
           enableResizing: true,
-          cell: ({ row: { original: topic } }) => topic.partitionCount,
+          cell: ({row: {original: topic}}) => topic.partitionCount,
         },
         {
           header: 'Replicas',
@@ -279,12 +240,12 @@ const TopicsTable: FC<{ topics: Topic[]; onDelete: (record: Topic) => void }> = 
         {
           header: 'Size',
           accessorKey: 'logDirSummary.totalSizeBytes',
-          cell: ({ row: { original: topic } }) => renderLogDirSummary(topic.logDirSummary),
+          cell: ({row: {original: topic}}) => renderLogDirSummary(topic.logDirSummary),
         },
         {
           id: 'action',
           header: '',
-          cell: ({ row: { original: record } }) => (
+          cell: ({row: {original: record}}) => (
             <Flex gap={1}>
               <DeleteDisabledTooltip topic={record}>
                 <button
@@ -295,7 +256,7 @@ const TopicsTable: FC<{ topics: Topic[]; onDelete: (record: Topic) => void }> = 
                     onDelete(record);
                   }}
                 >
-                  <Icon as={HiOutlineTrash} />
+                  <Icon as={HiOutlineTrash}/>
                 </button>
               </DeleteDisabledTooltip>
             </Flex>
@@ -307,22 +268,22 @@ const TopicsTable: FC<{ topics: Topic[]; onDelete: (record: Topic) => void }> = 
 };
 
 const iconAllowed = (
-  <span style={{ color: 'green' }}>
-    <CheckIcon size={16} />
+  <span style={{color: 'green'}}>
+    <CheckIcon size={16}/>
   </span>
 );
 const iconForbidden = (
-  <span style={{ color: '#ca000a' }}>
-    <CircleSlashIcon size={15} />
+  <span style={{color: '#ca000a'}}>
+    <CircleSlashIcon size={15}/>
   </span>
 );
 const iconClosedEye = (
-  <span style={{ color: '#0008', paddingLeft: '4px', transform: 'translateY(-1px)', display: 'inline-block' }}>
-    <EyeClosedIcon size={14} verticalAlign="middle" />
+  <span style={{color: '#0008', paddingLeft: '4px', transform: 'translateY(-1px)', display: 'inline-block'}}>
+    <EyeClosedIcon size={14} verticalAlign="middle"/>
   </span>
 );
 
-const renderName = (topic: Topic) => {
+const renderName = (topic: TopicSummary) => {
   const actions = topic.allowedActions;
 
   if (!actions || actions[0] === 'all') return topic.topicName; // happens in non-business version
@@ -336,9 +297,9 @@ const renderName = (topic: Topic) => {
   // Show a table of what they can't do
   const popoverContent = (
     <div>
-      <div style={{ marginBottom: '1em' }}>
+      <div style={{marginBottom: '1em'}}>
         You're missing permissions to view
-        <br />
+        <br/>
         one more aspects of this topic.
       </div>
       {QuickTable(
@@ -350,8 +311,8 @@ const renderName = (topic: Topic) => {
           gapWidth: '6px',
           gapHeight: '2px',
           keyAlign: 'right',
-          keyStyle: { fontSize: '86%', fontWeight: 700, textTransform: 'capitalize' },
-          tableStyle: { margin: 'auto' },
+          keyStyle: {fontSize: '86%', fontWeight: 700, textTransform: 'capitalize'},
+          tableStyle: {margin: 'auto'},
         },
       )}
     </div>
@@ -370,10 +331,10 @@ const renderName = (topic: Topic) => {
 };
 
 function ConfirmDeletionModal({
-  topicToDelete,
-  onFinish,
-  onCancel,
-}: { topicToDelete: Topic | null; onFinish: () => void; onCancel: () => void }) {
+                                topicToDelete,
+                                onFinish,
+                                onCancel,
+                              }: { topicToDelete: TopicSummary | null; onFinish: () => void; onCancel: () => void }) {
   const [deletionPending, setDeletionPending] = useState(false);
   const [error, setError] = useState<string | Error | null>(null);
   const toast = useToast();
@@ -413,18 +374,18 @@ function ConfirmDeletionModal({
           <AlertDialogBody>
             {error && (
               <Alert status="error" mb={2}>
-                <AlertIcon />
+                <AlertIcon/>
                 {`An error occurred: ${typeof error === 'string' ? error : error.message}`}
               </Alert>
             )}
             {topicToDelete?.isInternal && (
               <Alert status="error" mb={2}>
-                <AlertIcon />
+                <AlertIcon/>
                 This is an internal topic, deleting it might have unintended side-effects!
               </Alert>
             )}
             <Text>
-              Are you sure you want to delete topic <Code>{topicToDelete?.topicName}</Code>?<br />
+              Are you sure you want to delete topic <Code>{topicToDelete?.topicName}</Code>?<br/>
               This action cannot be undone.
             </Text>
           </AlertDialogBody>
@@ -460,7 +421,7 @@ function ConfirmDeletionModal({
   );
 }
 
-function DeleteDisabledTooltip(props: { topic: Topic; children: JSX.Element }): JSX.Element {
+function DeleteDisabledTooltip(props: { topic: TopicSummary; children: JSX.Element }): JSX.Element {
   const deleteButton = props.children;
 
   const wrap = (button: JSX.Element, message: string) => (
@@ -563,7 +524,7 @@ function makeCreateTopicModal(parent: TopicList) {
         minInSyncReplicas: undefined,
         replicationFactor: undefined,
 
-        additionalConfig: [{ name: '', value: '' }],
+        additionalConfig: [{name: '', value: ''}],
 
         defaults: {
           get retentionTime() {
@@ -596,7 +557,7 @@ function makeCreateTopicModal(parent: TopicList) {
       const setVal = (name: string, value: string | number | undefined) => {
         if (value === undefined) return;
         config.removeAll((x) => x.name === name);
-        config.push({ name, value: String(value) });
+        config.push(TopicConfigEntry.createFrom({name: name, value: String(value)}));
       };
 
       for (const x of state.additionalConfig) setVal(x.name, x.value);
@@ -609,12 +570,14 @@ function makeCreateTopicModal(parent: TopicList) {
 
       setVal('cleanup.policy', state.cleanupPolicy);
 
-      const result = await api.createTopic({
-        topicName: state.topicName,
-        partitionCount: state.partitions ?? Number(state.defaults.partitions ?? '-1'),
-        replicationFactor: state.replicationFactor ?? Number(state.defaults.replicationFactor ?? '-1'),
-        configs: config.filter((x) => x.name.length > 0),
-      });
+      const result = await api.createTopic(CreateTopicsRequestTopic.createFrom({
+        Topic: state.topicName,
+        NumPartitions: state.partitions ?? Number(state.defaults.partitions ?? '-1'),
+        ReplicationFactor: state.replicationFactor ?? Number(state.defaults.replicationFactor ?? '-1'),
+        Configs: config.map(x => {
+          return CreateTopicsRequestTopicConfig.createFrom({Name: x.name, Value: x.value});
+        }).filter((x) => x.Name.length > 0),
+      }));
 
       return (
         <Grid
@@ -631,7 +594,7 @@ function makeCreateTopicModal(parent: TopicList) {
             <Text wordBreak="break-word" whiteSpace="break-spaces" noOfLines={1}>
               {result.topicName}
             </Text>
-            <CopyButton content={result.topicName} variant="ghost" />
+            <CopyButton content={result.topicName} variant="ghost"/>
           </Flex>
           <Text>Partitions:</Text>
           <Text justifySelf="start">{String(result.partitionCount).replace('-1', '(Default)')}</Text>
@@ -641,8 +604,8 @@ function makeCreateTopicModal(parent: TopicList) {
       );
     },
     onSuccess: (_state, _result) => {
-      parent.refreshData(true);
+      parent.refreshData();
     },
-    content: (state) => <CreateTopicModalContent state={state} />,
+    content: (state) => <CreateTopicModalContent state={state}/>,
   });
 }

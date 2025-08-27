@@ -25,16 +25,6 @@ import * as monaco from 'monaco-editor';
 import memoizeOne from 'memoize-one';
 import { DEFAULT_API_BASE } from './components/constants';
 import { APP_ROUTES } from './components/routes';
-import { AuthenticationService } from './protogen/redpanda/api/console/v1alpha1/authentication_connect';
-import { ClusterStatusService } from './protogen/redpanda/api/console/v1alpha1/cluster_status_connect';
-import { ConsoleService } from './protogen/redpanda/api/console/v1alpha1/console_service_connect';
-import { DebugBundleService } from './protogen/redpanda/api/console/v1alpha1/debug_bundle_connect';
-import { LicenseService } from './protogen/redpanda/api/console/v1alpha1/license_connect';
-import { PipelineService } from './protogen/redpanda/api/console/v1alpha1/pipeline_connect';
-import { PipelineService as PipelineServiceV2 } from './protogen/redpanda/api/console/v1alpha1/pipeline_connect';
-import { SecretService as RPCNSecretService } from './protogen/redpanda/api/console/v1alpha1/secret_connect';
-import { SecurityService } from './protogen/redpanda/api/console/v1alpha1/security_connect';
-import { TransformService } from './protogen/redpanda/api/console/v1alpha1/transform_connect';
 import { appGlobal } from './state/appGlobal';
 import { api } from './state/backendApi';
 import { uiState } from './state/uiState';
@@ -115,16 +105,6 @@ export interface Breadcrumb {
 
 interface Config {
   restBasePath: string;
-  authenticationClient?: PromiseClient<typeof AuthenticationService>;
-  licenseClient?: PromiseClient<typeof LicenseService>;
-  consoleClient?: PromiseClient<typeof ConsoleService>;
-  debugBundleClient?: PromiseClient<typeof DebugBundleService>;
-  securityClient?: PromiseClient<typeof SecurityService>;
-  pipelinesClient?: PromiseClient<typeof PipelineService>;
-  pipelinesClientV2?: PromiseClient<typeof PipelineServiceV2>;
-  rpcnSecretsClient?: PromiseClient<typeof RPCNSecretService>;
-  transformsClient?: PromiseClient<typeof TransformService>;
-  clusterStatusClient?: PromiseClient<typeof ClusterStatusService>;
   fetch: WindowOrWorkerGlobalScope['fetch'];
   assetsPath: string;
   jwt?: string;
@@ -152,22 +132,6 @@ const setConfig = ({ fetch, urlOverride, jwt, isServerless, ...args }: SetConfig
   const assetsUrl =
     urlOverride?.assets === 'WEBPACK' ? String(__webpack_public_path__).removeSuffix('/') : urlOverride?.assets;
 
-  // instantiate the client once, if we need to add more clients you can add them in here, ideally only one transport is necessary
-  const transport = createConnectTransport({
-    baseUrl: getGrpcBasePath(urlOverride?.grpc),
-    interceptors: [addBearerTokenInterceptor, checkExpiredLicenseInterceptor],
-  });
-
-  const licenseGrpcClient = createPromiseClient(LicenseService, transport);
-  const consoleGrpcClient = createPromiseClient(ConsoleService, transport);
-  const debugBundleGrpcClient = createPromiseClient(DebugBundleService, transport);
-  const securityGrpcClient = createPromiseClient(SecurityService, transport);
-  const pipelinesGrpcClient = createPromiseClient(PipelineService, transport);
-  const pipelinesV2GrpcClient = createPromiseClient(PipelineServiceV2, transport);
-  const secretGrpcClient = createPromiseClient(RPCNSecretService, transport);
-  const authenticationGrpcClient = createPromiseClient(AuthenticationService, transport);
-  const transformClient = createPromiseClient(TransformService, transport);
-  const clusterStatusGrpcClient = createPromiseClient(ClusterStatusService, transport);
   Object.assign(config, {
     jwt,
     isServerless,
@@ -175,16 +139,6 @@ const setConfig = ({ fetch, urlOverride, jwt, isServerless, ...args }: SetConfig
     grpcBasePath: getGrpcBasePath(urlOverride?.grpc),
     fetch: fetch ?? window.fetch.bind(window),
     assetsPath: assetsUrl ?? getBasePath(),
-    authenticationClient: authenticationGrpcClient,
-    licenseClient: licenseGrpcClient,
-    consoleClient: consoleGrpcClient,
-    debugBundleClient: debugBundleGrpcClient,
-    securityClient: securityGrpcClient,
-    pipelinesClient: pipelinesGrpcClient,
-    pipelinesClientV2: pipelinesV2GrpcClient,
-    transformsClient: transformClient,
-    rpcnSecretsClient: secretGrpcClient,
-    clusterStatusClient: clusterStatusGrpcClient,
     ...args,
   });
   return config;
@@ -312,14 +266,12 @@ export const setup = memoizeOne((setupArgs: SetConfigArguments) => {
   // protected, so we need to delay the call until the user is logged in.
   if (!AppFeatures.SINGLE_SIGN_ON) {
     api.refreshSupportedEndpoints();
-    api.listLicenses();
   } else {
     when(
       () => Boolean(api.userData),
       () => {
         setTimeout(() => {
           api.refreshSupportedEndpoints();
-          api.listLicenses();
         });
       },
     );

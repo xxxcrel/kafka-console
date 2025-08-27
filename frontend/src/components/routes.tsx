@@ -9,64 +9,32 @@
  * by the Apache License, Version 2.0
  */
 
-import {
-  BeakerIcon,
-  CollectionIcon,
-  CubeTransparentIcon,
-  FilterIcon,
-  HomeIcon,
-  LinkIcon,
-  ScaleIcon,
-  ShieldCheckIcon,
-} from '@heroicons/react/outline';
-import type { NavLinkProps } from '@redpanda-data/ui/dist/components/Nav/NavLink';
-import React, { Fragment, type FunctionComponent } from 'react';
-import { MdOutlineSmartToy } from 'react-icons/md';
-import { Redirect, Route } from 'react-router';
-import { Switch } from 'react-router-dom';
-import { isServerless } from '../config';
-import { api } from '../state/backendApi';
-import type { UserPermissions } from '../state/restInterfaces';
-import { Feature, type FeatureEntry, isSupported, shouldHideIfNotSupported } from '../state/supportedFeatures';
-import { uiState } from '../state/uiState';
-import { AnimatePresence } from '../utils/animationProps';
-import { type AppFeature, AppFeatures } from '../utils/env';
-import { Section } from './misc/common';
-import type { PageComponentType, PageProps } from './pages/Page';
-import AclList, { type AclListTab } from './pages/acls/Acl.List';
-import RoleCreatePage from './pages/acls/RoleCreate';
-import RoleDetailsPage from './pages/acls/RoleDetails';
-import RoleEditPage from './pages/acls/RoleEditPage';
-import UserCreatePage from './pages/acls/UserCreate';
-import UserDetailsPage from './pages/acls/UserDetails';
-import UserEditPage from './pages/acls/UserEdit';
-import { AdminDebugBundle } from './pages/admin/Admin.DebugBundle';
-import AdminPageDebugBundleProgress from './pages/admin/Admin.DebugBundleProgress';
-import KafkaClusterDetails from './pages/connect/Cluster.Details';
-import KafkaConnectorDetails from './pages/connect/Connector.Details';
-import CreateConnector from './pages/connect/CreateConnector';
-import KafkaConnectOverview from './pages/connect/Overview';
+import {BeakerIcon, CollectionIcon, CubeTransparentIcon, FilterIcon, HomeIcon, ScaleIcon,} from '@heroicons/react/outline';
+import type {NavLinkProps} from '@redpanda-data/ui/dist/components/Nav/NavLink';
+import React, {Fragment, type FunctionComponent} from 'react';
+import {Redirect, Route} from 'react-router';
+import {Switch} from 'react-router-dom';
+import {api} from '../state/backendApi';
+import type {UserPermissions} from '../state/restInterfaces';
+import {Feature, type FeatureEntry, isSupported, shouldHideIfNotSupported} from '../state/supportedFeatures';
+import {uiState} from '../state/uiState';
+import {AnimatePresence} from '../utils/animationProps';
+import {type AppFeature, AppFeatures} from '../utils/env';
+import {Section} from './misc/common';
+import type {PageComponentType, PageProps} from './pages/Page';
 import GroupDetails from './pages/consumers/Group.Details';
 import GroupList from './pages/consumers/Group.List';
-import { BrokerDetails } from './pages/overview/Broker.Details';
+import {BrokerDetails} from './pages/overview/Broker.Details';
 import Overview from './pages/overview/Overview';
 import QuotasList from './pages/quotas/Quotas.List';
 import ReassignPartitions from './pages/reassign-partitions/ReassignPartitions';
-import RpConnectPipelinesCreate from './pages/rp-connect/Pipelines.Create';
-import RpConnectPipelinesDetails from './pages/rp-connect/Pipelines.Details';
-import RpConnectPipelinesEdit from './pages/rp-connect/Pipelines.Edit';
-import RpConnectSecretCreate from './pages/rp-connect/secrets/Secrets.Create';
-import RpConnectSecretUpdate from './pages/rp-connect/secrets/Secrets.Update';
 import EditSchemaCompatibilityPage from './pages/schemas/EditCompatibility';
-import { SchemaAddVersionPage, SchemaCreatePage } from './pages/schemas/Schema.Create';
+import {SchemaAddVersionPage, SchemaCreatePage} from './pages/schemas/Schema.Create';
 import SchemaDetailsView from './pages/schemas/Schema.Details';
 import SchemaList from './pages/schemas/Schema.List';
 import TopicDetails from './pages/topics/Topic.Details';
 import TopicList from './pages/topics/Topic.List';
-import { TopicProducePage } from './pages/topics/Topic.Produce';
-import TransformDetails from './pages/transforms/Transform.Details';
-import TransformsList from './pages/transforms/Transforms.List';
-import { TransformsSetup } from './pages/transforms/Transforms.Setup';
+import {TopicProducePage} from './pages/topics/Topic.Produce';
 
 //
 //	Route Types
@@ -92,7 +60,7 @@ export function createVisibleSidebarItems(entries: IRouteEntry[]): NavLinkProps[
       if (!entry.icon) return null; // items without icon do not appear in the sidebar
 
       let isEnabled = true;
-      let disabledText: JSX.Element = <Fragment key={entry.title} />;
+      let disabledText: JSX.Element = <Fragment key={entry.title}/>;
       if (entry.visibilityCheck) {
         const visibility = entry.visibilityCheck();
         if (!visibility.visible) return null;
@@ -122,7 +90,7 @@ export const RouteView = () => (
   <AnimatePresence mode="wait">
     <Switch>
       {/* Index */}
-      <Route exact path="/" render={() => <Redirect to="/overview" />} />
+      <Route exact path="/" render={() => <Redirect to="/overview"/>}/>
 
       {/* Emit all <Route/> elements */}
       {EmitRouteViews(APP_ROUTES)}
@@ -136,7 +104,8 @@ export const RouteView = () => (
                 <h4>Path:</h4> <span>{rp.location.pathname}</span>
               </div>
               <div>
-                <h4>Query:</h4> <pre>{JSON.stringify(rp.location.search, null, 4)}</pre>
+                <h4>Query:</h4>
+                <pre>{JSON.stringify(rp.location.search, null, 4)}</pre>
               </div>
             </Section>
           );
@@ -156,14 +125,14 @@ const disabledReasonText: { [key in DisabledReasons]: JSX.Element } = {
   [DisabledReasons.noPermission]: (
     <span>
       You don't have premissions
-      <br />
+      <br/>
       to view this page.
     </span>
   ),
   [DisabledReasons.notSupported]: (
     <span>
       The Kafka cluster does not
-      <br />
+      <br/>
       support this feature.
     </span>
   ),
@@ -200,7 +169,7 @@ function MakeRoute<TRouteParams>(
       exact={exact ? true : undefined}
       render={(rp) => {
         const matchedPath = rp.match.url;
-        const { ...params } = rp.match.params;
+        const {...params} = rp.match.params;
 
         if (uiState.currentRoute && uiState.currentRoute.path !== route.path) {
           //kconsole.log('switching route: ' + routeStr(ui.currentRoute) + " -> " + routeStr(route));
@@ -307,17 +276,6 @@ export const APP_ROUTES: IRouteEntry[] = [
   ),
   MakeRoute<{ groupId: string }>('/groups/:groupId/', GroupDetails, 'Consumer Groups'),
 
-  MakeRoute<{}>('/security', AclList, 'Security', ShieldCheckIcon, true),
-  MakeRoute<{ tab: AclListTab }>('/security/:tab?', AclList, 'Security'),
-
-  MakeRoute<{}>('/security/users/create', UserCreatePage, 'Security'),
-  MakeRoute<{ userName: string }>('/security/users/:userName/details', UserDetailsPage, 'Security'),
-  MakeRoute<{ userName: string }>('/security/users/:userName/edit', UserEditPage, 'Security'),
-
-  MakeRoute<{}>('/security/roles/create', RoleCreatePage, 'Security'),
-  MakeRoute<{ roleName: string }>('/security/roles/:roleName/details', RoleDetailsPage, 'Security'),
-  MakeRoute<{ roleName: string }>('/security/roles/:roleName/edit', RoleEditPage, 'Security'),
-
   MakeRoute<{}>(
     '/quotas',
     QuotasList,
@@ -339,22 +297,5 @@ export const APP_ROUTES: IRouteEntry[] = [
       ['canPatchConfigs', 'canReassignPartitions'],
       ['REASSIGN_PARTITIONS'],
     ),
-  ),
-
-  MakeRoute<{}>(
-    '/debug-bundle',
-    AdminDebugBundle,
-    'Debug Bundle',
-    undefined,
-    true,
-    routeVisibility(false, [Feature.DebugBundleService], ['canViewDebugBundle']),
-  ),
-  MakeRoute<{}>(
-    '/debug-bundle/progress/:jobId',
-    AdminPageDebugBundleProgress,
-    'Debug Bundle Progress',
-    undefined,
-    true,
-    routeVisibility(false, [Feature.DebugBundleService], ['canViewDebugBundle']),
   ),
 ].filterNull();

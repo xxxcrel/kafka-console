@@ -1877,6 +1877,7 @@ export namespace kconsole {
 	    cleanupPolicy: string;
 	    documentation: string;
 	    logDirSummary: TopicLogDirSummary;
+	    allowedActions: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new TopicSummary(source);
@@ -1891,6 +1892,7 @@ export namespace kconsole {
 	        this.cleanupPolicy = source["cleanupPolicy"];
 	        this.documentation = source["documentation"];
 	        this.logDirSummary = this.convertValues(source["logDirSummary"], TopicLogDirSummary);
+	        this.allowedActions = source["allowedActions"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -2013,6 +2015,23 @@ export namespace kgo {
 
 export namespace kmsg {
 	
+	export enum ConfigType {
+	    BOOLEAN = 1,
+	    STRING = 2,
+	    INT = 3,
+	    SHORT = 4,
+	    LONG = 5,
+	    DOUBLE = 6,
+	    LIST = 7,
+	    CLASS = 8,
+	    PASSWORD = 9,
+	}
+	export enum IncrementalAlterConfigOp {
+	    SET = 0,
+	    DELETE = 1,
+	    APPEND = 2,
+	    SUBTRACT = 3,
+	}
 	export enum ConfigResourceType {
 	    UNKNOWN = 0,
 	    TOPIC = 2,
@@ -2058,23 +2077,6 @@ export namespace kmsg {
 	    MATCH = 2,
 	    LITERAL = 3,
 	    PREFIXED = 4,
-	}
-	export enum ConfigType {
-	    BOOLEAN = 1,
-	    STRING = 2,
-	    INT = 3,
-	    SHORT = 4,
-	    LONG = 5,
-	    DOUBLE = 6,
-	    LIST = 7,
-	    CLASS = 8,
-	    PASSWORD = 9,
-	}
-	export enum IncrementalAlterConfigOp {
-	    SET = 0,
-	    DELETE = 1,
-	    APPEND = 2,
-	    SUBTRACT = 3,
 	}
 	export class Tags {
 	
@@ -4225,10 +4227,6 @@ export namespace serde {
 
 export namespace sr {
 	
-	export enum SchemaRuleKind {
-	    TRANSFORM = 0,
-	    CONDITION = 1,
-	}
 	export enum SchemaType {
 	    AVRO = 0,
 	    PROTOBUF = 1,
@@ -4255,6 +4253,10 @@ export namespace sr {
 	    WRITE = 3,
 	    READ = 4,
 	    WRITEREAD = 5,
+	}
+	export enum SchemaRuleKind {
+	    TRANSFORM = 0,
+	    CONDITION = 1,
 	}
 	export class SchemaRule {
 	    name: string;

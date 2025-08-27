@@ -9,40 +9,21 @@
  * by the Apache License, Version 2.0
  */
 
-import { observer } from 'mobx-react';
-import { useEffect, useState } from 'react';
-import { api } from '../../../../state/backendApi';
-import type { DeleteRecordsResponseData, Partition, Topic } from '../../../../state/restInterfaces';
-import { RadioOptionGroup } from '../../../../utils/tsxUtils';
-import { prettyNumber } from '../../../../utils/utils';
-import { range } from '../../../misc/common';
+import {observer} from 'mobx-react';
+import {useEffect, useState} from 'react';
+import {api} from '../../../../state/backendApi';
+import {RadioOptionGroup} from '../../../../utils/tsxUtils';
+import {prettyNumber} from '../../../../utils/utils';
+import {range} from '../../../misc/common';
 
-import {
-  Alert,
-  AlertIcon,
-  Button,
-  Flex,
-  Input,
-  List,
-  ListItem,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Slider,
-  SliderFilledTrack,
-  SliderMark,
-  SliderThumb,
-  SliderTrack,
-  Spinner,
-  Text,
-  useToast,
-} from '@redpanda-data/ui';
-import { KowlTimePicker } from '../../../misc/KowlTimePicker';
-import { SingleSelect } from '../../../misc/Select';
+import {Alert, AlertIcon, Button, Flex, Input, List, ListItem, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Slider, SliderFilledTrack, SliderMark, SliderThumb, SliderTrack, Spinner, Text, useToast,} from '@redpanda-data/ui';
+import {KowlTimePicker} from '../../../misc/KowlTimePicker';
+import {SingleSelect} from '../../../misc/Select';
 import styles from './DeleteRecordsModal.module.scss';
+import {kconsole} from "../../../../../wailsjs/go/models";
+import TopicSummary = kconsole.TopicSummary;
+import DeleteTopicRecordsResponse = kconsole.DeleteTopicRecordsResponse;
+import TopicPartitionDetails = kconsole.TopicPartitionDetails;
 
 type AllPartitions = 'allPartitions';
 type SpecificPartition = 'specificPartition';
@@ -54,7 +35,7 @@ function TrashIcon() {
   return (
     <svg width="66" height="67" fill="none" xmlns="http://www.w3.org/2000/svg">
       <title>Trash</title>
-      <circle cx="33" cy="33.6" r="33" fill="#F53649" />
+      <circle cx="33" cy="33.6" r="33" fill="#F53649"/>
       <path
         d="M18.806 24.729h28.388M29.452 31.826V42.47M36.548 31.826V42.47M20.58 24.729l1.775 21.29a3.548 3.548 0 003.548 3.549h14.194a3.548 3.548 0 003.548-3.549l1.774-21.29"
         stroke="#fff"
@@ -74,12 +55,12 @@ function TrashIcon() {
 }
 
 function SelectPartitionStep({
-  selectedPartitionOption,
-  onPartitionOptionSelected,
-  onPartitionSpecified: onSpecificPartitionSelected,
-  specificPartition,
-  partitions,
-}: {
+                               selectedPartitionOption,
+                               onPartitionOptionSelected,
+                               onPartitionSpecified: onSpecificPartitionSelected,
+                               specificPartition,
+                               partitions,
+                             }: {
   selectedPartitionOption: PartitionOption;
   onPartitionOptionSelected: (v: PartitionOption) => void;
   onPartitionSpecified: (v: number | null) => void;
@@ -89,7 +70,7 @@ function SelectPartitionStep({
   return (
     <>
       <div className={styles.twoCol}>
-        <TrashIcon />
+        <TrashIcon/>
         <p>
           You are about to delete records in your topic. Choose on what partitions you want to delete records. In the
           next step you can choose the new low water mark for your selected partitions.
@@ -145,14 +126,14 @@ type OffsetOption = null | 'highWatermark' | 'manualOffset' | 'timestamp';
 type PartitionInfo = [SpecificPartition, number] | AllPartitions;
 
 const SelectOffsetStep = ({
-  onOffsetOptionSelected: selectValue,
-  offsetOption: selectedValue,
-  topicName,
-  partitionInfo,
-  onOffsetSpecified,
-  timestamp,
-  onTimestampChanged,
-}: {
+                            onOffsetOptionSelected: selectValue,
+                            offsetOption: selectedValue,
+                            topicName,
+                            partitionInfo,
+                            onOffsetSpecified,
+                            timestamp,
+                            onTimestampChanged,
+                          }: {
   topicName: string;
   offsetOption: OffsetOption;
   onOffsetOptionSelected: (v: OffsetOption) => void;
@@ -164,27 +145,27 @@ const SelectOffsetStep = ({
   const upperOption =
     partitionInfo === 'allPartitions'
       ? {
-          value: 'highWatermark' as OffsetOption,
-          title: 'High Watermark',
-          subTitle: 'Delete records until high watermark across all partitions in this topic.',
-        }
+        value: 'highWatermark' as OffsetOption,
+        title: 'High Watermark',
+        subTitle: 'Delete records until high watermark across all partitions in this topic.',
+      }
       : {
-          value: 'manualOffset' as OffsetOption,
-          title: 'Manual Offset',
-          subTitle: `Delete records until specified offset across all selected partitions (ID: ${partitionInfo[1]}) in this topic.`,
-          content: (
-            <ManualOffsetContent
-              topicName={topicName}
-              partitionInfo={partitionInfo}
-              onOffsetSpecified={onOffsetSpecified}
-            />
-          ),
-        };
+        value: 'manualOffset' as OffsetOption,
+        title: 'Manual Offset',
+        subTitle: `Delete records until specified offset across all selected partitions (ID: ${partitionInfo[1]}) in this topic.`,
+        content: (
+          <ManualOffsetContent
+            topicName={topicName}
+            partitionInfo={partitionInfo}
+            onOffsetSpecified={onOffsetSpecified}
+          />
+        ),
+      };
 
   return (
     <>
       <div className={styles.twoCol}>
-        <TrashIcon />
+        <TrashIcon/>
         <p>
           Choose the new low offset for your selected partitions. Take note that this is a soft delete and that the
           actual data may still be on the hard drive but not visible for any clients, even if they request the data.
@@ -209,7 +190,7 @@ const SelectOffsetStep = ({
                   e.stopPropagation();
                 }}
               >
-                <KowlTimePicker valueUtcMs={timestamp || Date.now().valueOf()} onChange={onTimestampChanged} />
+                <KowlTimePicker valueUtcMs={timestamp || Date.now().valueOf()} onChange={onTimestampChanged}/>
               </span>
             ),
           },
@@ -221,10 +202,10 @@ const SelectOffsetStep = ({
 
 const ManualOffsetContent = observer(
   ({
-    topicName,
-    onOffsetSpecified,
-    partitionInfo,
-  }: {
+     topicName,
+     onOffsetSpecified,
+     partitionInfo,
+   }: {
     topicName: string;
     partitionInfo: PartitionInfo;
     onOffsetSpecified: (v: number) => void;
@@ -239,10 +220,10 @@ const ManualOffsetContent = observer(
     if (api.topicPartitionErrors?.get(topicName) || api.topicWatermarksErrors?.get(topicName)) {
       const partitionErrors = api.topicPartitionErrors
         .get(topicName)
-        ?.map(({ partitionError }, idx) => <li key={`${topicName}-partitionErrors-${idx}`}>{partitionError}</li>);
+        ?.map(({partitionError}, idx) => <li key={`${topicName}-partitionErrors-${idx}`}>{partitionError}</li>);
       const waterMarksErrors = api.topicWatermarksErrors
         .get(topicName)
-        ?.map(({ waterMarksError }, idx) => <li key={`${topicName}-watermarkErrors-${idx}`}>{waterMarksError}</li>);
+        ?.map(({waterMarksError}, idx) => <li key={`${topicName}-watermarkErrors-${idx}`}>{waterMarksError}</li>);
       const message = (
         <>
           {partitionErrors && partitionErrors.length > 0 ? (
@@ -261,7 +242,7 @@ const ManualOffsetContent = observer(
       );
       return (
         <Alert status="error">
-          <AlertIcon />
+          <AlertIcon/>
           {message}
         </Alert>
       );
@@ -270,7 +251,7 @@ const ManualOffsetContent = observer(
     const partitions = api.topicPartitions?.get(topicName);
 
     if (!partitions) {
-      return <Spinner size="lg" />;
+      return <Spinner size="lg"/>;
     }
 
     const [, partitionId] = partitionInfo;
@@ -279,13 +260,13 @@ const ManualOffsetContent = observer(
     if (!partition) {
       return (
         <Alert status="error">
-          <AlertIcon />
+          <AlertIcon/>
           {`Partition of topic ${topicName} with ID ${partitionId} not found!`}
         </Alert>
       );
     }
 
-    const { marks, min, max } = getMarks(partition);
+    const {marks, min, max} = getMarks(partition);
     return (
       <Flex alignItems="center" gap={2}>
         <Slider min={min} max={max} onChange={updateOffsetFromSlider} value={sliderValue}>
@@ -296,15 +277,15 @@ const ManualOffsetContent = observer(
               </SliderMark>
             ))}
           <SliderTrack>
-            <SliderFilledTrack />
+            <SliderFilledTrack/>
           </SliderTrack>
-          <SliderThumb />
+          <SliderThumb/>
         </Slider>
         <Input
           maxWidth={124}
           value={sliderValue}
           onChange={(e) => {
-            const { value } = e.target;
+            const {value} = e.target;
             if (!DIGITS_ONLY_REGEX.test(value)) return;
             updateOffsetFromSlider(Number(value));
           }}
@@ -323,7 +304,7 @@ const ManualOffsetContent = observer(
   },
 );
 
-function getMarks(partition: Partition) {
+function getMarks(partition: TopicPartitionDetails) {
   if (!partition)
     return {
       min: 0,
@@ -367,7 +348,7 @@ function formatMarks(marks: number[]) {
 }
 
 interface DeleteRecordsModalProps {
-  topic: Topic | undefined | null;
+  topic: TopicSummary | undefined | null;
   visible: boolean;
   onCancel: () => void;
   onFinish: () => void;
@@ -375,7 +356,7 @@ interface DeleteRecordsModalProps {
 }
 
 export default function DeleteRecordsModal(props: DeleteRecordsModalProps): JSX.Element {
-  const { visible, topic, onCancel, onFinish, afterClose } = props;
+  const {visible, topic, onCancel, onFinish, afterClose} = props;
   const toast = useToast();
 
   useEffect(() => {
@@ -399,7 +380,7 @@ export default function DeleteRecordsModal(props: DeleteRecordsModalProps): JSX.
   const isTimestamp = offsetOption === 'timestamp';
 
   // biome-ignore lint/suspicious/noConfusingVoidType: needed to fix error TS2345
-  const handleFinish = async (responseData: void | DeleteRecordsResponseData | null | undefined) => {
+  const handleFinish = async (responseData: void | DeleteTopicRecordsResponse | null | undefined) => {
     if (responseData == null) {
       setErrors(['You are not allowed to delete records on this topic. Please contact your Kafka administrator.']);
       return;
@@ -408,7 +389,7 @@ export default function DeleteRecordsModal(props: DeleteRecordsModalProps): JSX.
     const errorPartitions = responseData.partitions.filter((partition) => !!partition.error);
 
     if (errorPartitions.length > 0) {
-      setErrors(errorPartitions.map(({ partitionId, error }) => `Partition ${partitionId}: ${error}`));
+      setErrors(errorPartitions.map(({partitionId, error}) => `Partition ${partitionId}: ${error}`));
       setOkButtonLoading(false);
     } else {
       onFinish();
@@ -455,9 +436,9 @@ export default function DeleteRecordsModal(props: DeleteRecordsModalProps): JSX.
     } else if (isTimestamp && timestamp != null) {
       api.getTopicOffsetsByTimestamp([topic.topicName], timestamp).then((topicOffsets) => {
         if (isAllPartitions) {
-          const pairs = topicOffsets[0].partitions.map(({ partitionId, offset }) => ({
-            partitionId,
-            offset,
+          const pairs = topicOffsets[0].partitions.map(({partitionId, offset}) => ({
+            Partition: partitionId,
+            Offset: offset,
           }));
           api.deleteTopicRecordsFromMultiplePartitionOffsetPairs(topic.topicName, pairs).then(handleFinish);
         } else if (isSpecficPartition) {
@@ -487,13 +468,13 @@ export default function DeleteRecordsModal(props: DeleteRecordsModalProps): JSX.
 
   return (
     <Modal isOpen={visible} onClose={onCancel} onCloseComplete={afterClose}>
-      <ModalOverlay />
+      <ModalOverlay/>
       <ModalContent minW="2xl">
         <ModalHeader>Delete records in topic</ModalHeader>
         <ModalBody>
           {hasErrors && (
             <Alert status="error" mb={2}>
-              <AlertIcon />
+              <AlertIcon/>
               <Flex flexDirection="column" gap={4} p={2}>
                 <Text>Errors have occurred when processing your request. Please contact your Kafka Administrator.</Text>
                 <List>

@@ -19,18 +19,46 @@ import PageContent from '../../misc/PageContent';
 import Section from '../../misc/Section';
 import {PageComponent, type PageInitHelper} from '../Page';
 import './Overview.scss';
-import {Box, Button, DataTable, Flex, Grid, GridItem, Heading, Link, Skeleton, Tooltip,} from '@redpanda-data/ui';
+import {Box, Button, DataTable, Flex, Grid, GridItem, Heading, Skeleton, Tooltip,} from '@redpanda-data/ui';
 import type {Row} from '@tanstack/react-table';
 import React, {type FC} from 'react';
 import {FaCrown} from 'react-icons/fa';
-import {MdCheck, MdError} from 'react-icons/md';
-import {Link as ReactRouterLink} from 'react-router-dom';
+import {MdCheck} from 'react-icons/md';
 import colors from '../../../colors';
-import {type ComponentStatus, StatusType} from '../../../protogen/redpanda/api/console/v1alpha1/cluster_status_pb';
 import {Statistic} from '../../misc/Statistic';
-import ClusterHealthOverview from './ClusterHealthOverview';
-import {kconsole} from "../../../../wailsjs/go/models";
+import {clusterstatus, kconsole} from "../../../../wailsjs/go/models";
 import BrokerWithLogDirs = kconsole.BrokerWithLogDirs;
+import ComponentStatus = clusterstatus.ComponentStatus;
+
+export enum StatusType {
+  /**
+   * STATUS_TYPE_UNSPECIFIED is the default value.
+   *
+   * @generated from enum value: STATUS_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * STATUS_TYPE_HEALTHY indicates the component is healthy.
+   *
+   * @generated from enum value: STATUS_TYPE_HEALTHY = 1;
+   */
+  HEALTHY = 1,
+
+  /**
+   * STATUS_TYPE_DEGRADED indicates the component is partially impaired.
+   *
+   * @generated from enum value: STATUS_TYPE_DEGRADED = 2;
+   */
+  DEGRADED = 2,
+
+  /**
+   * STATUS_TYPE_UNHEALTHY indicates the component is unhealthy or unreachable.
+   *
+   * @generated from enum value: STATUS_TYPE_UNHEALTHY = 3;
+   */
+  UNHEALTHY = 3,
+}
 
 @observer
 class Overview extends PageComponent {
@@ -56,8 +84,6 @@ class Overview extends PageComponent {
     void api.refreshClusterOverview();
 
     api.refreshBrokers();
-    void api.refreshClusterHealth();
-    void api.refreshDebugBundleStatuses();
   }
 
   render() {
@@ -133,10 +159,10 @@ class Overview extends PageComponent {
                       header: 'Status',
                       cell: ({}) => (
                         <Flex gap={2}>
-                            <>
-                              <MdCheck size={18} color={colors.green}/>
-                              Running
-                            </>
+                          <>
+                            <MdCheck size={18} color={colors.green}/>
+                            Running
+                          </>
                         </Flex>
                       ),
                       size: Number.POSITIVE_INFINITY,
@@ -282,10 +308,6 @@ function ClusterDetails() {
   const totalPrimaryStorageBytes = brokers.sum((x) => x.totalPrimaryLogDirSizeBytes ?? 0);
   const totalReplicatedStorageBytes = totalStorageBytes - totalPrimaryStorageBytes;
 
-  const serviceAccounts = 'Admin API not configured';
-
-  const aclCount = overview.kafkaAuthorizerInfo?.aclCount ?? 'Authorizer not configured';
-
   const formatStatus = (overviewStatus?: ComponentStatus): React.ReactNode => {
     if (!overviewStatus) {
       return null;
@@ -300,22 +322,9 @@ function ClusterDetails() {
     return status;
   };
 
-  const clusters = overview.kafkaConnect?.clusters ?? [];
-  const hasConnect = overview.kafkaConnect !== null && clusters.length > 0;
-  const clusterLines = clusters.map((c) => {
-    return {
-      name: c.name,
-      status: formatStatus(c.status),
-    };
-  });
-
   return (
     <Grid w="full" templateColumns={{base: 'auto', lg: 'repeat(3, auto)'}} gap={2} alignItems="center">
       <DetailsBlock title="Services">
-        <Details
-          title="Kafka Connect"
-          content={hasConnect ? clusterLines.map((c) => [c.name, c.status]) : [['Not configured']]}
-        />
         <Details
           title="Schema Registry"
           content={
@@ -324,7 +333,7 @@ function ClusterDetails() {
                 [
                   formatStatus(overview.schemaRegistry.status),
                   overview.schemaRegistry?.status?.status === StatusType.HEALTHY
-                    ? `${overview.schemaRegistry.registeredSubjectsCount} schemas`
+                    ? `${overview.schemaRegistry.registered_subjects_count} schemas`
                     : undefined,
                 ],
               ]
@@ -341,29 +350,6 @@ function ClusterDetails() {
         <Details title="Replicated" content={[[prettyBytesOrNA(totalReplicatedStorageBytes)]]}/>
       </DetailsBlock>
 
-      <DetailsBlock title="Security">
-        <Details
-          title="Service Accounts"
-          content={[
-            [
-              <Link key={0} as={ReactRouterLink} to="/security/users/">
-                {serviceAccounts}
-              </Link>,
-            ],
-          ]}
-        />
-
-        <Details
-          title="ACLs"
-          content={[
-            [
-              <Link key={0} as={ReactRouterLink} to="/security/acls/">
-                {aclCount}
-              </Link>,
-            ],
-          ]}
-        />
-      </DetailsBlock>
     </Grid>
   );
 }

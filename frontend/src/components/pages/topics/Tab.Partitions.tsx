@@ -12,9 +12,8 @@
 import {observer} from 'mobx-react';
 import type {FC} from 'react';
 import {api} from '../../../state/backendApi';
-import type {Partition} from '../../../state/restInterfaces';
 import '../../../utils/arrayExtensions';
-import {Alert, AlertIcon, Badge, Box, DataTable, Flex, Popover, Text} from '@redpanda-data/ui';
+import {Alert, AlertIcon, Box, DataTable, Flex, Popover, Text} from '@redpanda-data/ui';
 import {MdOutlineWarningAmber} from 'react-icons/md';
 import usePaginationParams from '../../../hooks/usePaginationParams';
 import {uiState} from '../../../state/uiState';
@@ -38,13 +37,6 @@ export const TopicPartitions: FC<TopicPartitionsProps> = observer(({topic}) => {
   if (partitions === null) {
     return <div/>; // todo: show the error (if one was reported);
   }
-
-  const leaderLessPartitions = (api.clusterHealth?.leaderlessPartitions ?? []).find(
-    ({topicName}) => topicName === topic.topicName,
-  )?.partitionIds;
-  const underReplicatedPartitions = (api.clusterHealth?.underReplicatedPartitions ?? []).find(
-    ({topicName}) => topicName === topic.topicName,
-  )?.partitionIds;
 
   let warning: JSX.Element = <></>;
   if (topic.cleanupPolicy.toLowerCase() === 'compact')
@@ -90,10 +82,6 @@ export const TopicPartitions: FC<TopicPartitionsProps> = observer(({topic}) => {
               return (
                 <Flex alignItems="center" gap={2}>
                   {header}
-                  {leaderLessPartitions?.includes(partition.id) && <Badge variant="error">Leaderless</Badge>}
-                  {underReplicatedPartitions?.includes(partition.id) && (
-                    <Badge variant="warning">Under-replicated</Badge>
-                  )}
                 </Flex>
               );
             },

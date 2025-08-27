@@ -23,7 +23,6 @@ import {
   isSingleValue,
 } from '@redpanda-data/ui';
 import { isServerless } from '../../../../config';
-import { api } from '../../../../state/backendApi';
 import { SingleSelect } from '../../../misc/Select';
 import type { CleanupPolicyType } from '../types';
 

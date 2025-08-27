@@ -13,11 +13,9 @@ import type { SortingState } from '@redpanda-data/ui';
 import { autorun, makeObservable, observable, transaction } from 'mobx';
 import { DEFAULT_TABLE_PAGE_SIZE } from '../components/constants';
 import type { TopicTabId } from '../components/pages/topics/Topic.Details';
-import { PayloadEncoding } from '../protogen/redpanda/api/console/v1alpha1/common_pb';
 import { clone } from '../utils/jsonUtils';
 import { assignDeep, randomId } from '../utils/utils';
 import { AclRequestDefault, type GetAclsRequest } from './restInterfaces';
-import { CompressionType } from '../protogen/redpanda/api/console/v1alpha1/common_pb';
 
 const settingsName = 'uiSettings-v3';
 
@@ -106,8 +104,6 @@ export const DEFAULT_SEARCH_PARAMS = {
   filtersEnabled: false,
   filters: [] as FilterEntry[],
 
-  keyDeserializer: PayloadEncoding.UNSPECIFIED as PayloadEncoding,
-  valueDeserializer: PayloadEncoding.UNSPECIFIED as PayloadEncoding,
 };
 
 export type TopicMessageSearchSettings = TopicDetailsSettings['searchParams'];
@@ -146,8 +142,8 @@ export class TopicDetailsSettings {
   @observable partitionPageSize = 20;
   @observable aclPageSize = 20;
 
-  @observable produceRecordEncoding = PayloadEncoding.TEXT as PayloadEncoding | 'base64';
-  @observable produceRecordCompression = CompressionType.SNAPPY;
+  // @observable produceRecordEncoding = PayloadEncoding.TEXT as PayloadEncoding | 'base64';
+  // @observable produceRecordCompression = CompressionType.SNAPPY;
 
   @observable quickSearch = '';
 }

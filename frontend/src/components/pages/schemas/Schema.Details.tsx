@@ -9,44 +9,30 @@
  * by the Apache License, Version 2.0
  */
 
-import { createStandaloneToast } from '@redpanda-data/ui';
-import {
-  Alert,
-  AlertDescription,
-  AlertIcon,
-  AlertTitle,
-  Box,
-  CodeBlock,
-  Divider,
-  Flex,
-  Grid,
-  GridItem,
-  ListItem,
-  Skeleton,
-  Tabs,
-  UnorderedList,
-  useToast,
-} from '@redpanda-data/ui';
-import { Text } from '@redpanda-data/ui';
-import { Link } from '@redpanda-data/ui';
-import { makeObservable, observable } from 'mobx';
-import { observer } from 'mobx-react';
-import { useState } from 'react';
-import { Link as ReactRouterLink } from 'react-router-dom';
-import { appGlobal } from '../../../state/appGlobal';
-import { api } from '../../../state/backendApi';
-import type { SchemaRegistrySubjectDetails, SchemaRegistryVersionedSchema } from '../../../state/restInterfaces';
-import { uiState } from '../../../state/uiState';
-import { editQuery } from '../../../utils/queryHelper';
-import { Button, DefaultSkeleton, Label } from '../../../utils/tsxUtils';
-import { decodeURIComponentPercents } from '../../../utils/utils';
-import { KowlDiffEditor } from '../../misc/KowlEditor';
+import {Alert, AlertDescription, AlertIcon, AlertTitle, Box, CodeBlock, createStandaloneToast, Divider, Flex, Grid, GridItem, Link, ListItem, Skeleton, Tabs, Text, UnorderedList, useToast} from '@redpanda-data/ui';
+import {makeObservable, observable} from 'mobx';
+import {observer} from 'mobx-react';
+import {useState} from 'react';
+import {Link as ReactRouterLink} from 'react-router-dom';
+import {appGlobal} from '../../../state/appGlobal';
+import {api} from '../../../state/backendApi';
+import {uiState} from '../../../state/uiState';
+import {editQuery} from '../../../utils/queryHelper';
+import {Button, DefaultSkeleton, Label} from '../../../utils/tsxUtils';
+import {decodeURIComponentPercents} from '../../../utils/utils';
+import {KowlDiffEditor} from '../../misc/KowlEditor';
 import PageContent from '../../misc/PageContent';
-import { SingleSelect } from '../../misc/Select';
-import { SmallStat } from '../../misc/SmallStat';
-import { PageComponent } from '../Page';
-import { openDeleteModal, openPermanentDeleteModal } from './modals';
-const { ToastContainer, toast } = createStandaloneToast();
+import {SingleSelect} from '../../misc/Select';
+import {SmallStat} from '../../misc/SmallStat';
+import {PageComponent} from '../Page';
+import {openDeleteModal, openPermanentDeleteModal} from './modals';
+import {kconsole, sr} from "../../../../wailsjs/go/models";
+import SchemaRegistrySubjectDetails = kconsole.SchemaRegistrySubjectDetails;
+import SchemaRegistryVersionedSchema = kconsole.SchemaRegistryVersionedSchema;
+import SchemaType = sr.SchemaType;
+import Schema = sr.Schema;
+
+const {ToastContainer, toast} = createStandaloneToast();
 
 @observer
 class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
@@ -57,8 +43,8 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
 
   initPage(): void {
     this.updateTitleAndBreadcrumbs();
-    this.refreshData(false);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
   }
 
   constructor(p: any) {
@@ -91,7 +77,7 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
 
     uiState.pageTitle = subjectNameRaw;
     uiState.pageBreadcrumbs = [];
-    uiState.pageBreadcrumbs.push({ title: 'Schema Registry', linkTo: '/schema-registry' });
+    uiState.pageBreadcrumbs.push({title: 'Schema Registry', linkTo: '/schema-registry'});
     uiState.pageBreadcrumbs.push({
       title: subjectNameRaw,
       linkTo: `/schema-registry/${encodeURIComponent(subjectNameRaw)}?version=${version}`,
@@ -102,21 +88,21 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
     });
   }
 
-  refreshData(force?: boolean) {
+  refreshData() {
     api.refreshSchemaCompatibilityConfig();
     api.refreshSchemaMode();
-    api.refreshSchemaSubjects(force);
-    api.refreshSchemaTypes(force);
+    api.refreshSchemaSubjects();
+    api.refreshSchemaTypes();
 
     const subjectName = decodeURIComponentPercents(this.props.subjectName);
-    api.refreshSchemaDetails(subjectName, force).then(() => {
+    api.refreshSchemaDetails(subjectName).then(() => {
       const details = api.schemaDetails.get(subjectName);
       if (!details) return;
 
       for (const v of details.versions) {
         if (v.isSoftDeleted) continue;
 
-        api.refreshSchemaReferencedBy(subjectName, v.version, force);
+        api.refreshSchemaReferencedBy(subjectName, v.version);
       }
     });
   }
@@ -128,15 +114,15 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
 
     return (
       <PageContent key="b">
-        <ToastContainer />
+        <ToastContainer/>
 
         {/* Statistics Bar */}
         <Flex gap="1rem" alignItems="center">
           <SmallStat title="Format">{subject.type}</SmallStat>
-          <Divider height="2ch" orientation="vertical" />
+          <Divider height="2ch" orientation="vertical"/>
 
-          <SmallStat title="Compatibility">{subject.compatibility}</SmallStat>
-          <Divider height="2ch" orientation="vertical" />
+          <SmallStat title="Compatibility">{String(subject.compatibility)}</SmallStat>
+          <Divider height="2ch" orientation="vertical"/>
 
           <SmallStat title="Active Versions">{subject.schemas.count((x) => !x.isSoftDeleted)}</SmallStat>
         </Flex>
@@ -182,7 +168,7 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
                         isClosable: false,
                         title: 'Subject permanently deleted',
                       });
-                      api.refreshSchemaSubjects(true);
+                      api.refreshSchemaSubjects();
                       appGlobal.history.push('/schema-registry/');
                     })
                     .catch((err) => {
@@ -206,7 +192,7 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
                         isClosable: false,
                         title: 'Subject soft-deleted',
                       });
-                      api.refreshSchemaSubjects(true);
+                      api.refreshSchemaSubjects();
                     })
                     .catch((err) => {
                       toast({
@@ -232,12 +218,12 @@ class SchemaDetailsView extends PageComponent<{ subjectName: string }> {
             {
               key: 'definition',
               name: 'Definition',
-              component: <SubjectDefinition subject={subject} />,
+              component: <SubjectDefinition subject={subject}/>,
             },
             {
               key: 'diff',
               name: 'Version diff',
-              component: <VersionDiff subject={subject} />,
+              component: <VersionDiff subject={subject}/>,
             },
           ]}
         />
@@ -263,8 +249,8 @@ function getVersionFromQuery(): 'latest' | number | undefined {
   return undefined;
 }
 
-export function schemaTypeToCodeBlockLanguage(type: string) {
-  const lower = type.toLowerCase();
+export function schemaTypeToCodeBlockLanguage(type: SchemaType) {
+  const lower = type.toString().toLowerCase();
   switch (lower) {
     case 'json':
     case 'avro':
@@ -275,7 +261,7 @@ export function schemaTypeToCodeBlockLanguage(type: string) {
 }
 
 export function getFormattedSchemaText(schema: SchemaRegistryVersionedSchema) {
-  const lower = schema.type.toLowerCase();
+  const lower = schema.type.toString().toLowerCase();
   if (lower === 'avro' || lower === 'json') return JSON.stringify(JSON.parse(schema.schema), undefined, 4);
   return schema.schema;
 }
@@ -355,8 +341,8 @@ const SubjectDefinition = observer((p: { subject: SchemaRegistrySubjectDetails }
                           title: 'Schema version permanently deleted',
                         });
 
-                        api.refreshSchemaSubjects(true);
-                        await api.refreshSchemaDetails(subject.name, true);
+                        api.refreshSchemaSubjects();
+                        await api.refreshSchemaDetails(subject.name);
 
                         const newDetails = api.schemaDetails.get(subject.name);
                         if (!newDetails || !newDetails.latestActiveVersion) {
@@ -389,11 +375,11 @@ const SubjectDefinition = observer((p: { subject: SchemaRegistrySubjectDetails }
                 }
                 onClick={() => {
                   api
-                    .createSchema(subject.name, {
+                    .createSchema(subject.name, Schema.createFrom({
                       references: schema.references,
                       schema: schema.schema,
                       schemaType: schema.type,
-                    })
+                    }))
                     .then(async (r) => {
                       toast({
                         status: 'success',
@@ -402,8 +388,8 @@ const SubjectDefinition = observer((p: { subject: SchemaRegistrySubjectDetails }
                         title: `Schema ${subject.name} ${schema.version} has been recovered`,
                         description: `Schema ID: ${r.id}`,
                       });
-                      api.refreshSchemaSubjects(true);
-                      await api.refreshSchemaDetails(subject.name, true);
+                      api.refreshSchemaSubjects();
+                      await api.refreshSchemaDetails(subject.name);
 
                       const updatedDetails = api.schemaDetails.get(subject.name);
                       if (updatedDetails)
@@ -448,8 +434,8 @@ const SubjectDefinition = observer((p: { subject: SchemaRegistrySubjectDetails }
                           description: 'You can recover or permanently delete it.',
                         });
 
-                        api.refreshSchemaDetails(subject.name, true);
-                        api.refreshSchemaSubjects(true);
+                        api.refreshSchemaDetails(subject.name);
+                        api.refreshSchemaSubjects();
                       })
                       .catch((err) => {
                         toast({
@@ -472,7 +458,7 @@ const SubjectDefinition = observer((p: { subject: SchemaRegistrySubjectDetails }
         {/* Deleted Hint */}
         {schema.isSoftDeleted && (
           <Alert status="warning" variant="left-accent">
-            <AlertIcon />
+            <AlertIcon/>
             <Box>
               <AlertTitle>Soft-deleted schema</AlertTitle>
               <AlertDescription>
@@ -494,7 +480,7 @@ const SubjectDefinition = observer((p: { subject: SchemaRegistrySubjectDetails }
 
       {/* References Box */}
       <Box>
-        <SchemaReferences subject={subject} schema={schema} />
+        <SchemaReferences subject={subject} schema={schema}/>
       </Box>
     </Flex>
   );
@@ -596,7 +582,7 @@ const VersionDiff = observer((p: { subject: SchemaRegistrySubjectDetails }) => {
 
 const SchemaReferences = observer(
   (p: { subject: SchemaRegistrySubjectDetails; schema: SchemaRegistryVersionedSchema }) => {
-    const { subject, schema } = p;
+    const {subject, schema} = p;
     const version = schema.version;
 
     const referencedByVersions = api.schemaReferencedBy.get(subject.name);
@@ -641,8 +627,8 @@ const SchemaReferences = observer(
 
         {!referencedBy ? (
           <Flex gap="2" direction="column">
-            <Skeleton height="20px" />
-            <Skeleton height="20px" />
+            <Skeleton height="20px"/>
+            <Skeleton height="20px"/>
           </Flex>
         ) : referencedBy.length > 0 ? (
           <UnorderedList>

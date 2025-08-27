@@ -115,15 +115,15 @@ class SchemaList extends PageComponent<{}> {
   initPage(p: PageInitHelper): void {
     p.title = 'Schema Registry';
     p.addBreadcrumb('Schema Registry', '/schema-registry');
-    this.refreshData(true);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
   }
 
-  refreshData(force?: boolean) {
+  refreshData() {
     api.refreshSchemaCompatibilityConfig();
     api.refreshSchemaMode();
-    api.refreshSchemaSubjects(force);
-    api.refreshSchemaTypes(force);
+    api.refreshSchemaSubjects();
+    api.refreshSchemaTypes();
 
     // Forcing a refresh means clearing cached information
     // For all the above calls this happens automatically, but schema usages are a cached map
@@ -346,7 +346,7 @@ class SchemaList extends PageComponent<{}> {
                                 isClosable: false,
                                 title: 'Subject permanently deleted',
                               });
-                              api.refreshSchemaSubjects(true);
+                              api.refreshSchemaSubjects();
                               appGlobal.history.push('/schema-registry/');
                             })
                             .catch((err) => {
@@ -370,7 +370,7 @@ class SchemaList extends PageComponent<{}> {
                                 isClosable: false,
                                 title: 'Subject soft-deleted',
                               });
-                              api.refreshSchemaSubjects(true);
+                              api.refreshSchemaSubjects();
                             })
                             .catch((err) => {
                               toast({

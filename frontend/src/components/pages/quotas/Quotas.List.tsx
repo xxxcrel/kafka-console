@@ -9,19 +9,35 @@
  * by the Apache License, Version 2.0
  */
 
-import { SkipIcon } from '@primer/octicons-react';
-import { Alert, AlertIcon, Button, DataTable, Result } from '@redpanda-data/ui';
-import { computed, makeObservable } from 'mobx';
-import { observer } from 'mobx-react';
-import { appGlobal } from '../../../state/appGlobal';
-import { api } from '../../../state/backendApi';
-import { type QuotaResponseSetting, QuotaType } from '../../../state/restInterfaces';
-import { toJson } from '../../../utils/jsonUtils';
-import { DefaultSkeleton, InfoText } from '../../../utils/tsxUtils';
-import { prettyBytes, prettyNumber } from '../../../utils/utils';
+import {SkipIcon} from '@primer/octicons-react';
+import {Alert, AlertIcon, Button, DataTable, Result} from '@redpanda-data/ui';
+import {computed, makeObservable} from 'mobx';
+import {observer} from 'mobx-react';
+import {appGlobal} from '../../../state/appGlobal';
+import {api} from '../../../state/backendApi';
+import {toJson} from '../../../utils/jsonUtils';
+import {DefaultSkeleton, InfoText} from '../../../utils/tsxUtils';
+import {prettyBytes, prettyNumber} from '../../../utils/utils';
 import PageContent from '../../misc/PageContent';
 import Section from '../../misc/Section';
-import { PageComponent, type PageInitHelper } from '../Page';
+import {PageComponent, type PageInitHelper} from '../Page';
+import {kconsole} from "../../../../wailsjs/go/models";
+import QuotaResponseSetting = kconsole.QuotaResponseSetting;
+
+export enum QuotaType {
+  // A rate representing the upper bound (bytes/sec) for producer traffic
+  PRODUCER_BYTE_RATE = 'producer_byte_rate',
+  // A rate representing the upper bound (bytes/sec) for consumer traffic.
+  CONSUMER_BYTE_RATE = 'consumer_byte_rate',
+  // A percentage representing the upper bound of time spent for processing requests.
+  REQUEST_PERCENTAGE = 'request_percentage',
+  // The rate at which mutations are accepted for the create "topics request,
+  // the create partitions request and the delete topics request. The rate is accumulated by
+  // the number of partitions created or deleted.
+  CONTROLLER_MUTATION_RATE = 'controller_mutation_rate',
+  // An int representing the upper bound of connections accepted for the specified IP.
+  CONNECTION_CREATION_RATE = 'connection_creation_rate',
+}
 
 @observer
 class QuotasList extends PageComponent {
@@ -34,13 +50,13 @@ class QuotasList extends PageComponent {
     p.title = 'Quotas';
     p.addBreadcrumb('Quotas', '/quotas');
 
-    this.refreshData(true);
-    appGlobal.onRefresh = () => this.refreshData(true);
+    this.refreshData();
+    appGlobal.onRefresh = () => this.refreshData();
   }
 
-  refreshData(force: boolean) {
+  refreshData() {
     if (api.userData != null && !api.userData.canListQuotas) return;
-    api.refreshQuotas(force);
+    api.refreshQuotas();
   }
 
   render() {
@@ -49,8 +65,8 @@ class QuotasList extends PageComponent {
 
     const warning =
       api.Quotas === null ? (
-        <Alert variant="solid" status="warning" style={{ marginBottom: '1em' }}>
-          <AlertIcon />
+        <Alert variant="solid" status="warning" style={{marginBottom: '1em'}}>
+          <AlertIcon/>
           You do not have the necessary permissions to view Quotas
         </Alert>
       ) : null;
@@ -60,16 +76,16 @@ class QuotasList extends PageComponent {
       x ? (
         prettyBytes(x)
       ) : (
-        <span style={{ opacity: 0.3 }}>
-          <SkipIcon />
+        <span style={{opacity: 0.3}}>
+          <SkipIcon/>
         </span>
       );
     const formatRate = (x: undefined | number) =>
       x ? (
         prettyNumber(x)
       ) : (
-        <span style={{ opacity: 0.3 }}>
-          <SkipIcon />
+        <span style={{opacity: 0.3}}>
+          <SkipIcon/>
         </span>
       );
 
@@ -81,7 +97,7 @@ class QuotasList extends PageComponent {
 
             <DataTable<{
               eqKey: string;
-              entityType: 'client-id' | 'user' | 'ip';
+              entityType: string;
               entityName?: string | undefined;
               settings: QuotaResponseSetting[];
             }>
@@ -101,14 +117,14 @@ class QuotasList extends PageComponent {
                   size: 100,
                   header: () => <InfoText tooltip="Limit throughput of produce requests">Producer Rate</InfoText>,
                   accessorKey: 'producerRate',
-                  cell: ({ row: { original } }) =>
+                  cell: ({row: {original}}) =>
                     formatBytes(original.settings.first((k) => k.key === QuotaType.PRODUCER_BYTE_RATE)?.value),
                 },
                 {
                   size: 100,
                   header: () => <InfoText tooltip="Limit throughput of fetch requests">Consumer Rate</InfoText>,
                   accessorKey: 'consumerRate',
-                  cell: ({ row: { original } }) =>
+                  cell: ({row: {original}}) =>
                     formatBytes(original.settings.first((k) => k.key === QuotaType.CONSUMER_BYTE_RATE)?.value),
                 },
                 {
@@ -119,7 +135,7 @@ class QuotasList extends PageComponent {
                     </InfoText>
                   ),
                   accessorKey: 'controllerMutationRate',
-                  cell: ({ row: { original } }) =>
+                  cell: ({row: {original}}) =>
                     formatRate(original.settings.first((k) => k.key === QuotaType.CONTROLLER_MUTATION_RATE)?.value),
                 },
               ]}
@@ -134,7 +150,7 @@ class QuotasList extends PageComponent {
     const quotaResponse = api.Quotas;
     if (!quotaResponse || quotaResponse.error) return [];
 
-    return quotaResponse.items.map((x) => ({ ...x, eqKey: toJson(x) }));
+    return quotaResponse.items.map((x) => ({...x, eqKey: toJson(x)}));
   }
 }
 
@@ -148,7 +164,7 @@ const PermissionDenied = (
           userMessage={
             <p>
               You are not allowed to view this page.
-              <br />
+              <br/>
               Contact the administrator if you think this is an error.
             </p>
           }

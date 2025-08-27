@@ -16,10 +16,8 @@ import {config as appConfig} from '../config';
 import {decodeBase64} from '../utils/utils';
 import {
   AlterPartitionAssignments,
-  CreateACL,
   CreateSchemaRegistrySchema,
   CreateTopic,
-  DeleteACLs,
   DeleteConsumerGroup,
   DeleteConsumerGroupOffsets,
   DeleteSchemaRegistrySubject,
@@ -37,7 +35,6 @@ import {
   GetConsumerGroupsOverview,
   GetEndpointCompatibility,
   GetKafkaAuthorizerInfo,
-  GetKafkaConnectInfo,
   GetKafkaInfo,
   GetSchemaRegistryConfig,
   GetSchemaRegistryInfo,
@@ -78,8 +75,6 @@ import CompressionCodec = kgo.CompressionCodec;
 import ProduceRecordsResponse = kconsole.ProduceRecordsResponse;
 import CreateTopicResponse = kconsole.CreateTopicResponse;
 import CreateTopicsRequestTopic = kmsg.CreateTopicsRequestTopic;
-import DeleteACLsRequestFilter = kmsg.DeleteACLsRequestFilter;
-import CreateACLsRequestCreation = kmsg.CreateACLsRequestCreation;
 import QuotaResponse = kconsole.QuotaResponse;
 import DescribeACLsRequest = kmsg.DescribeACLsRequest;
 import TopicConfigEntry = kconsole.TopicConfigEntry;
@@ -144,12 +139,9 @@ const apiStore = {
   topicConsumers: new Map<string, TopicConsumerGroup[]>(),
   topicAcls: new Map<string, ACLOverview | null>(),
 
-  ACLs: undefined as ACLOverview | undefined | null,
-
   Quotas: undefined as QuotaResponse | undefined | null,
 
   consumerGroups: new Map<string, ConsumerGroupOverview>(),
-  consumerGroupAcls: new Map<string, ACLOverview | null>(),
 
   partitionReassignments: undefined as PartitionReassignments[] | null | undefined,
 
@@ -425,38 +417,9 @@ const apiStore = {
     return result;
   },
 
-  refreshTopicAcls(topicName: string) {
-    ListAllACLs(DescribeACLsRequest.createFrom({
-      ...AclRequestDefault,
-      ResourcePatternType: 2,
-      ResourceType: 2,
-      ResourceName: topicName
-    }))
-      .then((v) => {
-        if (v) normalizeAcls(v.aclResources);
-        this.topicAcls.set(topicName, v);
-      });
-  },
-
   refreshTopicConsumers(topicName: string) {
     ListTopicConsumers(topicName)
       .then((consumerGroups) => this.topicConsumers.set(topicName, consumerGroups), addError);
-  },
-
-  async refreshAcls(request: DescribeACLsRequest): Promise<void> {
-    await
-      ListAllACLs(request)
-        .then(
-          (v) => {
-            if (v) {
-              normalizeAcls(v.aclResources);
-              this.ACLs = v;
-            } else {
-              this.ACLs = null;
-            }
-          },
-          addError,
-        );
   },
 
   refreshQuotas() {
@@ -474,12 +437,11 @@ const apiStore = {
   },
 
   async refreshClusterOverview() {
-    GetKafkaAuthorizerInfo().then(aclCnt => {
-      this.clusterOverview?.kafkaAuthorizerInfo = aclCnt;
-    }.catch((e) => {
-      console.error(e);
-      return null;
-    }),
+    const requests: Array<Promise<any>> = [
+      GetKafkaAuthorizerInfo().catch((e) => {
+        console.error(e);
+        return null;
+      }),
       GetConsoleInfo().catch((e) => {
         console.error(e);
         return null;
@@ -488,26 +450,25 @@ const apiStore = {
         console.error(e);
         return null;
       }),
-
-    // Conditionally add schema registry request
-    if (api.userData?.canViewSchemas) {
       GetSchemaRegistryInfo().catch((e) => {
         console.error(e);
         return null;
-      });
-    }
+      })
+    ]
+    const responses = await Promise.all(requests);
+    const [
+      aclCnt,
+      consoleInfo,
+      kafkaInfo,
+      schemaRegistryInfo
+    ] = responses;
 
     this.clusterOverview = {
-      kafkaAuthorizerInfo: kafkaAuthorizerInfoResponse,
-      console: consoleInfoResponse,
-      kafka: kafkaResponse,
-      schemaRegistry: schemaRegistryResponse,
-      kafkaConnect: kafkaConnectResponse,
+      kafkaAuthorizerInfo: aclCnt,
+      console: consoleInfo,
+      kafka: kafkaInfo,
+      schemaRegistry: schemaRegistryInfo,
     };
-  },
-
-  get isAdminApiConfigured() {
-    return false;
   },
 
   refreshBrokers() {
@@ -569,21 +530,6 @@ const apiStore = {
           });
         }
       }, addError);
-  },
-
-  refreshConsumerGroupAcls(groupName: string) {
-    ListAllACLs(DescribeACLsRequest.createFrom({
-      ...AclRequestDefault,
-      ResourcePatternType: 2,
-      ResourceType: 3,
-      ResourceName: groupName,
-    }))
-      .then((v) => {
-        if (v) {
-          normalizeAcls(v.aclResources);
-        }
-        this.consumerGroupAcls.set(groupName, v);
-      });
   },
 
   async editConsumerGroupOffsets(
@@ -655,7 +601,7 @@ const apiStore = {
   refreshSchemaDetails(subjectName: string) {
     // Always refresh all versions, otherwise we cannot know wether or not we have to refresh with 'all,
     // If we refresh with 'latest' or specific number, we'd need to keep track of what information we're missing
-    GetSchemaRegistrySubjectDetails(subjectName, "all")
+    return GetSchemaRegistrySubjectDetails(subjectName, "all")
       .then((details) => {
         this.schemaDetails.set(subjectName, details);
       })
@@ -925,13 +871,6 @@ const apiStore = {
     return CreateTopic(request);
   },
 
-  async createACL(request: CreateACLsRequestCreation): Promise<void> {
-    return CreateACL(request);
-  },
-
-  async deleteACLs(request: DeleteACLsRequestFilter): Promise<void> {
-    DeleteACLs(request);
-  },
 };
 
 // export function createMessageSearch() {
@@ -1280,7 +1219,7 @@ const apiStore = {
 //   return observable(messageSearch);
 // }
 
-// export type MessageSearch = ReturnType<typeof createMessageSearch>;
+export type MessageSearch = ReturnType<typeof createMessageSearch>;
 
 
 function addFrontendFieldsForConsumerGroup(g: ConsumerGroupOverview) {

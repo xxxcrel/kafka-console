@@ -474,11 +474,12 @@ const apiStore = {
   },
 
   async refreshClusterOverview() {
-    const requests: Array<Promise<any>> = [
-      GetKafkaAuthorizerInfo().catch((e) => {
-        console.error(e);
-        return null;
-      }),
+    GetKafkaAuthorizerInfo().then(aclCnt => {
+      this.clusterOverview?.kafkaAuthorizerInfo = aclCnt;
+    }.catch((e) => {
+      console.error(e);
+      return null;
+    }),
       GetConsoleInfo().catch((e) => {
         console.error(e);
         return null;
@@ -487,31 +488,14 @@ const apiStore = {
         console.error(e);
         return null;
       }),
-      GetKafkaConnectInfo().catch((e) => {
-        console.error(e);
-        return null;
-      }),
-    ];
 
     // Conditionally add schema registry request
     if (api.userData?.canViewSchemas) {
-      requests.push(
-        GetSchemaRegistryInfo().catch((e) => {
-          console.error(e);
-          return null;
-        }),
-      );
+      GetSchemaRegistryInfo().catch((e) => {
+        console.error(e);
+        return null;
+      });
     }
-
-    const responses = await Promise.all(requests);
-
-    const [
-      kafkaAuthorizerInfoResponse,
-      consoleInfoResponse,
-      kafkaResponse,
-      kafkaConnectResponse,
-      schemaRegistryResponse = null, // Default to null in case it wasn't requested
-    ] = responses;
 
     this.clusterOverview = {
       kafkaAuthorizerInfo: kafkaAuthorizerInfoResponse,

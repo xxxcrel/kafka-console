@@ -9,8 +9,10 @@
  * by the Apache License, Version 2.0
  */
 
-import {kconsole, kgo} from "../../wailsjs/go/models";
+import {clusterstatus, kconsole, kgo} from "../../wailsjs/go/models";
 import TopicPartitionDetails = kconsole.TopicPartitionDetails;
+import KafkaInfo = clusterstatus.KafkaInfo;
+import SchemaRegistryInfo = clusterstatus.SchemaRegistryInfo;
 
 export interface ApiError {
   statusCode: number;
@@ -1378,11 +1380,10 @@ export interface CreateSecretResponse {
 }
 
 export interface ClusterOverview {
-  kafkaAuthorizerInfo: GetKafkaAuthorizerInfoResponse | null;
-  kafka: GetKafkaInfoResponse | null;
-  console: GetConsoleInfoResponse | null;
-  kafkaConnect: GetKafkaConnectInfoResponse | null;
-  schemaRegistry: GetSchemaRegistryInfoResponse | null;
+  kafkaAuthorizerInfo: number | null;
+  kafka: KafkaInfo | null;
+  console: string | null;
+  schemaRegistry: SchemaRegistryInfo | null;
 }
 
 export interface OverviewStatus {

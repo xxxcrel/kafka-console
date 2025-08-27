@@ -131,19 +131,12 @@ class Overview extends PageComponent {
                     },
                     {
                       header: 'Status',
-                      cell: ({row: {original: broker}}) => (
+                      cell: ({}) => (
                         <Flex gap={2}>
-                          {api.clusterHealth?.offlineBrokerIds.includes(broker.brokerId) ? (
-                            <>
-                              <MdError size={18} color={colors.brandError}/>
-                              Down
-                            </>
-                          ) : (
                             <>
                               <MdCheck size={18} color={colors.green}/>
                               Running
                             </>
-                          )}
                         </Flex>
                       ),
                       size: Number.POSITIVE_INFINITY,

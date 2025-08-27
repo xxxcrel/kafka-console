@@ -9,16 +9,6 @@
  * by the Apache License, Version 2.0
  */
 
-import type { AuthenticationMethod } from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
-import type {
-  GetConsoleInfoResponse,
-  GetKafkaAuthorizerInfoResponse,
-  GetKafkaConnectInfoResponse,
-  GetKafkaInfoResponse,
-  GetRedpandaInfoResponse,
-  GetSchemaRegistryInfoResponse,
-} from '../protogen/redpanda/api/console/v1alpha1/cluster_status_pb';
-import type { TroubleshootReport } from '../protogen/redpanda/api/console/v1alpha1/common_pb';
 import {kconsole, kgo} from "../../wailsjs/go/models";
 import TopicPartitionDetails = kconsole.TopicPartitionDetails;
 

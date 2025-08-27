@@ -14,12 +14,6 @@
 import {comparer, computed, observable, transaction} from 'mobx';
 import {config as appConfig} from '../config';
 import {decodeBase64} from '../utils/utils';
-import type {ConnectError} from '@connectrpc/connect';
-import {AuthenticationMethod,} from '../protogen/redpanda/api/console/v1alpha1/authentication_pb';
-import {PayloadEncoding,} from '../protogen/redpanda/api/console/v1alpha1/common_pb';
-import {type GetClusterHealthResponse, type GetDebugBundleStatusResponse_DebugBundleBrokerStatus,} from '../protogen/redpanda/api/console/v1alpha1/debug_bundle_pb';
-import type {PublishMessageRequest, PublishMessageResponse,} from '../protogen/redpanda/api/console/v1alpha1/publish_messages_pb';
-import {Features} from './supportedFeatures';
 import {
   AlterPartitionAssignments,
   CreateACL,
@@ -58,6 +52,7 @@ import {
   GetTopicDocumentation,
   GetTopicsConfigs,
   GetTopicsOverview,
+  IncrementalAlterConfigs,
   ListAllACLs,
   ListOffsets,
   ListPartitionReassignments,
@@ -106,13 +101,14 @@ import AlterPartitionAssignmentsRequestTopic = kmsg.AlterPartitionAssignmentsReq
 import CompatibilityLevel = sr.CompatibilityLevel;
 import PartitionReassignments = kconsole.PartitionReassignments;
 import SetCompatibility = sr.SetCompatibility;
+import IncrementalAlterConfigsRequestResource = kmsg.IncrementalAlterConfigsRequestResource;
+import IncrementalAlterConfigsResourceResponse = kconsole.IncrementalAlterConfigsResourceResponse;
+import ConfigResourceType = kmsg.ConfigResourceType;
+import IncrementalAlterConfigOp = kmsg.IncrementalAlterConfigOp;
+import IncrementalAlterConfigsRequestResourceConfig = kmsg.IncrementalAlterConfigsRequestResourceConfig;
 
 export const REST_CACHE_DURATION_SEC = 20;
 
-/*
-    - If statusCode is not 2xx (any sort of error) -> response content will always be an `ApiError` json object
-    - 2xx does not mean complete success, for some endpoints (e.g.: broker log dirs) we can get partial responses (array with some result entries and some error entries)
-*/
 //
 // BackendAPI
 //
@@ -157,8 +153,6 @@ const apiStore = {
 
   partitionReassignments: undefined as PartitionReassignments[] | null | undefined,
 
-  clusterHealth: undefined as GetClusterHealthResponse | undefined,
-  debugBundleStatuses: [] as GetDebugBundleStatusResponse_DebugBundleBrokerStatus[],
   hasDebugProcess: false as boolean,
 
   // undefined = we haven't checked yet
@@ -173,7 +167,6 @@ const apiStore = {
     this.userData = {
       displayName: 'Kafka Console',
       avatarUrl: '',
-      authenticationMethod: AuthenticationMethod.NONE,
       canListAcls: true,
       canListQuotas: true,
       canPatchConfigs: true,
@@ -311,6 +304,7 @@ const apiStore = {
                     partitionHasError = true;
                   }
                   if (partitionHasError) {
+                    p.hasErrors = true;
                     continue;
                   }
 
@@ -545,7 +539,7 @@ const apiStore = {
         transaction(() => {
           // add 'type' to each synonym entry
           for (const broker of clusterInfo.brokers)
-            if (broker.config && !broker.config.error) prepareSynonyms(broker.config.configs ?? []);
+            if (broker.config && !broker.config.error) prepareBrokerSynonyms(broker.config.configs ?? []);
 
           // don't assign if the value didn't change
           // we'd re-trigger all observers!
@@ -563,7 +557,7 @@ const apiStore = {
   refreshBrokerConfig(brokerId: number) {
     GetBrokerConfig(brokerId)
       .then(brokerConfigs => {
-        prepareSynonyms(brokerConfigs);
+        prepareBrokerSynonyms(brokerConfigs);
         this.brokerConfigs.set(brokerId, brokerConfigs);
       })
       .catch((err) => {
@@ -800,125 +794,124 @@ const apiStore = {
   ): Promise<Array<AlterPartitionReassignmentsResponse>> {
     return await AlterPartitionAssignments(request);
   },
-  //
-  // async setReplicationThrottleRate(brokerIds: number[], maxBytesPerSecond: number): Promise<PatchConfigsResponse> {
-  //   maxBytesPerSecond = Math.ceil(maxBytesPerSecond);
-  //
-  //   const configRequest: PatchConfigsRequest = {resources: []};
-  //
-  //   for (const b of brokerIds) {
-  //     configRequest.resources.push({
-  //       resourceType: ConfigResourceType.Broker,
-  //       resourceName: String(b),
-  //       configs: [
-  //         {name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Set, value: String(maxBytesPerSecond)},
-  //         {
-  //           name: 'follower.replication.throttled.rate',
-  //           op: AlterConfigOperation.Set,
-  //           value: String(maxBytesPerSecond),
-  //         },
-  //       ],
-  //     });
-  //   }
-  //
-  //   return await this.changeConfig(configRequest);
-  // },
-  //
-  // async setThrottledReplicas(
-  //   topicReplicas: {
-  //     topicName: string;
-  //     leaderReplicas: { brokerId: number; partitionId: number }[];
-  //     followerReplicas: { brokerId: number; partitionId: number }[];
-  //   }[],
-  // ): Promise<PatchConfigsResponse> {
-  //   const configRequest: PatchConfigsRequest = {resources: []};
-  //
-  //   for (const t of topicReplicas) {
-  //     const res: ResourceConfig = {
-  //       // Set which topics to throttle
-  //       resourceType: ConfigResourceType.Topic,
-  //       resourceName: t.topicName,
-  //       configs: [],
-  //     };
-  //
-  //     const leaderReplicas = t.leaderReplicas.map((e) => `${e.partitionId}:${e.brokerId}`).join(',');
-  //     res.configs.push({
-  //       name: 'leader.replication.throttled.replicas',
-  //       op: AlterConfigOperation.Set,
-  //       value: leaderReplicas,
-  //     });
-  //     const followerReplicas = t.followerReplicas.map((e) => `${e.partitionId}:${e.brokerId}`).join(',');
-  //     res.configs.push({
-  //       name: 'follower.replication.throttled.replicas',
-  //       op: AlterConfigOperation.Set,
-  //       value: followerReplicas,
-  //     });
-  //
-  //     // individual request for each topic
-  //     configRequest.resources.push(res);
-  //   }
-  //
-  //   return await this.changeConfig(configRequest);
-  // },
-  //
-  // async resetThrottledReplicas(topicNames: string[]): Promise<PatchConfigsResponse> {
-  //   const configRequest: PatchConfigsRequest = {resources: []};
-  //
-  //   // reset throttled replicas for those topics
-  //   for (const t of topicNames) {
-  //     configRequest.resources.push({
-  //       resourceType: ConfigResourceType.Topic,
-  //       resourceName: t,
-  //       configs: [
-  //         {name: 'leader.replication.throttled.replicas', op: AlterConfigOperation.Delete},
-  //         {name: 'follower.replication.throttled.replicas', op: AlterConfigOperation.Delete},
-  //       ],
-  //     });
-  //   }
-  //
-  //   return await this.changeConfig(configRequest);
-  // },
-  //
-  // async resetReplicationThrottleRate(brokerIds: number[]): Promise<PatchConfigsResponse> {
-  //   const configRequest: PatchConfigsRequest = {resources: []};
-  //
-  //   // We currently only set replication throttle on each broker, instead of cluster-wide (same effect, but different kind of 'ConfigSource')
-  //   // So we don't remove the cluster-wide setting, only the ones we've set (the per-broker) settings
-  //
-  //   // remove throttle configs from all brokers (DYNAMIC_DEFAULT_BROKER_CONFIG)
-  //   // configRequest.resources.push({
-  //   //     resourceType: ConfigResourceType.Broker,
-  //   //     resourceName: "", // empty = all brokers
-  //   //     configs: [
-  //   //         { name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Delete },
-  //   //         { name: 'follower.replication.throttled.rate', op: AlterConfigOperation.Delete },
-  //   //     ]
-  //   // });
-  //
-  //   // remove throttle configs from each broker individually (DYNAMIC_BROKER_CONFIG)
-  //   for (const b of brokerIds) {
-  //     configRequest.resources.push({
-  //       resourceType: ConfigResourceType.Broker,
-  //       resourceName: String(b),
-  //       configs: [
-  //         {name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Delete},
-  //         {name: 'follower.replication.throttled.rate', op: AlterConfigOperation.Delete},
-  //       ],
-  //     });
-  //   }
-  //
-  //   return await this.changeConfig(configRequest);
-  // },
-  //
-  // async changeConfig(request: PatchConfigsRequest): Promise<PatchConfigsResponse> {
-  //   const response = await appConfig.fetch(`${appConfig.restBasePath}/operations/configs`, {
-  //     method: 'PATCH',
-  //     headers: [['Content-Type', 'application/json']],
-  //     body: toJson(request),
-  //   });
-  //   return await parseOrUnwrap<PatchConfigsResponse>(response, null);
-  // },
-  //
+
+  async setReplicationThrottleRate(brokerIds: number[], maxBytesPerSecond: number): Promise<Array<IncrementalAlterConfigsResourceResponse>> {
+    maxBytesPerSecond = Math.ceil(maxBytesPerSecond);
+
+    const configRequest: IncrementalAlterConfigsRequestResource[] = [];
+
+    for (const b of brokerIds) {
+      configRequest.push(IncrementalAlterConfigsRequestResource.createFrom({
+        ResourceType: ConfigResourceType.BROKER,
+        ResourceName: String(b),
+        Configs: [
+          {
+            Name: 'leader.replication.throttled.rate',
+            Op: IncrementalAlterConfigOp.SET,
+            Value: String(maxBytesPerSecond)
+          },
+          {
+            Name: 'follower.replication.throttled.rate',
+            Op: IncrementalAlterConfigOp.SET,
+            Value: String(maxBytesPerSecond),
+          },
+        ],
+      }));
+    }
+
+    return await this.changeConfig(configRequest);
+  },
+
+  async setThrottledReplicas(
+    topicReplicas: {
+      topicName: string;
+      leaderReplicas: { brokerId: number; partitionId: number }[];
+      followerReplicas: { brokerId: number; partitionId: number }[];
+    }[],
+  ): Promise<Array<IncrementalAlterConfigsResourceResponse>> {
+    const configRequest: IncrementalAlterConfigsRequestResource[] = [];
+
+    for (const t of topicReplicas) {
+      const res: IncrementalAlterConfigsRequestResource = IncrementalAlterConfigsRequestResource.createFrom({
+        // Set which topics to throttle
+        ResourceType: ConfigResourceType.TOPIC,
+        ResourceName: t.topicName,
+        Configs: [],
+      });
+
+      const leaderReplicas = t.leaderReplicas.map((e) => `${e.partitionId}:${e.brokerId}`).join(',');
+      res.Configs.push(IncrementalAlterConfigsRequestResourceConfig.createFrom({
+        Name: 'leader.replication.throttled.replicas',
+        Op: IncrementalAlterConfigOp.SET,
+        Value: leaderReplicas,
+      }));
+      const followerReplicas = t.followerReplicas.map((e) => `${e.partitionId}:${e.brokerId}`).join(',');
+      res.Configs.push(IncrementalAlterConfigsRequestResourceConfig.createFrom({
+        Name: 'follower.replication.throttled.replicas',
+        Op: IncrementalAlterConfigOp.SET,
+        Value: followerReplicas,
+      }));
+
+      // individual request for each topic
+      configRequest.push(res);
+    }
+
+    return await this.changeConfig(configRequest);
+  },
+
+  async resetThrottledReplicas(topicNames: string[]): Promise<Array<IncrementalAlterConfigsResourceResponse>> {
+    const configRequest: IncrementalAlterConfigsRequestResource[] = [];
+
+    // reset throttled replicas for those topics
+    for (const t of topicNames) {
+      configRequest.push(IncrementalAlterConfigsRequestResource.createFrom({
+        ResourceType: ConfigResourceType.TOPIC,
+        ResourceName: t,
+        Configs: [
+          {Name: 'leader.replication.throttled.replicas', Op: IncrementalAlterConfigOp.DELETE},
+          {Name: 'follower.replication.throttled.replicas', Op: IncrementalAlterConfigOp.DELETE},
+        ],
+      }));
+    }
+
+    return await this.changeConfig(configRequest);
+  },
+
+  async resetReplicationThrottleRate(brokerIds: number[]): Promise<Array<IncrementalAlterConfigsResourceResponse>> {
+    const configRequest: IncrementalAlterConfigsRequestResource[] = [];
+
+    // We currently only set replication throttle on each broker, instead of cluster-wide (same effect, but different kind of 'ConfigSource')
+    // So we don't remove the cluster-wide setting, only the ones we've set (the per-broker) settings
+
+    // remove throttle configs from all brokers (DYNAMIC_DEFAULT_BROKER_CONFIG)
+    // configRequest.resources.push({
+    //     resourceType: ConfigResourceType.Broker,
+    //     resourceName: "", // empty = all brokers
+    //     configs: [
+    //         { name: 'leader.replication.throttled.rate', op: AlterConfigOperation.Delete },
+    //         { name: 'follower.replication.throttled.rate', op: AlterConfigOperation.Delete },
+    //     ]
+    // });
+
+    // remove throttle configs from each broker individually (DYNAMIC_BROKER_CONFIG)
+    for (const b of brokerIds) {
+      configRequest.push(IncrementalAlterConfigsRequestResource.createFrom({
+        ResourceType: ConfigResourceType.BROKER,
+        ResourceName: String(b),
+        Configs: [
+          {Name: 'leader.replication.throttled.rate', Op: IncrementalAlterConfigOp.DELETE},
+          {Name: 'follower.replication.throttled.rate', Op: IncrementalAlterConfigOp.DELETE},
+        ],
+      }));
+    }
+
+    return await this.changeConfig(configRequest);
+  },
+
+  async changeConfig(request: Array<IncrementalAlterConfigsRequestResource>): Promise<Array<IncrementalAlterConfigsResourceResponse>> {
+    return IncrementalAlterConfigs(request);
+  },
+
 
   // PATCH /topics/{topicName}/configuration   //
   // PATCH /topics/configuration               // default config
@@ -931,18 +924,18 @@ const apiStore = {
     return ProducePlainRecords(request.records, request.useTransactions, [CompressionCodec.createFrom(request.compressionType)])
   },
 
-  // New version of "publishRecords"
-  async publishMessage(request: PublishMessageRequest): Promise<PublishMessageResponse> {
-    // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
-    const client = appConfig.consoleClient!;
-    if (!client) {
-      // this shouldn't happen but better to explicitly throw
-      throw new Error('Console client is not initialized');
-    }
-    const r = await client.publishMessage(request);
-
-    return r;
-  },
+  // // New version of "publishRecords"
+  // async publishMessage(request: PublishMessageRequest): Promise<PublishMessageResponse> {
+  //   // biome-ignore lint/style/noNonNullAssertion: leave as is for now due to MobX
+  //   const client = appConfig.consoleClient!;
+  //   if (!client) {
+  //     // this shouldn't happen but better to explicitly throw
+  //     throw new Error('Console client is not initialized');
+  //   }
+  //   const r = await client.publishMessage(request);
+  //
+  //   return r;
+  // },
 
   async createTopic(request: CreateTopicsRequestTopic): Promise<CreateTopicResponse> {
     return CreateTopic(request);
@@ -956,117 +949,6 @@ const apiStore = {
     DeleteACLs(request);
   },
 };
-
-export type RolePrincipal = { name: string; principalType: 'User' };
-export const rolesApi = observable({
-  roles: [] as string[],
-  roleMembers: new Map<string, RolePrincipal[]>(), // RoleName -> Principals
-  rolesError: null as ConnectError | null,
-
-  async refreshRoles(): Promise<void> {
-    this.rolesError = null;
-    const client = appConfig.securityClient;
-    if (!client) throw new Error('security client is not initialized');
-
-    const roles: string[] = [];
-
-    if (Features.rolesApi) {
-      let nextPageToken = '';
-      while (true) {
-        const res = await client.listRoles({pageSize: 500, pageToken: nextPageToken}).catch((error) => {
-          this.rolesError = error;
-          return null;
-        });
-
-        if (res === null) {
-          break;
-        }
-
-        const newRoles = res.roles.map((x) => x.name);
-        roles.push(...newRoles);
-
-        if (!res.nextPageToken || res.nextPageToken.length === 0) break;
-
-        nextPageToken = res.nextPageToken;
-      }
-    }
-
-    this.roles = roles;
-  },
-
-  async refreshRoleMembers() {
-    const client = appConfig.securityClient;
-    if (!client) throw new Error('security client is not initialized');
-
-    const rolePromises = [];
-
-    if (Features.rolesApi) {
-      for (const role of this.roles) {
-        rolePromises.push(client.getRole({roleName: role}));
-      }
-    }
-
-    await Promise.allSettled(rolePromises);
-
-    this.roleMembers.clear();
-
-    for (const r of rolePromises) {
-      const res = await r;
-      if (res.role == null) continue; // how could this ever happen, maybe someone deleted the role right before we retreived the members?
-      const roleName = res.role.name;
-
-      const members = res.members
-        .map((x) => {
-          const principalParts = x.principal.split(':');
-          if (principalParts.length !== 2) {
-            console.error('failed to split principal of role', {roleName, principal: x.principal});
-            return null;
-          }
-          const principalType = principalParts[0];
-          const name = principalParts[1];
-
-          if (principalType !== 'User') {
-            console.error('unexpected principal type in refreshRoleMembers', {roleName, principal: x.principal});
-          }
-
-          return {principalType, name} as RolePrincipal;
-        })
-        .filterNull();
-
-      this.roleMembers.set(roleName, members);
-    }
-  },
-
-  async createRole(name: string) {
-    const client = appConfig.securityClient;
-    if (!client) throw new Error('security client is not initialized');
-
-    if (Features.rolesApi) {
-      await client.createRole({role: {name}});
-    }
-  },
-
-  async deleteRole(name: string, deleteAcls: boolean) {
-    const client = appConfig.securityClient;
-    if (!client) throw new Error('security client is not initialized');
-
-    if (Features.rolesApi) {
-      await client.deleteRole({roleName: name, deleteAcls});
-    }
-  },
-
-  async updateRoleMembership(roleName: string, addUsers: string[], removeUsers: string[], create = false) {
-    const client = appConfig.securityClient;
-    if (!client) throw new Error('security client is not initialized');
-
-    return await client.updateRoleMembership({
-      roleName: roleName,
-      add: addUsers.map((u) => ({principal: `User:${u}`})),
-      remove: removeUsers.map((u) => ({principal: `User:${u}`})),
-      create,
-    });
-  },
-});
 
 // export function createMessageSearch() {
 //   const messageSearch = {
@@ -1458,6 +1340,17 @@ function prepareSynonyms(configEntries: TopicConfigEntry[]) {
   }
 }
 
+function prepareBrokerSynonyms(configEntries: BrokerConfigEntry[]) {
+  if (!Array.isArray(configEntries)) return;
+
+  for (const e of configEntries) {
+    if (e.synonyms === undefined) continue;
+
+    // add 'type' from root object
+    for (const s of e.synonyms) s.type = e.type;
+  }
+}
+
 function normalizeAcls(acls: ACLResource[]) {
   function upperFirst(str: string): string {
     if (!str) return str;
@@ -1502,24 +1395,24 @@ export async function partialTopicConfigs(
   return GetTopicsConfigs(topics, configKeys).then(Object.values);
 }
 
-export interface MessageSearchRequest {
-  topicName: string;
-  startOffset: number;
-  startTimestamp: number;
-  partitionId: number;
-  maxResults: number; // should also support '-1' soon, so we can do live tailing
-  filterInterpreterCode: string; // js code, base64 encoded
-  enterprise?: {
-    redpandaCloud?: {
-      accessToken: string;
-    };
-  };
-  includeRawPayload?: boolean;
-  ignoreSizeLimit?: boolean;
-
-  keyDeserializer?: PayloadEncoding;
-  valueDeserializer?: PayloadEncoding;
-}
+// export interface MessageSearchRequest {
+//   topicName: string;
+//   startOffset: number;
+//   startTimestamp: number;
+//   partitionId: number;
+//   maxResults: number; // should also support '-1' soon, so we can do live tailing
+//   filterInterpreterCode: string; // js code, base64 encoded
+//   enterprise?: {
+//     redpandaCloud?: {
+//       accessToken: string;
+//     };
+//   };
+//   includeRawPayload?: boolean;
+//   ignoreSizeLimit?: boolean;
+//
+//   keyDeserializer?: PayloadEncoding;
+//   valueDeserializer?: PayloadEncoding;
+// }
 
 function addError(err: Error) {
   api.errors.push(err);

@@ -9,16 +9,17 @@
  * by the Apache License, Version 2.0
  */
 
-import { Checkbox, DataTable } from '@redpanda-data/ui';
-import type { Row } from '@tanstack/react-table';
-import { transaction } from 'mobx';
-import { observer } from 'mobx-react';
-import { Component } from 'react';
-import { api } from '../../../state/backendApi';
-import type { Broker } from '../../../state/restInterfaces';
-import { eqSet, prettyBytesOrNA } from '../../../utils/utils';
-import type { PartitionSelection } from './ReassignPartitions';
-import { SelectionInfoBar } from './components/StatisticsBar';
+import {Checkbox, DataTable} from '@redpanda-data/ui';
+import type {Row} from '@tanstack/react-table';
+import {transaction} from 'mobx';
+import {observer} from 'mobx-react';
+import {Component} from 'react';
+import {api} from '../../../state/backendApi';
+import {eqSet, prettyBytesOrNA} from '../../../utils/utils';
+import type {PartitionSelection} from './ReassignPartitions';
+import {SelectionInfoBar} from './components/StatisticsBar';
+import {kconsole} from "../../../../wailsjs/go/models";
+import Broker = kconsole.Broker;
 
 @observer
 export class StepSelectBrokers extends Component<{
@@ -34,7 +35,7 @@ export class StepSelectBrokers extends Component<{
 
   render() {
     if (!this.brokers || this.brokers.length === 0) {
-      console.error('brokers', { brokers: this.brokers, apiClusterInfo: api.clusterInfo });
+      console.error('brokers', {brokers: this.brokers, apiClusterInfo: api.clusterInfo});
       return <div>Error: no brokers available</div>;
     }
 
@@ -42,7 +43,7 @@ export class StepSelectBrokers extends Component<{
 
     return (
       <>
-        <div style={{ margin: '2em 1em' }}>
+        <div style={{margin: '2em 1em'}}>
           <h2>Target Brokers</h2>
           <p>
             Choose the target brokers to move the selected partitions to. Redpanda Console will distribute partitions
@@ -50,7 +51,7 @@ export class StepSelectBrokers extends Component<{
           </p>
         </div>
 
-        <SelectionInfoBar partitionSelection={this.props.partitionSelection} margin="1em" />
+        <SelectionInfoBar partitionSelection={this.props.partitionSelection} margin="1em"/>
 
         <DataTable<Broker>
           data={this.brokers}
@@ -60,7 +61,7 @@ export class StepSelectBrokers extends Component<{
               id: 'check',
               header: observer(() => {
                 const selectedSet = new Set<number>(selectedBrokers);
-                const allIdsSet = new Set<number>(this.brokers.map(({ brokerId }) => brokerId));
+                const allIdsSet = new Set<number>(this.brokers.map(({brokerId}) => brokerId));
                 const allIsSelected = eqSet<number>(selectedSet, allIdsSet);
                 return (
                   <Checkbox
@@ -81,7 +82,7 @@ export class StepSelectBrokers extends Component<{
                   />
                 );
               }),
-              cell: observer(({ row: { original: broker } }: { row: Row<Broker> }) => {
+              cell: observer(({row: {original: broker}}: { row: Row<Broker> }) => {
                 const checked = selectedBrokers.includes(broker.brokerId);
                 return (
                   <Checkbox
@@ -95,13 +96,13 @@ export class StepSelectBrokers extends Component<{
                 );
               }),
             },
-            { header: 'ID', accessorKey: 'brokerId' },
-            { header: 'Broker Address', size: Number.POSITIVE_INFINITY, accessorKey: 'address' },
-            { header: 'Rack', accessorKey: 'rack' },
+            {header: 'ID', accessorKey: 'brokerId'},
+            {header: 'Broker Address', size: Number.POSITIVE_INFINITY, accessorKey: 'address'},
+            {header: 'Rack', accessorKey: 'rack'},
             {
               header: 'Used Space',
               accessorKey: 'logDirSize',
-              cell: ({ row: { original } }) => prettyBytesOrNA(original.logDirSize),
+              cell: ({row: {original}}) => prettyBytesOrNA(original.logDirSize),
             },
           ]}
         />

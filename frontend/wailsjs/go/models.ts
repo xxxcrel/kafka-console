@@ -1544,7 +1544,7 @@ export namespace kconsole {
 	    name: string;
 	    value?: string;
 	    source: string;
-	    type: string;
+	    type: kmsg.ConfigType;
 	
 	    static createFrom(source: any = {}) {
 	        return new TopicConfigSynonym(source);
@@ -1568,7 +1568,7 @@ export namespace kconsole {
 	    isReadOnly: boolean;
 	    synonyms: TopicConfigSynonym[];
 	    documentation?: string;
-	    type: number;
+	    type: kmsg.ConfigType;
 	    category?: string;
 	    frontendFormat?: FrontendFormat;
 	    enumValues?: string[];
@@ -1693,6 +1693,7 @@ export namespace kconsole {
 	    partitionLogDirs: TopicPartitionLogDirs[];
 	    topicName: string;
 	    replicaSize: number;
+	    hasErrors: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new TopicPartitionDetails(source);
@@ -1712,6 +1713,7 @@ export namespace kconsole {
 	        this.partitionLogDirs = this.convertValues(source["partitionLogDirs"], TopicPartitionLogDirs);
 	        this.topicName = source["topicName"];
 	        this.replicaSize = source["replicaSize"];
+	        this.hasErrors = source["hasErrors"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -2011,6 +2013,12 @@ export namespace kgo {
 
 export namespace kmsg {
 	
+	export enum ConfigResourceType {
+	    UNKNOWN = 0,
+	    TOPIC = 2,
+	    BROKER = 4,
+	    BROKER_LOGGER = 8,
+	}
 	export enum ACLOperation {
 	    UNKNOWN = 0,
 	    ANY = 1,
@@ -2050,6 +2058,23 @@ export namespace kmsg {
 	    MATCH = 2,
 	    LITERAL = 3,
 	    PREFIXED = 4,
+	}
+	export enum ConfigType {
+	    BOOLEAN = 1,
+	    STRING = 2,
+	    INT = 3,
+	    SHORT = 4,
+	    LONG = 5,
+	    DOUBLE = 6,
+	    LIST = 7,
+	    CLASS = 8,
+	    PASSWORD = 9,
+	}
+	export enum IncrementalAlterConfigOp {
+	    SET = 0,
+	    DELETE = 1,
+	    APPEND = 2,
+	    SUBTRACT = 3,
 	}
 	export class Tags {
 	
@@ -2099,7 +2124,7 @@ export namespace kmsg {
 		}
 	}
 	export class AlterConfigsRequestResource {
-	    ResourceType: number;
+	    ResourceType: ConfigResourceType;
 	    ResourceName: string;
 	    Configs: AlterConfigsRequestResourceConfig[];
 	    // Go type: Tags
@@ -2177,7 +2202,7 @@ export namespace kmsg {
 	export class AlterConfigsResponseResource {
 	    ErrorCode: number;
 	    ErrorMessage?: string;
-	    ResourceType: number;
+	    ResourceType: ConfigResourceType;
 	    ResourceName: string;
 	    // Go type: Tags
 	    UnknownTags: any;
@@ -3354,7 +3379,7 @@ export namespace kmsg {
 	
 	
 	export class DescribeConfigsRequestResource {
-	    ResourceType: number;
+	    ResourceType: ConfigResourceType;
 	    ResourceName: string;
 	    ConfigNames: string[];
 	    // Go type: Tags
@@ -3475,7 +3500,7 @@ export namespace kmsg {
 	    Source: number;
 	    IsSensitive: boolean;
 	    ConfigSynonyms: DescribeConfigsResponseResourceConfigConfigSynonym[];
-	    ConfigType: number;
+	    ConfigType: ConfigType;
 	    Documentation?: string;
 	    // Go type: Tags
 	    UnknownTags: any;
@@ -3519,7 +3544,7 @@ export namespace kmsg {
 	export class DescribeConfigsResponseResource {
 	    ErrorCode: number;
 	    ErrorMessage?: string;
-	    ResourceType: number;
+	    ResourceType: ConfigResourceType;
 	    ResourceName: string;
 	    Configs: DescribeConfigsResponseResourceConfig[];
 	    // Go type: Tags
@@ -3599,7 +3624,7 @@ export namespace kmsg {
 	
 	export class IncrementalAlterConfigsRequestResourceConfig {
 	    Name: string;
-	    Op: number;
+	    Op: IncrementalAlterConfigOp;
 	    Value?: string;
 	    // Go type: Tags
 	    UnknownTags: any;
@@ -3635,7 +3660,7 @@ export namespace kmsg {
 		}
 	}
 	export class IncrementalAlterConfigsRequestResource {
-	    ResourceType: number;
+	    ResourceType: ConfigResourceType;
 	    ResourceName: string;
 	    Configs: IncrementalAlterConfigsRequestResourceConfig[];
 	    // Go type: Tags
@@ -3713,7 +3738,7 @@ export namespace kmsg {
 	export class IncrementalAlterConfigsResponseResource {
 	    ErrorCode: number;
 	    ErrorMessage?: string;
-	    ResourceType: number;
+	    ResourceType: ConfigResourceType;
 	    ResourceName: string;
 	    // Go type: Tags
 	    UnknownTags: any;
@@ -4200,19 +4225,6 @@ export namespace serde {
 
 export namespace sr {
 	
-	export enum Mode {
-	    IMPORT = 0,
-	    READONLY = 1,
-	    READWRITE = 2,
-	}
-	export enum SchemaRuleMode {
-	    UPGRADE = 0,
-	    DOWNGRADE = 1,
-	    UPDOWN = 2,
-	    WRITE = 3,
-	    READ = 4,
-	    WRITEREAD = 5,
-	}
 	export enum SchemaRuleKind {
 	    TRANSFORM = 0,
 	    CONDITION = 1,
@@ -4230,6 +4242,19 @@ export namespace sr {
 	    FORWARD_TRANSITIVE = 5,
 	    FULL = 6,
 	    FULL_TRANSITIVE = 7,
+	}
+	export enum Mode {
+	    IMPORT = 0,
+	    READONLY = 1,
+	    READWRITE = 2,
+	}
+	export enum SchemaRuleMode {
+	    UPGRADE = 0,
+	    DOWNGRADE = 1,
+	    UPDOWN = 2,
+	    WRITE = 3,
+	    READ = 4,
+	    WRITEREAD = 5,
 	}
 	export class SchemaRule {
 	    name: string;

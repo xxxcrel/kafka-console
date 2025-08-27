@@ -40,6 +40,9 @@ func main() {
 			kconsole.AllSchemaRuleKind,
 			kconsole.AllACLResourcePatternType,
 			kconsole.AllFrontendFormat,
+			kconsole.AllConfigType,
+			kconsole.AllIncrementalAlterConfigOp,
+			kconsole.AllConfigResourceType,
 		},
 	})
 

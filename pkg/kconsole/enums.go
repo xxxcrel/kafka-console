@@ -128,3 +128,38 @@ var AllFrontendFormat = []struct {
 	{FrontendFormatDecimal, "DECIMAL"},
 	{FrontendFormatInteger, "INTEGER"},
 }
+
+var AllConfigType = []struct {
+	Value  kmsg.ConfigType
+	TSName string
+}{
+	{kmsg.ConfigType(1), "BOOLEAN"},
+	{kmsg.ConfigType(2), "STRING"},
+	{kmsg.ConfigType(3), "INT"},
+	{kmsg.ConfigType(4), "SHORT"},
+	{kmsg.ConfigType(5), "LONG"},
+	{kmsg.ConfigType(6), "DOUBLE"},
+	{kmsg.ConfigType(7), "LIST"},
+	{kmsg.ConfigType(8), "CLASS"},
+	{kmsg.ConfigType(9), "PASSWORD"},
+}
+
+var AllIncrementalAlterConfigOp = []struct {
+	Value  kmsg.IncrementalAlterConfigOp
+	TSName string
+}{
+	{kmsg.IncrementalAlterConfigOpSet, "SET"},
+	{kmsg.IncrementalAlterConfigOpDelete, "DELETE"},
+	{kmsg.IncrementalAlterConfigOpAppend, "APPEND"},
+	{kmsg.IncrementalAlterConfigOpSubtract, "SUBTRACT"},
+}
+
+var AllConfigResourceType = []struct {
+	Value  kmsg.ConfigResourceType
+	TSName string
+}{
+	{kmsg.ConfigResourceTypeUnknown, "UNKNOWN"},
+	{kmsg.ConfigResourceTypeTopic, "TOPIC"},
+	{kmsg.ConfigResourceTypeBroker, "BROKER"},
+	{kmsg.ConfigResourceTypeBrokerLogger, "BROKER_LOGGER"},
+}

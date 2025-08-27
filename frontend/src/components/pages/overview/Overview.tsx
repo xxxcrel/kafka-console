@@ -114,12 +114,6 @@ class Overview extends PageComponent {
 
           <Grid gridTemplateColumns={{base: '1fr', lg: 'fit-content(60%) 1fr'}} gap={6}>
             <GridItem display="flex" flexDirection="column" gap={6}>
-              {api.clusterHealth?.isHealthy === false && (
-                <Section py={4} gridArea="debugInfo">
-                  <Heading as="h3">Cluster Health Debug</Heading>
-                  <ClusterHealthOverview/>
-                </Section>
-              )}
 
               <Section py={4}>
                 <Heading as="h3">Broker Details</Heading>

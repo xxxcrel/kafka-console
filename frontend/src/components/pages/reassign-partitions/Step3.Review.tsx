@@ -20,7 +20,6 @@ import {prettyBytesOrNA, prettyMilliseconds} from '../../../utils/utils';
 import {BrokerList} from '../../misc/BrokerList';
 import {BandwidthSlider} from './components/BandwidthSlider';
 import {kconsole} from "../../../../wailsjs/go/models";
-import {PartitionReassignmentRequest, TopicAssignment} from "../../../state/restInterfaces";
 import ReassignPartitions, {PartitionSelection} from "./ReassignPartitions";
 import TopicPartitionDetails = kconsole.TopicPartitionDetails;
 import TopicSummary = kconsole.TopicSummary;

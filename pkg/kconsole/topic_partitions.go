@@ -52,6 +52,7 @@ type TopicPartitionDetails struct {
 	// for frontend
 	TopicName   string `json:"topicName"`
 	ReplicaSize int32  `json:"replicaSize"`
+	HasErrors   bool   `json:"hasErrors"`
 }
 
 // TopicPartitionMetadata represents the available metadata for a partition.
@@ -249,6 +250,7 @@ func (s *Service) getTopicPartitionMetadata(ctx context.Context, adminCl *kadm.C
 					nil,
 					"",
 					0,
+					false,
 				}
 				continue
 			}
@@ -263,6 +265,7 @@ func (s *Service) getTopicPartitionMetadata(ctx context.Context, adminCl *kadm.C
 				[]TopicPartitionLogDirs{},
 				"",
 				0,
+				false,
 			}
 		}
 		topicOverview.Partitions = partitionInfo

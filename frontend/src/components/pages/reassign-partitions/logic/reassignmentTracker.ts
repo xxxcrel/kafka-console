@@ -15,7 +15,6 @@
 
 import { observable, transaction } from 'mobx';
 import { api } from '../../../../state/backendApi';
-import type { PartitionReassignments } from '../../../../state/restInterfaces';
 import { IsDev } from '../../../../utils/env';
 import { clone, toJson } from '../../../../utils/jsonUtils';
 

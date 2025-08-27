@@ -12,7 +12,6 @@
 import type { SortingState } from '@redpanda-data/ui';
 import { autorun, makeObservable, observable, transaction } from 'mobx';
 import { DEFAULT_TABLE_PAGE_SIZE } from '../components/constants';
-import type { ConnectTabKeys } from '../components/pages/connect/Overview';
 import type { TopicTabId } from '../components/pages/topics/Topic.Details';
 import { PayloadEncoding } from '../protogen/redpanda/api/console/v1alpha1/common_pb';
 import { clone } from '../utils/jsonUtils';
@@ -289,41 +288,6 @@ const defaultUiSettings = {
 
   schemaDetails: {
     viewMode: 'fields' as 'json' | 'fields',
-  },
-
-  kafkaConnect: {
-    selectedTab: 'clusters' as ConnectTabKeys,
-
-    clusters: {
-      pageSize: undefined as any as number,
-      quickSearch: '',
-    },
-    connectors: {
-      pageSize: undefined as any as number,
-      quickSearch: '',
-    },
-    tasks: {
-      pageSize: undefined as any as number,
-      quickSearch: '',
-    },
-
-    clusterDetails: {
-      pageSize: undefined as any as number,
-      quickSearch: '',
-    },
-    clusterDetailsPlugins: {
-      pageSize: undefined as any as number,
-      quickSearch: '',
-    },
-
-    connectorDetails: {
-      pageSize: undefined as any as number,
-      quickSearch: '',
-    },
-  },
-
-  transformsList: {
-    quickSearch: '',
   },
 
   userDefaults: {

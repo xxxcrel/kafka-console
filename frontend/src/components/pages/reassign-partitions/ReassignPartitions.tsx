@@ -39,7 +39,6 @@ import {kconsole, kmsg} from "../../../../wailsjs/go/models";
 import TopicSummary = kconsole.TopicSummary;
 import BrokerConfigEntry = kconsole.BrokerConfigEntry;
 import TopicPartitionDetails = kconsole.TopicPartitionDetails;
-import {PartitionReassignmentRequest} from "../../../state/restInterfaces";
 import AlterPartitionReassignmentsPartitionResponse = kconsole.AlterPartitionReassignmentsPartitionResponse;
 import Broker = kconsole.Broker;
 import AlterPartitionAssignmentsRequestTopic = kmsg.AlterPartitionAssignmentsRequestTopic;
@@ -101,8 +100,8 @@ class ReassignPartitions extends PageComponent {
     p.title = 'Reassign Partitions';
     p.addBreadcrumb('Reassign Partitions', '/reassign-partitions');
 
-    appGlobal.onRefresh = () => this.refreshData(true);
-    this.refreshData(true);
+    appGlobal.onRefresh = () => this.refreshData();
+    this.refreshData();
   }
 
   componentDidMount() {
@@ -148,7 +147,7 @@ class ReassignPartitions extends PageComponent {
     reassignmentTracker.start();
   }
 
-  refreshData(force: boolean) {
+  refreshData() {
     api.refreshCluster(); // need to know brokers for reassignment calculation, will also refresh config
     api.refreshTopics();
     api.refreshPartitions('all');
@@ -379,7 +378,7 @@ class ReassignPartitions extends PageComponent {
                     });
 
                     const result = await api.resetThrottledReplicas(this.removeThrottleFromTopicsContent);
-                    const errors = result.patchedConfigs.filter((r) => r.error);
+                    const errors = result.filter((r) => r.error);
 
                     if (errors.length === 0) {
                       toast.update(toastId, {
@@ -412,7 +411,7 @@ class ReassignPartitions extends PageComponent {
 
   resetSelectionAndPage(scrollTop: boolean, showSelectionWarning: boolean) {
     transaction(() => {
-      this.refreshData(true);
+      this.refreshData();
       this.partitionSelection = {};
       this.selectedBrokerIds = [];
       this.reassignmentRequest = null;
@@ -537,14 +536,14 @@ class ReassignPartitions extends PageComponent {
     try {
       const response = await api.startPartitionReassignment(request);
 
-      const errors = response.reassignPartitionsResponses
+      const errors = response
         .map((e) => {
           const partErrors = e.partitions.filter((p) => p.errorMessage != null);
           if (partErrors.length === 0) return null;
           return {topicName: e.topicName, partitions: partErrors};
         })
         .filterNull();
-      const startedCount = response.reassignPartitionsResponses.sum((x) => x.partitions.count((p) => !p.errorCode));
+      const startedCount = response.sum((x) => x.partitions.count((p) => !p.errorCode));
 
       if (errors.length === 0) {
         // No errors
@@ -588,7 +587,7 @@ class ReassignPartitions extends PageComponent {
       followerReplicas: { brokerId: number; partitionId: number }[];
     }[] = [];
 
-    for (const t of request.topics) {
+    for (const t of request.Topics) {
       const topicName = t.topicName;
       const leaderReplicas: { partitionId: number; brokerId: number }[] = [];
       const followerReplicas: { partitionId: number; brokerId: number }[] = [];
@@ -632,7 +631,7 @@ class ReassignPartitions extends PageComponent {
     try {
       const brokerIds = api.clusterInfo?.brokers.map((b) => b.brokerId) ?? [];
       let response = await api.setReplicationThrottleRate(brokerIds, maxBytesPerSecond);
-      let errors = response.patchedConfigs.filter((c) => c.error);
+      let errors = response.filter((c) => c.error);
       if (errors.length > 0) throw new Error(toJson(errors));
 
       toast.update(toastRef, {
@@ -641,7 +640,7 @@ class ReassignPartitions extends PageComponent {
       });
 
       response = await api.setThrottledReplicas(topicReplicas);
-      errors = response.patchedConfigs.filter((c) => c.error);
+      errors = response.filter((c) => c.error);
       if (errors.length > 0) throw new Error(toJson(errors));
 
       toast.update(toastRef, {
@@ -707,10 +706,10 @@ class ReassignPartitions extends PageComponent {
       const topicConfigs = await partialTopicConfigs([
         'follower.replication.throttled.replicas',
         'leader.replication.throttled.replicas',
-      ]);
+      ], []);
 
       // Only get the names of the topics that have throttles applied
-      const newThrottledTopics = topicConfigs.topicDescriptions
+      const newThrottledTopics = topicConfigs
         .filter((t) => t.configEntries.any((x) => Boolean(x.value)))
         .map((t) => t.topicName)
         .sort();

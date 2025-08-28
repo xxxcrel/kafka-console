@@ -210,6 +210,10 @@ export function ListAllACLs(arg1) {
   return window['go']['main']['App']['ListAllACLs'](arg1);
 }
 
+export function ListMessages(arg1) {
+  return window['go']['main']['App']['ListMessages'](arg1);
+}
+
 export function ListOffsets(arg1, arg2) {
   return window['go']['main']['App']['ListOffsets'](arg1, arg2);
 }

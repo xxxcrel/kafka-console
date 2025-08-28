@@ -1,8 +1,10 @@
-package kconsole
+package enums
 
 import (
 	"github.com/twmb/franz-go/pkg/kmsg"
 	"github.com/twmb/franz-go/pkg/sr"
+	"github.com/xxxcrel/kafka-console/pkg/api/connect/service/console"
+	"github.com/xxxcrel/kafka-console/pkg/kconsole"
 )
 
 var AllSchemaType = []struct {
@@ -113,20 +115,20 @@ var AllACLOperation = []struct {
 }
 
 var AllFrontendFormat = []struct {
-	Value  FrontendFormat
+	Value  kconsole.FrontendFormat
 	TSName string
 }{
-	{FrontendFormatUnknown, "UNKNOWN"},
-	{FrontendFormatBoolean, "BOOLEAN"},
-	{FrontendFormatPassword, "PASSWORD"},
-	{FrontendFormatString, "STRING"},
-	{FrontendFormatSelect, "SELECT"},
-	{FrontendFormatMultiSelect, "MULTI_SELECT"},
-	{FrontendFormatByteSize, "BYTE_SIZE"},
-	{FrontendFormatRatio, "RATIO"},
-	{FrontendFormatDuration, "DURATION"},
-	{FrontendFormatDecimal, "DECIMAL"},
-	{FrontendFormatInteger, "INTEGER"},
+	{kconsole.FrontendFormatUnknown, "UNKNOWN"},
+	{kconsole.FrontendFormatBoolean, "BOOLEAN"},
+	{kconsole.FrontendFormatPassword, "PASSWORD"},
+	{kconsole.FrontendFormatString, "STRING"},
+	{kconsole.FrontendFormatSelect, "SELECT"},
+	{kconsole.FrontendFormatMultiSelect, "MULTI_SELECT"},
+	{kconsole.FrontendFormatByteSize, "BYTE_SIZE"},
+	{kconsole.FrontendFormatRatio, "RATIO"},
+	{kconsole.FrontendFormatDuration, "DURATION"},
+	{kconsole.FrontendFormatDecimal, "DECIMAL"},
+	{kconsole.FrontendFormatInteger, "INTEGER"},
 }
 
 var AllConfigType = []struct {
@@ -162,4 +164,38 @@ var AllConfigResourceType = []struct {
 	{kmsg.ConfigResourceTypeTopic, "TOPIC"},
 	{kmsg.ConfigResourceTypeBroker, "BROKER"},
 	{kmsg.ConfigResourceTypeBrokerLogger, "BROKER_LOGGER"},
+}
+
+var AllPayloadEncoding = []struct {
+	Value  console.PayloadEncoding
+	TSName string
+}{
+	{console.PayloadEncoding_PAYLOAD_ENCODING_UNSPECIFIED, "UNSPECIFIED"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_NULL, "NULL"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_AVRO, "AVRO"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_PROTOBUF, "PROTOBUF"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_PROTOBUF_SCHEMA, "PROTOBUF_SCHEMA"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_JSON, "JSON"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_JSON_SCHEMA, "JSON_SCHEMA"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_XML, "XML"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_TEXT, "TEXT"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_UTF8, "UTF8"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_MESSAGE_PACK, "MESSAGE_PACK"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_SMILE, "SMILE"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_BINARY, "BINARY"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_UINT, "UINT"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_CONSUMER_OFFSETS, "CONSUMER_OFFSETS"},
+	{console.PayloadEncoding_PAYLOAD_ENCODING_CBOR, "CBOR"},
+}
+
+var AllCompressionType = []struct {
+	Value  console.CompressionType
+	TSName string
+}{
+	{console.CompressionType_COMPRESSION_TYPE_UNSPECIFIED, "UNSPECIFIED"},
+	{console.CompressionType_COMPRESSION_TYPE_UNCOMPRESSED, "UNCOMPRESSED"},
+	{console.CompressionType_COMPRESSION_TYPE_GZIP, "GZIP"},
+	{console.CompressionType_COMPRESSION_TYPE_SNAPPY, "SNAPPY"},
+	{console.CompressionType_COMPRESSION_TYPE_LZ4, "LZ4"},
+	{console.CompressionType_COMPRESSION_TYPE_ZSTD, "ZSTD"},
 }

@@ -35,7 +35,7 @@ type Servicer interface {
 	GetEndpointCompatibility(ctx context.Context) (EndpointCompatibility, error)
 	IncrementalAlterConfigs(ctx context.Context, alterConfigs []kmsg.IncrementalAlterConfigsRequestResource) ([]IncrementalAlterConfigsResourceResponse, error)
 	ListAllACLs(ctx context.Context, req kmsg.DescribeACLsRequest) (*ACLOverview, error)
-	ListMessages(ctx context.Context, listReq ListMessageRequest, progress IListMessagesProgress) error
+	ListMessages(ctx context.Context, listReq ListMessageRequest) ([]*TopicMessage, error)
 	ListOffsets(ctx context.Context, topicNames []string, timestamp int64) ([]TopicOffset, error)
 	GetKafkaVersion(ctx context.Context) (string, error)
 	ListPartitionReassignments(ctx context.Context) ([]PartitionReassignments, error)

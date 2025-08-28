@@ -6,7 +6,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"github.com/xxxcrel/kafka-console/pkg/kconsole"
+	"github.com/xxxcrel/kafka-console/pkg/enums"
 )
 
 //go:embed all:frontend
@@ -30,19 +30,21 @@ func main() {
 			app,
 		},
 		EnumBind: []interface{}{
-			kconsole.AllSchemaType,
-			kconsole.AllACLOperation,
-			kconsole.AllACLPermissionType,
-			kconsole.AllCompatibilityLevel,
-			kconsole.AllACLResourceType,
-			kconsole.AllMode,
-			kconsole.AllSchemaRuleMode,
-			kconsole.AllSchemaRuleKind,
-			kconsole.AllACLResourcePatternType,
-			kconsole.AllFrontendFormat,
-			kconsole.AllConfigType,
-			kconsole.AllIncrementalAlterConfigOp,
-			kconsole.AllConfigResourceType,
+			enums.AllSchemaType,
+			enums.AllACLOperation,
+			enums.AllACLPermissionType,
+			enums.AllCompatibilityLevel,
+			enums.AllACLResourceType,
+			enums.AllMode,
+			enums.AllSchemaRuleMode,
+			enums.AllSchemaRuleKind,
+			enums.AllACLResourcePatternType,
+			enums.AllFrontendFormat,
+			enums.AllConfigType,
+			enums.AllIncrementalAlterConfigOp,
+			enums.AllConfigResourceType,
+			enums.AllPayloadEncoding,
+			enums.AllCompressionType,
 		},
 	})
 

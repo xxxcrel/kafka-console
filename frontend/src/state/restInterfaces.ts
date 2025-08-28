@@ -528,30 +528,7 @@ export interface Seat {
   lastActivity: string; // is a datetime string, should probably be a "UnixMillis"
 }
 
-export interface UserData {
-  displayName: string;
-  avatarUrl: string;
 
-  canViewConsoleUsers: boolean;
-  canListAcls: boolean;
-  canListQuotas: boolean;
-  canReassignPartitions: boolean;
-  canPatchConfigs: boolean;
-  canCreateRoles: boolean;
-  canManageUsers: boolean;
-  canViewPermissionsList: boolean;
-
-  canManageLicense: boolean;
-  canViewSchemas: boolean;
-  canCreateSchemas: boolean;
-  canDeleteSchemas: boolean;
-  canManageSchemaRegistry: boolean;
-  canViewDebugBundle: boolean;
-
-  canListTransforms: boolean;
-  canCreateTransforms: boolean;
-  canDeleteTransforms: boolean;
-}
 
 export type UserPermissions = Exclude<keyof UserData, 'user' | 'seat'>;
 
@@ -1375,12 +1352,7 @@ export interface CreateSecretResponse {
   labels: Record<string, string>;
 }
 
-export interface ClusterOverview {
-  kafkaAuthorizerInfo: number | null;
-  kafka: KafkaInfo | null;
-  console: string | null;
-  schemaRegistry: SchemaRegistryInfo | null;
-}
+
 
 export interface OverviewStatus {
   status: 'HEALTHY' | 'DEGRADED' | 'UNHEALTHY';

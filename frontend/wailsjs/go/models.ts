@@ -153,6 +153,37 @@ export namespace clusterstatus {
 
 }
 
+export namespace console {
+	
+	export enum PayloadEncoding {
+	    UNSPECIFIED = 0,
+	    NULL = 1,
+	    AVRO = 2,
+	    PROTOBUF = 3,
+	    PROTOBUF_SCHEMA = 4,
+	    JSON = 5,
+	    JSON_SCHEMA = 6,
+	    XML = 7,
+	    TEXT = 8,
+	    UTF8 = 9,
+	    MESSAGE_PACK = 10,
+	    SMILE = 11,
+	    BINARY = 12,
+	    UINT = 13,
+	    CONSUMER_OFFSETS = 14,
+	    CBOR = 15,
+	}
+	export enum CompressionType {
+	    UNSPECIFIED = 0,
+	    UNCOMPRESSED = 1,
+	    GZIP = 2,
+	    SNAPPY = 3,
+	    LZ4 = 4,
+	    ZSTD = 5,
+	}
+
+}
+
 export namespace kconsole {
 	
 	export enum FrontendFormat {
@@ -1018,6 +1049,56 @@ export namespace kconsole {
 	        this.description = source["description"];
 	    }
 	}
+	export class ListMessageRequest {
+	    TopicName: string;
+	    PartitionID: number;
+	    StartOffset: number;
+	    StartTimestamp: number;
+	    MessageCount: number;
+	    FilterInterpreterCode: string;
+	    Troubleshoot: boolean;
+	    IncludeRawPayload: boolean;
+	    IgnoreMaxSizeLimit: boolean;
+	    KeyDeserializer: string;
+	    ValueDeserializer: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListMessageRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.TopicName = source["TopicName"];
+	        this.PartitionID = source["PartitionID"];
+	        this.StartOffset = source["StartOffset"];
+	        this.StartTimestamp = source["StartTimestamp"];
+	        this.MessageCount = source["MessageCount"];
+	        this.FilterInterpreterCode = source["FilterInterpreterCode"];
+	        this.Troubleshoot = source["Troubleshoot"];
+	        this.IncludeRawPayload = source["IncludeRawPayload"];
+	        this.IgnoreMaxSizeLimit = source["IgnoreMaxSizeLimit"];
+	        this.KeyDeserializer = source["KeyDeserializer"];
+	        this.ValueDeserializer = source["ValueDeserializer"];
+	    }
+	}
+	export class MessageHeader {
+	    key: string;
+	    value: number[];
+	    isValueTooLarge: boolean;
+	    encoding: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new MessageHeader(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.key = source["key"];
+	        this.value = source["value"];
+	        this.isValueTooLarge = source["isValueTooLarge"];
+	        this.encoding = source["encoding"];
+	    }
+	}
 	export class PartitionOffset {
 	    error?: string;
 	    partitionId: number;
@@ -1835,6 +1916,50 @@ export namespace kconsole {
 		}
 	}
 	
+	export class TopicMessage {
+	    partitionID: number;
+	    offset: number;
+	    timestamp: number;
+	    compression: string;
+	    isTransactional: boolean;
+	    headers: MessageHeader[];
+	    key?: serde.RecordPayload;
+	    value?: serde.RecordPayload;
+	
+	    static createFrom(source: any = {}) {
+	        return new TopicMessage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.partitionID = source["partitionID"];
+	        this.offset = source["offset"];
+	        this.timestamp = source["timestamp"];
+	        this.compression = source["compression"];
+	        this.isTransactional = source["isTransactional"];
+	        this.headers = this.convertValues(source["headers"], MessageHeader);
+	        this.key = this.convertValues(source["key"], serde.RecordPayload);
+	        this.value = this.convertValues(source["value"], serde.RecordPayload);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class TopicOffset {
 	    topicName: string;
 	    partitions: PartitionOffset[];
@@ -2015,17 +2140,6 @@ export namespace kgo {
 
 export namespace kmsg {
 	
-	export enum ConfigType {
-	    BOOLEAN = 1,
-	    STRING = 2,
-	    INT = 3,
-	    SHORT = 4,
-	    LONG = 5,
-	    DOUBLE = 6,
-	    LIST = 7,
-	    CLASS = 8,
-	    PASSWORD = 9,
-	}
 	export enum IncrementalAlterConfigOp {
 	    SET = 0,
 	    DELETE = 1,
@@ -2077,6 +2191,17 @@ export namespace kmsg {
 	    MATCH = 2,
 	    LITERAL = 3,
 	    PREFIXED = 4,
+	}
+	export enum ConfigType {
+	    BOOLEAN = 1,
+	    STRING = 2,
+	    INT = 3,
+	    SHORT = 4,
+	    LONG = 5,
+	    DOUBLE = 6,
+	    LIST = 7,
+	    CLASS = 8,
+	    PASSWORD = 9,
 	}
 	export class Tags {
 	
@@ -4192,6 +4317,66 @@ export namespace kmsg {
 
 export namespace serde {
 	
+	export class TroubleshootingReport {
+	    serdeName: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TroubleshootingReport(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.serdeName = source["serdeName"];
+	        this.message = source["message"];
+	    }
+	}
+	export class RecordPayload {
+	    originalPayload?: number[];
+	    payloadSizeBytes: number;
+	    humanReadablePayload: number[];
+	    isPayloadTooLarge: boolean;
+	    isPayloadNull: boolean;
+	    encoding: string;
+	    schemaId?: number;
+	    troubleshooting?: TroubleshootingReport[];
+	    extraMetadata?: Record<string, string>;
+	
+	    static createFrom(source: any = {}) {
+	        return new RecordPayload(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.originalPayload = source["originalPayload"];
+	        this.payloadSizeBytes = source["payloadSizeBytes"];
+	        this.humanReadablePayload = source["humanReadablePayload"];
+	        this.isPayloadTooLarge = source["isPayloadTooLarge"];
+	        this.isPayloadNull = source["isPayloadNull"];
+	        this.encoding = source["encoding"];
+	        this.schemaId = source["schemaId"];
+	        this.troubleshooting = this.convertValues(source["troubleshooting"], TroubleshootingReport);
+	        this.extraMetadata = source["extraMetadata"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class RecordPayloadInput {
 	    Payload: any;
 	    Encoding: string;
@@ -4206,20 +4391,6 @@ export namespace serde {
 	        this.Payload = source["Payload"];
 	        this.Encoding = source["Encoding"];
 	        this.Options = source["Options"];
-	    }
-	}
-	export class TroubleshootingReport {
-	    serdeName: string;
-	    message: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new TroubleshootingReport(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.serdeName = source["serdeName"];
-	        this.message = source["message"];
 	    }
 	}
 

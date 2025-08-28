@@ -134,26 +134,23 @@ type TopicConsumeRequest struct {
 // 6. Send a completion message to the frontend, that will show stats about the completed (or aborted) message search
 //
 //nolint:cyclop // complex logic
-func (s *Service) ListMessages(ctx context.Context, listReq ListMessageRequest, progress IListMessagesProgress) error {
+func (s *Service) ListMessages(ctx context.Context, listReq ListMessageRequest) ([]*TopicMessage, error) {
 	cl, adminCl, err := s.kafkaClientFactory.GetKafkaClient(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	start := time.Now()
-
-	progress.OnPhase("Get Partitions")
 	// Create array of partitionIDs which shall be consumed (always do that to ensure the requested topic exists at all)
 	metadata, err := adminCl.Metadata(ctx, listReq.TopicName)
 	if err != nil {
-		return fmt.Errorf("failed to get metadata for topic %s: %w", listReq.TopicName, err)
+		return nil, fmt.Errorf("failed to get metadata for topic %s: %w", listReq.TopicName, err)
 	}
 	topicMetadata, exist := metadata.Topics[listReq.TopicName]
 	if !exist {
-		return fmt.Errorf("metadata response did not contain requested topic")
+		return nil, fmt.Errorf("metadata response did not contain requested topic")
 	}
 	if topicMetadata.Err != nil {
-		return fmt.Errorf("failed to get metadata for topic %s: %w", listReq.TopicName, topicMetadata.Err)
+		return nil, fmt.Errorf("failed to get metadata for topic %s: %w", listReq.TopicName, topicMetadata.Err)
 	}
 
 	partitionByID := make(map[int32]kadm.PartitionDetail)
@@ -172,52 +169,48 @@ func (s *Service) ListMessages(ctx context.Context, listReq ListMessageRequest, 
 	var partitionIDs []int32
 	if listReq.PartitionID == partitionsAll {
 		if len(offlinePartitionIDs) > 0 {
-			progress.OnError(
-				fmt.Sprintf("%v of the requested partitions are offline. Messages will be listed from the remaining %v partitions",
-					len(offlinePartitionIDs), len(onlinePartitionIDs)),
-			)
+			return nil, fmt.Errorf("%v of the requested partitions are offline. Messages will be listed from the remaining %v partitions",
+				len(offlinePartitionIDs), len(onlinePartitionIDs))
 		}
 		partitionIDs = onlinePartitionIDs
 	} else {
 		// Check if requested partitionID exists
 		pInfo, exists := partitionByID[listReq.PartitionID]
 		if !exists {
-			return fmt.Errorf("requested partitionID (%v) does not exist in topic (%v)", listReq.PartitionID, listReq.TopicName)
+			return nil, fmt.Errorf("requested partitionID (%v) does not exist in topic (%v)", listReq.PartitionID, listReq.TopicName)
 		}
 
 		// Check if the requested partitionID is available
 		if pInfo.Err != nil {
-			return fmt.Errorf("requested partitionID (%v) is not available: %w", listReq.PartitionID, err)
+			return nil, fmt.Errorf("requested partitionID (%v) is not available: %w", listReq.PartitionID, err)
 		}
 		partitionIDs = []int32{listReq.PartitionID}
 	}
 
-	progress.OnPhase("Get Watermarks and calculate consuming requests")
 	startOffsets, err := adminCl.ListStartOffsets(ctx, listReq.TopicName)
 	if err != nil {
-		return fmt.Errorf("failed to get start offsets: %w", err)
+		return nil, fmt.Errorf("failed to get start offsets: %w", err)
 	}
 	if startOffsets.Error() != nil {
-		return fmt.Errorf("failed to get start offsets: %w", startOffsets.Error())
+		return nil, fmt.Errorf("failed to get start offsets: %w", startOffsets.Error())
 	}
 
 	endOffsets, err := adminCl.ListEndOffsets(ctx, listReq.TopicName)
 	if err != nil {
-		return fmt.Errorf("failed to get end offsets: %w", err)
+		return nil, fmt.Errorf("failed to get end offsets: %w", err)
 	}
 	if startOffsets.Error() != nil {
-		return fmt.Errorf("failed to get end offsets: %w", endOffsets.Error())
+		return nil, fmt.Errorf("failed to get end offsets: %w", endOffsets.Error())
 	}
 
 	// Get partition consume request by calculating start and end offsets for each partition
 	consumeRequests, err := s.calculateConsumeRequests(ctx, cl, &listReq, partitionIDs, startOffsets, endOffsets)
 	if err != nil {
-		return fmt.Errorf("failed to calculate consume request: %w", err)
+		return nil, fmt.Errorf("failed to calculate consume request: %w", err)
 	}
 	if len(consumeRequests) == 0 {
 		// No partitions/messages to consume, we can quit early.
-		progress.OnComplete(time.Since(start).Milliseconds(), false)
-		return nil
+		return nil, nil
 	}
 	topicConsumeRequest := TopicConsumeRequest{
 		TopicName:             listReq.TopicName,
@@ -231,20 +224,17 @@ func (s *Service) ListMessages(ctx context.Context, listReq ListMessageRequest, 
 		ValueDeserializer:     listReq.ValueDeserializer,
 	}
 
-	progress.OnPhase("Consuming messages")
-	err = s.fetchMessages(ctx, cl, progress, topicConsumeRequest)
+	msgResult, err := s.fetchMessages(ctx, cl, topicConsumeRequest)
 	if err != nil {
-		progress.OnError(err.Error())
-		return nil
+		return nil, err
 	}
 
 	isCancelled := ctx.Err() != nil
-	progress.OnComplete(time.Since(start).Milliseconds(), isCancelled)
 	if isCancelled {
-		return fmt.Errorf("request was cancelled while waiting for messages")
+		return nil, fmt.Errorf("request was cancelled while waiting for messages")
 	}
 
-	return nil
+	return msgResult, nil
 }
 
 // calculateConsumeRequests is supposed to calculate the start and end offsets for each partition consumer, so that
@@ -427,7 +417,7 @@ func (s *Service) calculateConsumeRequests(
 // FetchMessages is in charge of fulfilling the topic consume request. This is tricky
 // in many cases, often due to the fact that we can't consume backwards, but we offer
 // users to consume the most recent messages.
-func (s *Service) fetchMessages(ctx context.Context, cl *kgo.Client, progress IListMessagesProgress, consumeReq TopicConsumeRequest) error {
+func (s *Service) fetchMessages(ctx context.Context, cl *kgo.Client, consumeReq TopicConsumeRequest) ([]*TopicMessage, error) {
 	// 1. Assign partitions with right start offsets and create client
 	partitionOffsets := make(map[string]map[int32]kgo.Offset)
 	partitionOffsets[consumeReq.TopicName] = make(map[int32]kgo.Offset)
@@ -439,7 +429,7 @@ func (s *Service) fetchMessages(ctx context.Context, cl *kgo.Client, progress IL
 	opts := append(cl.Opts(), kgo.ConsumePartitions(partitionOffsets))
 	client, err := kgo.NewClient(opts...)
 	if err != nil {
-		return fmt.Errorf("failed to create new kafka client: %w", err)
+		return nil, fmt.Errorf("failed to create new kafka client: %w", err)
 	}
 	defer client.Close()
 
@@ -462,8 +452,7 @@ func (s *Service) fetchMessages(ctx context.Context, cl *kgo.Client, progress IL
 		isMessageOK, err := s.setupInterpreter(consumeReq.FilterInterpreterCode)
 		if err != nil {
 			s.logger.Error("failed to setup interpreter", zap.Error(err))
-			progress.OnError(fmt.Sprintf("failed to setup interpreter: %v", err.Error()))
-			return err
+			return nil, err
 		}
 
 		wg.Add(1)
@@ -485,26 +474,26 @@ func (s *Service) fetchMessages(ctx context.Context, cl *kgo.Client, progress IL
 	messageCount := 0
 	messageCountByPartition := make(map[int32]int64)
 
+	msgResult := make([]*TopicMessage, consumeReq.MaxMessageCount)
+
 	for msg := range resultsCh {
 		// Since a 'kafka message' is likely transmitted in compressed batches this size is not really accurate
-		progress.OnMessageConsumed(msg.MessageSize)
 		partitionReq := consumeReq.Partitions[msg.PartitionID]
 
 		if msg.IsMessageOk && messageCountByPartition[msg.PartitionID] < partitionReq.MaxMessageCount {
 			messageCount++
 			messageCountByPartition[msg.PartitionID]++
-
-			progress.OnMessage(msg)
+			msgResult = append(msgResult, msg)
 		}
 
 		// Do we need more messages to satisfy the user request? Return if request is satisfied
 		isRequestSatisfied := messageCount == consumeReq.MaxMessageCount
 		if isRequestSatisfied {
-			return nil
+			return msgResult, nil
 		}
 	}
 
-	return nil
+	return msgResult, nil
 }
 
 // requestOffsetsByTimestamp returns the offset that has been resolved for the given timestamp in a map which is indexed

@@ -91,8 +91,9 @@ func (app *App) IncrementalAlterConfigs(alterConfigs []kmsg.IncrementalAlterConf
 func (app *App) ListAllACLs(req kmsg.DescribeACLsRequest) (*kconsole.ACLOverview, error) {
 	return app.api.ConsoleSvc.ListAllACLs(app.ctx, req)
 }
-
-// func (app *App) ListMessages(listReq ListMessageRequest, progress IListMessagesProgress) error
+func (app *App) ListMessages(listReq kconsole.ListMessageRequest) ([]*kconsole.TopicMessage, error) {
+	return app.api.ConsoleSvc.ListMessages(app.ctx, listReq)
+}
 func (app *App) ListOffsets(topicNames []string, timestamp int64) ([]kconsole.TopicOffset, error) {
 	return app.api.ConsoleSvc.ListOffsets(app.ctx, topicNames, timestamp)
 }

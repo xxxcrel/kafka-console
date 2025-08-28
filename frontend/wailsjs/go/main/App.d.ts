@@ -112,6 +112,8 @@ export function IncrementalAlterConfigsKafka(arg1:kmsg.IncrementalAlterConfigsRe
 
 export function ListAllACLs(arg1:kmsg.DescribeACLsRequest):Promise<kconsole.ACLOverview>;
 
+export function ListMessages(arg1:kconsole.ListMessageRequest):Promise<Array<kconsole.TopicMessage>>;
+
 export function ListOffsets(arg1:Array<string>,arg2:number):Promise<Array<kconsole.TopicOffset>>;
 
 export function ListPartitionReassignments():Promise<Array<kconsole.PartitionReassignments>>;
